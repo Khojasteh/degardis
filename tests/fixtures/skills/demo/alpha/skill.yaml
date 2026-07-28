@@ -1,0 +1,19 @@
+name: alpha
+title: Alpha
+format_version: 1
+version: 1.0.0
+description: Alpha is a minimal self-contained fixture skill used to exercise generic
+  compiler behavior in tests.
+primary_workflow: alpha.run
+content:
+  entries:
+  - entries/*.yaml
+  workflows:
+  - workflows/*.yaml
+profiles:
+  directory: profiles
+  defaults: []
+interface:
+  display_name: Alpha
+  short_description: Minimal fixture skill for compiler behavior tests
+  default_prompt: Use $alpha to run the fixture workflow.

@@ -1,0 +1,5 @@
+id: gamma.rule-three
+kind: rule
+title: Rule Three
+priority: 100
+rule: This is a third fixture rule used only to exercise generic entry rendering.

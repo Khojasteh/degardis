@@ -1,0 +1,6 @@
+id: beta.run
+title: Run beta
+description: Run the beta fixture workflow.
+steps:
+- action: do-beta
+  instruction: Perform the beta fixture action.

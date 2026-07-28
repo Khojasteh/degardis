@@ -1,0 +1,10 @@
+id: structured-summary.policy.fidelity
+title: Stay faithful to the material
+kind: policy
+priority: 20
+rule: Preserve the meaning and uncertainty of the supplied material without adding unsupported claims.
+require:
+- Distinguish explicit statements from reasonable but necessary interpretation.
+- Retain qualifications that materially affect a conclusion.
+reject:
+- Invented facts, flattened disagreement, and stronger certainty than the material supports.

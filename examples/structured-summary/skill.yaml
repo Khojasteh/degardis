@@ -1,0 +1,29 @@
+name: structured-summary
+title: Structured Summary
+format_version: 1
+version: 1.0.0
+license: MIT
+copyright: Copyright (c) 2026 Example Organization
+description: Turn supplied material into a clear, audience-appropriate summary.
+primary_workflow: structured-summary.compose
+entry_kinds:
+- principle
+- policy
+content:
+  entries:
+  - entries/*.yaml
+  workflows:
+  - workflows/*.yaml
+  scripts:
+  - scripts/*.py
+  assets:
+  - assets/*.md
+profiles:
+  directory: profiles
+  defaults: []
+interface:
+  display_name: Structured Summary
+  short_description: Turn supplied material into a clear summary
+  icon: assets/icon.svg
+  brand_color: "#5B4B8A"
+  default_prompt: Use $structured-summary to summarize this material.

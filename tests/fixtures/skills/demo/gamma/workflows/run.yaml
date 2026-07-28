@@ -1,0 +1,6 @@
+id: gamma.run
+title: Run gamma
+description: Run the gamma fixture workflow.
+steps:
+- action: do-gamma
+  instruction: Perform the gamma fixture action.

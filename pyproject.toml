@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "degardis"
+dynamic = ["version"]
+description = "Compile validated Agent Skill sources into portable, installable bundles."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Kambiz Khojasteh" },
+]
+keywords = [
+    "agent-skills",
+    "ai-agents",
+    "cli",
+    "compiler",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Software Development :: Build Tools",
+]
+dependencies = [
+    "Pillow>=10,<13",
+    "PyYAML>=6.0",
+    "resvg_py>=0.3,<1.0",
+]
+
+[project.optional-dependencies]
+release = [
+    "build>=1.2",
+    "twine>=6",
+]
+
+[project.urls]
+Documentation = "https://github.com/Khojasteh/degardis/tree/main/docs"
+Issues = "https://github.com/Khojasteh/degardis/issues"
+Repository = "https://github.com/Khojasteh/degardis"
+
+[project.scripts]
+degardis = "degardis.cli:main"
+
+[tool.setuptools]
+packages = ["degardis"]
+
+[tool.setuptools.dynamic]
+version = { attr = "degardis.__version__" }

@@ -1,0 +1,6 @@
+id: alpha.run
+title: Run alpha
+description: Run the alpha fixture workflow.
+steps:
+- action: do-alpha
+  instruction: Perform the alpha fixture action.

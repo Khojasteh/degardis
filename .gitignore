@@ -1,0 +1,15 @@
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+
+.vscode/
+.agents/
+.codex/
+.claude/
+.junie/
+
+.artifacts/

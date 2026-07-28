@@ -1,0 +1,5 @@
+name: beta-only
+label: Beta Only
+description: Fixture profile that is only defined on the beta skill.
+instructions:
+- Fixture profile content unique to beta.

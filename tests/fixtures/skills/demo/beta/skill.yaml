@@ -1,0 +1,19 @@
+name: beta
+title: Beta
+format_version: 1
+version: 1.0.0
+description: Beta is a minimal self-contained fixture skill used to exercise profile
+  selection behavior in tests.
+primary_workflow: beta.run
+content:
+  entries:
+  - entries/*.yaml
+  workflows:
+  - workflows/*.yaml
+profiles:
+  directory: profiles
+  defaults: []
+interface:
+  display_name: Beta
+  short_description: Minimal fixture skill depending on alpha
+  default_prompt: Use $beta to run the fixture workflow.

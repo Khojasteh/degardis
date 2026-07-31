@@ -1206,7 +1206,7 @@ class BuildTests(unittest.TestCase):
             )
             self.assertEqual("1.0.0", frontmatter["metadata"]["version"])
             self.assertEqual(
-                "degardis/1.0.0",
+                "degardis/1.0.1",
                 frontmatter["metadata"]["generated_by"],
             )
             self.assertNotIn("format_version", frontmatter["metadata"])

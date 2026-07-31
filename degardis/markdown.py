@@ -187,7 +187,7 @@ def skill_markdown(
             "",
             "## Profiles",
             "",
-            "Load a profile only when its description matches the current environment:",
+            "Load a profile only when its own stated condition holds for this request:",
             "",
         ]
         for profile in content.profiles:

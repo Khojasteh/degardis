@@ -8,6 +8,30 @@ into a self-contained bundle for Claude, Codex, Copilot, Cursor, Roo, or
 ChatGPT. Your source stays authoritative; the bundle is generated output you
 can replace at any time.
 
+That work is meant to be done with an agent rather than by hand, so every command
+is built to give one what it needs to review, create, or revise a skill at the
+lowest cost it can: every error and warning from a single run, the loading cost of
+what a skill makes an agent read, and check codes it can look up instead of
+guessing at.
+
+## Author with an agent
+
+[Degardis Authoring](https://github.com/Khojasteh/degardis-skills/tree/main/skills/degardis-authoring)
+is a skill for building skills. Hand it to your agent and it guides the whole
+loop: drawing a skill's boundary so the right requests select it and the wrong
+ones do not, holding down what the skill costs to load and to run, keeping
+credentials and private material out of both sources and bundles, establishing
+how a skill really behaves by trialling it blind, then validating, packaging, and
+installing it with this compiler. It reviews a skill somebody handed you as
+readily as one you wrote — including a skill whose source is gone and only the
+built folder or ZIP survives.
+
+The [Degardis skills catalog](https://github.com/Khojasteh/degardis-skills)
+holds it, along with other reusable skills built with Degardis.
+
+Your agent is the one that ends up reading everything this produces, so if you
+want a second opinion on any of the above, ask it how the experience went.
+
 ## Quick start
 
 You need Python 3.10 or newer.
@@ -63,34 +87,25 @@ degardis build examples/structured-summary --zip --output .artifacts
 guides. It summarizes material on any subject. The synthetic skills under
 `tests/fixtures` are compiler test data, not examples.
 
-## Companion skills
-
-The [Degardis skills catalog](https://github.com/Khojasteh/degardis-skills)
-contains reusable skills built with Degardis.
-
-For the best authoring experience, try
-[Degardis Authoring](https://github.com/Khojasteh/degardis-skills/tree/main/skills/degardis-authoring).
-It guides you from initial design through review, validation, packaging, and
-installation, and it follows Degardis conventions for every part of a skill.
-
 ## Commands
 
 ```console
-degardis list PATH [PATH ...]
+degardis agent PATH [PATH ...] [--only DIMENSION] [--all] [--profile PROFILE] [--baseline REF]
 degardis validate PATH [PATH ...]
 degardis build PATH [PATH ...] --output PATH [--profile [SKILL:]PROFILE] [--zip]
-degardis agent PATH [PATH ...] [--only DIMENSION] [--all] [--profile PROFILE] [--baseline REF]
+degardis list PATH [PATH ...]
 degardis explain CODE [CODE ...]
 ```
 
-- `list` shows metadata and available profiles.
-- `validate` checks a skill source and reports every problem it finds.
-- `build` creates the installable folder or ZIP.
 - `agent` reports full skill intelligence in a compact form meant for AI
   agents, not humans. It covers entries, workflows, profiles, generated files,
   the workflow graph, loading cost, and diagnostics. `--baseline REF` also
   reports what a skill cost at a git revision and how much your edits changed
   it, without checking that revision out.
+- `validate` checks a skill source and reports every problem it finds. This is
+  the one to gate on in CI, where a person reads the result.
+- `build` creates the installable folder or ZIP.
+- `list` shows metadata and available profiles as a readable summary.
 - `explain` describes the checks behind reported diagnostic codes: what
   triggers each one, why it matters, and a failing and passing example. Pass as
   many codes as a report gave you.
@@ -115,7 +130,8 @@ API, see the [reference](https://github.com/Khojasteh/degardis/blob/main/docs/re
 | --- | --- |
 | Build and install the example | [Getting started](https://github.com/Khojasteh/degardis/blob/main/docs/getting-started.md) |
 | Understand the source and artifact models | [Concepts](https://github.com/Khojasteh/degardis/blob/main/docs/concepts.md) |
-| Create or modify a skill | [Authoring guide](https://github.com/Khojasteh/degardis/blob/main/docs/authoring-guide.md) |
+| Create or modify a skill with an agent | [Degardis Authoring](https://github.com/Khojasteh/degardis-skills/tree/main/skills/degardis-authoring) |
+| Create or modify a skill by hand | [Authoring guide](https://github.com/Khojasteh/degardis/blob/main/docs/authoring-guide.md) |
 | Look up commands, schemas, or the Python API | [Reference](https://github.com/Khojasteh/degardis/blob/main/docs/reference.md) |
 | Inspect and install generated output | [Artifact format](https://github.com/Khojasteh/degardis/blob/main/docs/artifact-format.md) |
 

@@ -514,11 +514,20 @@ are rejected.
 | `require`     | no       | list of strings  | Behaviors the entry requires                  |
 | `allow`       | no       | list of strings  | Explicitly permitted behavior                 |
 | `reject`      | no       | list of strings  | Disallowed behavior                           |
-| `conditions`  | no       | list of strings  | Conditions that qualify application           |
-| `exceptions`  | no       | list of strings  | Explicit exceptions                           |
+| `conditions`  | no       | list of strings  | When the rule's requirements bind             |
+| `exceptions`  | no       | list of strings  | Cases the rule deliberately does not cover    |
 | `examples`    | no       | list of strings  | Short examples that clarify application       |
 
 Unlisted entry fields are ignored with a warning.
+
+`title` becomes the reference's heading and its link text in the skill's reference
+index. Every field that describes the rule contributes one section of its own, and
+none of them has any further effect on what Degardis builds. Sections are emitted
+in a fixed order, whatever order the keys appear in the file: `Rule`, `Rationale`,
+`Scope`, `Constraint`, `Conditions`, `Require`, `Allow`, `Reject`, `Exceptions`,
+`Examples`, and last a `Metadata` block carrying the entry's `id`, `kind`, skill
+name, and `priority`. A field that is absent, empty, or an empty list produces no
+section.
 
 The kinds this compiler knows are `principle`, `policy`, `heuristic`,
 `pattern`, `constraint`, and `rule`. This list is not closed. A kind outside it

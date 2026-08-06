@@ -199,13 +199,40 @@ the kind you declared. Source written for a later compiler therefore builds on
 this one too. No manifest field lists the kinds: a skill's kinds come from the
 entries it contains.
 
-Use the optional `require`, `allow`, `reject`, `conditions`, `exceptions`, and
-`examples` lists only where they clarify how the rule applies.
+Only `id` and `rule` are required. Of the rest, `title`, `kind`, and `priority`
+decide how the entry is labelled and ordered, and every other field is optional
+detail about the rule: each one you fill in adds a titled section to the Markdown
+reference Degardis generates for that entry, and none of them changes how the skill
+is built or which entries an agent is given. Choose among them by the question you
+want that reference to answer:
+
+- `rationale` — why the rule exists, which is worth writing down wherever
+  applying the rule takes judgment.
+- `scope` — where the rule applies, as a sentence.
+- `conditions` — when its requirements bind, as a list.
+- `require`, `allow`, and `reject` — what the rule demands, permits, and forbids.
+- `constraint` — a bound the rule itself must respect.
+- `exceptions` — the cases you are deliberately leaving out.
+- `examples` — what the rule looks like in practice.
+
+Fill in only the ones that tell a reader something the `rule` line does not; a
+field you leave out produces no section at all. The
+[entry schema](reference.md#entry-schema) lists each field's type and the fixed
+order the sections come out in, whatever order you write the keys in. Note that
+`constraint` is both a field and a kind: the field is one sentence naming a bound
+the rule respects, while the kind classifies the whole entry.
 
 Give every entry a `title` and a `priority`. Both are optional, but the title is
 what the always-loaded reference index shows, and the priority is what orders
 it. If you omit either, Degardis warns you and names the default it used
 instead.
+
+`conditions` is the list whose reader is easiest to mistake. It states when the
+rule's requirements bind, for an agent that has already opened the entry, and it
+cannot decide whether to open it: because the index shows only the title, an
+entry's conditions are read only once that entry is loaded. Where an entry should
+be consulted in some situations and not others, put that test in the workflow step
+that sends the agent to it, and let one step's test cover every entry it selects.
 
 ## 5. Express procedures as workflows
 

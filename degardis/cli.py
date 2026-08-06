@@ -8,7 +8,7 @@ from pathlib import Path
 from . import __version__
 from .build import SkillCompiler
 from .explain import codes_by_namespace, explanation, known_codes, known_codes_message
-from .model import DegardisError
+from .model import SUPPORTED_FORMAT_VERSIONS, DegardisError
 from .output import (
     write_agent_report,
     write_build_report,
@@ -33,6 +33,22 @@ HELP_FORMATTER = argparse.RawDescriptionHelpFormatter
 def _expand_path(value: str) -> Path:
     """Expand and resolve a CLI path using one uniform policy."""
     return Path(os.path.expandvars(os.path.expanduser(value))).resolve()
+
+
+def _supported_formats() -> str:
+    """Announce the source formats the compiler accepts, oldest to newest.
+
+    Read from the constant the manifest check enforces, so the help cannot claim
+    a format the compiler would reject. Support is a set because a release that
+    introduces a new source format keeps reading the formats before it, so this
+    names every accepted version and, once there is a choice, which one new
+    source should declare.
+    """
+    versions = sorted(SUPPORTED_FORMAT_VERSIONS)
+    earlier = ", ".join(str(version) for version in versions[:-1])
+    listed = " or ".join(part for part in (earlier, str(versions[-1])) if part)
+    newest = f"; declare {versions[-1]} in new source" if len(versions) > 1 else ""
+    return f"skill.yaml format_version {listed}{newest}"
 
 
 def _dimensions(value: str) -> list[str]:
@@ -64,8 +80,11 @@ def parser() -> argparse.ArgumentParser:
     command = argparse.ArgumentParser(
         prog="degardis",
         description="Compile self-contained agent skills into installable bundles.",
-        epilog="""\
+        epilog=f"""\
 Run `degardis COMMAND -h` for that command's options and examples.
+
+Source format: this compiler accepts {_supported_formats()}. A manifest
+declaring any other version is rejected by validate, agent, and build.
 
 Examples:
   degardis list examples/structured-summary
@@ -141,14 +160,46 @@ Examples:
             "Report everything an AI agent needs to review, repair, and budget "
             "a skill, with all errors and warnings aggregated in one run. This "
             "command is for AI agents: its compact output is shaped for minimum "
-            "token cost and its format is not stable. Use list for a readable "
-            "summary and validate for a pass or fail gate."
+            "token cost, not for a person to read, and its line shapes are "
+            "stable and meant to be relied on. The legend below gives every one "
+            "of them. Use list for a readable summary and validate for a pass "
+            "or fail gate."
         ),
         epilog=f"""\
 Dimensions: {', '.join(AGENT_DIMENSIONS)}
 Reported by default: {', '.join(DEFAULT_AGENT_DIMENSIONS)}
 Entry kinds known to this compiler: {', '.join(sorted(ALLOWED_ENTRY_KINDS))}
 (an unrecognized kind is a warning, not an error, and compiles as declared)
+
+Legend. A later release may add a section, a check code, or an entry kind, but
+not change a shape below. Sizes are bytes of the generated Markdown, paths are
+relative to the root in the header, ids drop the `<name>.` prefix, a blank line
+separates sections and skills, and listed rows are indented and space-aligned.
+
+  skill <name> <version> "<title>" [(derived title)]
+  root  <absolute source directory>
+  ids   <name>.*
+  desc  <n> chars                 (identity reports the description itself instead)
+  main  <primary workflow id>|none
+  count <n> entries, <n> workflows, <n> profiles, <n> scripts, <n> assets
+  desc|lic|copy <value>|none      identity: description, license, copyright
+  body  SKILL.md <n>B <n>L | text <n>B <n>L <n>w | profiles <names>|<n> selected|none
+                                  text is SKILL.md without its frontmatter
+  refs  entries <n>B | workflows <n>B | profiles <n>B
+                                  weight loaded on demand, not up front
+  workflows <n>                   rows: <id> primary|<step>|unreached <n> steps <path> <n>B
+                                  <step> reaches this workflow, as <workflow>.<index>
+  entries <n>  <kind> <n>...      rows: <id> <kind>/<priority> <path> <n>B
+  profiles <n>  <n> selected      rows: <name> *|- <path> <n>B
+                                  * marks a profile the selection includes
+  scripts|assets <n>              rows: <path> <n>B
+  outputs <n>  <total>B           rows: <path> <n>B <octal mode>
+  error|warn <path>[:<line>] <code> <message>
+                                  <path> is - for a whole-skill finding, and
+                                  <line> appears where the check knows one
+  <n> skill(s), <n> error(s), <n> warning(s)
+                                  final line, and the only labels that inflect;
+                                  count 1 entries and 1 steps stay plural
 
 Examples:
   degardis agent examples/structured-summary

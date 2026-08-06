@@ -105,9 +105,15 @@ Its reader pays for every token, so the output is line-oriented and terse:
 - paths are relative to the root named in the header;
 - sizes are the bytes of the *generated* Markdown, which is what an agent
   loads;
-- nothing is wrapped or padded into columns.
+- nothing is wrapped into prose, and listed rows are aligned into columns.
 
-Treat the format as unstable.
+The layout is stable: a release may add a section, a check code, or an entry
+kind, but does not change the shape of a line an earlier release printed.
+`degardis agent -h` documents the shape of every line the report can print, for
+the agents that consume it.
+
+The report is not written for a person. To read one yourself, `list` shows a
+skill's metadata in readable form and `validate` gives the pass or fail.
 
 Options:
 
@@ -127,7 +133,7 @@ whatever the selection, so multi-skill output stays unambiguous:
 | `skill` | yes | name, version, title, root, id namespace, description length, primary workflow, and content counts |
 | `identity` | | the full description, license, and copyright |
 | `budget` | yes | the generated `SKILL.md` size for the selected profiles, and the on-demand weight of entries, supporting workflows, and selected profiles |
-| `workflows` | yes | each workflow with the step that reaches it from the primary workflow, or `unreached` |
+| `workflows` | yes | each workflow, marked `primary` for the primary workflow, with the step that reaches a supporting one, or `unreached` |
 | `entries` | | each entry's local id, kind, priority, source path, and generated size |
 | `profiles` | | each profile's name, whether the selection includes it, source path, and generated size |
 | `scripts`, `assets` | | selected source paths and sizes |
@@ -141,6 +147,9 @@ are selected.
 `outputs` and `budget` describe the bundle the current `--profile` selection
 would produce, so both agree with `build` under the same selector without
 anything being written to disk.
+
+The `budget` section measures the whole generated `SKILL.md` and, separately, its
+body without the YAML frontmatter — the prompt itself.
 
 Diagnostics use one fixed line shape, so an agent can locate a finding without
 parsing prose:
@@ -284,7 +293,7 @@ template as a skill, and report a pass for a skill you never named.
 | ------------------ | -------- | ---------------------------------------------------------------------------------------------- |
 | `name`             | yes      | Lowercase hyphenated name; must match directory                                                |
 | `title`            | no       | Human-readable heading; derived from `name` when omitted                                       |
-| `format_version`   | yes      | Integer source-format version; the current compiler supports format 1                          |
+| `format_version`   | yes      | Integer source-format version; `degardis -h` names the versions this compiler accepts           |
 | `version`          | yes      | Non-empty skill version; emitted in `SKILL.md` metadata but not used for dependency resolution |
 | `license`          | no       | Non-empty license name or bundled license-file reference                                       |
 | `copyright`        | no       | Non-empty copyright notice                                                                     |
@@ -297,6 +306,19 @@ Unlisted skill fields are ignored with a warning.
 
 `name` is 1–64 lowercase letters, digits, or single hyphens, must match its
 directory name, and cannot be `all`.
+
+`format_version` says which source contract your manifest is written to, and
+which versions are accepted is a property of the compiler you have installed
+rather than of your source. Run `degardis -h` to see them; it names them in the
+epilog beside the examples, and that announcement is authoritative where it and
+this page could differ. Declaring a version it does not name fails `validate`,
+`agent`, and `build` with `manifest.unsupported-format_version`.
+
+A compiler can accept more than one version. A release that introduces a new
+source format keeps accepting the formats before it, so source that builds today
+keeps building after an upgrade. Declare the newest version the announcement
+names in new source, and leave an existing manifest on the version it already
+declares until you have a reason to move it.
 
 ### Content configuration
 

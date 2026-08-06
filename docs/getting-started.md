@@ -51,8 +51,8 @@ The output shows the skill title, description, optional `detailed` profile,
 whether it includes scripts, legal metadata, and the absolute source path.
 
 `degardis agent` reports the same skill in much more detail. It is designed
-for AI agents, not people, so its output is compact and its format may change.
-See [the reference](reference.md#degardis-agent-path-path-) before relying on it.
+for AI agents, not people, so its output is compact rather than readable. See
+[the reference](reference.md#degardis-agent-path-path-) for what each line means.
 
 ## Build the bundle
 

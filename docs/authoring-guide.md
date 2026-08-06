@@ -150,8 +150,10 @@ interface:
 
 The version fields have separate meanings:
 
-- `format_version` selects the Degardis source contract. The current compiler
-  supports format 1 and rejects unsupported formats before building.
+- `format_version` selects the Degardis source contract. Run `degardis -h` for
+  the formats the installed compiler accepts, and declare the newest it names; a
+  release that adds a format keeps accepting the ones before it, and any version
+  it does not accept is rejected before building.
 - `version` identifies the authored skill source.
 
 Content globs are relative to the skill root and cannot escape it. Scripts and

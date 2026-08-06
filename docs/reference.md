@@ -89,6 +89,9 @@ output path is resolved from the current working directory. On success, the
 command reports every skill and the absolute path of its generated folder or
 archive, followed by a summary.
 
+Generated text is written with `\n` line endings on every platform, so the same
+source produces the same bundle bytes wherever it is built.
+
 ## Discovery
 
 A path containing `skill.yaml` selects that skill. Otherwise, Degardis selects

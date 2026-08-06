@@ -17,6 +17,16 @@ from .markdown import (
 from .model import DegardisError, SkillBundle
 
 
+def write_generated(path: Path, text: str) -> None:
+    """Write one generated file with newlines the host cannot rewrite.
+
+    Without this the same source builds a different bundle on Windows than on
+    Linux, byte for byte, and the archive carries that difference downstream.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8", newline="\n")
+
+
 def remove_skill_artifacts(output: Path, skill_name: str) -> None:
     for path in (output / skill_name, output / f"{skill_name}.zip"):
         if path.is_symlink() or path.is_file():
@@ -104,32 +114,30 @@ class ArtifactWriter:
         content = bundle.content(name)
         icon_assets = render_icon_assets(content.icon_sources)
         destination.mkdir(parents=True, exist_ok=True)
-        (destination / "SKILL.md").write_text(
-            skill_markdown(bundle, name),
-            encoding="utf-8",
-        )
+        write_generated(destination / "SKILL.md", skill_markdown(bundle, name))
 
         for entry in content.entries:
-            path = destination / "references" / "entries" / entry_filename(entry)
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(entry_markdown(entry), encoding="utf-8")
+            write_generated(
+                destination / "references" / "entries" / entry_filename(entry),
+                entry_markdown(entry),
+            )
 
         for workflow in content.workflows:
             if workflow.get("id") == content.skill.primary_workflow:
                 continue
-            path = (
+            write_generated(
                 destination
                 / "references"
                 / "workflows"
-                / workflow_filename(workflow, name)
+                / workflow_filename(workflow, name),
+                workflow_markdown(workflow),
             )
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(workflow_markdown(workflow), encoding="utf-8")
 
         for profile in content.profiles:
-            path = destination / "references" / "profiles" / profile.filename
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(profile.text, encoding="utf-8")
+            write_generated(
+                destination / "references" / "profiles" / profile.filename,
+                profile.text,
+            )
 
         for source in content.scripts:
             path = destination / source.relative_to(content.skill.root)
@@ -174,9 +182,10 @@ class ArtifactWriter:
         for key in fields:
             if key in emitted:
                 lines.append(f"  {key}: {json.dumps(str(emitted[key]))}")
-        path = destination / "agents" / "openai.yaml"
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        write_generated(
+            destination / "agents" / "openai.yaml",
+            "\n".join(lines) + "\n",
+        )
 
 
 class ArchivePackager:

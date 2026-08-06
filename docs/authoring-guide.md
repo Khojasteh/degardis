@@ -270,6 +270,27 @@ exception: relative icon paths may resolve outside the skill so several skills
 can share a source image. The generated bundle remains self-contained because
 Degardis converts and copies the selected icons.
 
+
+Content patterns read from top to bottom. A pattern prefixed with `!` removes
+what the patterns above it selected, and a later pattern can put a file back:
+
+```yaml
+content:
+  assets:
+  - assets/**/*
+  - "!assets/drafts/**/*"
+  - assets/drafts/keep.md
+```
+
+Quote any pattern that begins with `!`. Left unquoted, YAML reads it as a type
+tag and the manifest does not parse.
+
+You do not have to exclude the files your tools leave behind. Hidden and system
+files, anything inside a dot-prefixed directory such as `.git` or `.venv`,
+Python bytecode, and host bookkeeping like `.DS_Store` and `Thumbs.db` are never
+content, whatever the patterns say. See
+[content patterns](reference.md#content-configuration) for the full rules.
+
 ## 8. Validate, build, and inspect
 
 Validate your source without writing output:

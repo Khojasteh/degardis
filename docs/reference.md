@@ -260,6 +260,44 @@ skill source; ZIP output marks scripts executable.
 `name` is 1–64 lowercase letters, digits, or single hyphens, must match its
 directory name, and cannot be `all`.
 
+### Content configuration
+
+Each `content` key takes a list of glob patterns, relative to the skill root.
+
+Patterns apply in order, as in `.gitignore`. A pattern prefixed with `!`
+excludes what the patterns before it selected, and a later pattern can add a
+file back:
+
+```yaml
+content:
+  assets:
+  - assets/**/*
+  - "!assets/drafts/**/*"
+  - assets/drafts/keep.md
+```
+
+Quote any pattern beginning with `!`. Unquoted, YAML reads it as a type tag and
+the file does not parse.
+
+Excluding a directory removes everything selected beneath it, so
+`"!assets/drafts"` and `"!assets/drafts/**"` do the same thing. An exclusion
+that names something outside the skill directory is an error, exactly as a
+selection is.
+
+Some files are never content, whatever the patterns say:
+
+- files and directories the filesystem marks hidden or system;
+- anything inside a dot-prefixed directory, such as `.git` or `.venv` — a
+  dot-prefixed *file* is ordinary content, since `.gitignore` and
+  `.editorconfig` are files a skill may legitimately ship;
+- Python bytecode: `__pycache__` directories, `.pyc`, and `.pyo`;
+- host bookkeeping such as `.DS_Store`, `._` sidecars, `Thumbs.db`, and
+  `desktop.ini`.
+
+A wildcard is written without knowing what it will match, so it never reaches a
+hidden path. A pattern that spells out a dot-prefixed directory, or that names a
+path with no wildcard at all, selects exactly what it names.
+
 ### Profile configuration
 
 The optional manifest `profiles` mapping accepts:

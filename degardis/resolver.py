@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from pathlib import Path
+import stat
+from pathlib import Path, PurePosixPath
 from typing import Iterable
 
 from .markdown import entry_filename, workflow_filename
@@ -30,6 +31,29 @@ from .yamlsource import load_yaml, yaml_scalar_warnings
 
 
 ALLOWED_CONTENT_KEYS = {"entries", "workflows", "scripts", "assets"}
+
+# The marker that turns a content pattern into an exclusion, as in .gitignore.
+CONTENT_EXCLUDE_PREFIX = "!"
+
+# What the host itself writes beside authored files, matched by name so a tree
+# carried from one machine to another still builds the same bundle. Names are
+# compared casefolded. AppleDouble sidecars are a prefix rather than a name,
+# because the rest of each one is the name of the file it shadows.
+PLATFORM_METADATA_NAMES = frozenset(
+    {
+        ".ds_store",
+        ".spotlight-v100",
+        ".trashes",
+        ".fseventsd",
+        ".localized",
+        "__macosx",
+        "thumbs.db",
+        "ehthumbs.db",
+        "desktop.ini",
+        "icon\r",
+    }
+)
+APPLEDOUBLE_PREFIX = "._"
 ALLOWED_ENTRY_KINDS = {
     "principle",
     "policy",
@@ -66,24 +90,130 @@ ALLOWED_WORKFLOW_STEP_FIELDS = {
 }
 
 
-def _glob(
-    skill: Skill,
-    patterns: Iterable[str],
-    diagnostics: Diagnostics,
-) -> list[Path]:
-    """The files a pattern list selects, reporting the ones that reach outside."""
-    paths: list[Path] = []
+def _is_bytecode(relative: Path) -> bool:
+    """Whether a path is Python bytecode rather than authored content.
+
+    Python writes bytecode beside the scripts a skill ships, so a default
+    pattern such as `scripts/**/*` matches it once those scripts have run. It is
+    generated output of the author's own source and must never reach a bundle,
+    where it would be stale on the first edit and wrong on another Python.
+    """
+    return "__pycache__" in relative.parts or relative.suffix in (".pyc", ".pyo")
+
+
+def _is_platform_metadata(relative: Path) -> bool:
+    """Whether a path is bookkeeping the host wrote, rather than authored content.
+
+    Every desktop platform drops its own files beside real ones: Finder writes
+    .DS_Store and ._ sidecars, Explorer writes Thumbs.db and desktop.ini. None of
+    it is content, none of it is usually visible to the author who would have to
+    exclude it, and a bundle carrying it is a bundle carrying one host's habits.
+    The test is by name and not by any host flag, so the same source tree yields
+    the same bundle wherever it is built.
+    """
+    if relative.name.startswith(APPLEDOUBLE_PREFIX):
+        return True
+    return any(part.casefold() in PLATFORM_METADATA_NAMES for part in relative.parts)
+
+
+def _has_hidden_attribute(path: Path) -> bool:
+    """Whether the filesystem itself marks a path hidden or system.
+
+    Windows keeps this in file attributes and macOS in BSD flags, and each field
+    is absent from the other platform's stat result, so both are read defensively.
+    Reading host state is the point rather than a compromise: a file its author
+    cannot see is a file they cannot write an exclusion for.
+    """
+    try:
+        status = path.stat()
+    except OSError:
+        return False
+    attributes = getattr(status, "st_file_attributes", 0)
+    if attributes & (stat.FILE_ATTRIBUTE_HIDDEN | stat.FILE_ATTRIBUTE_SYSTEM):
+        return True
+    return bool(getattr(status, "st_flags", 0) & stat.UF_HIDDEN)
+
+
+def _is_hidden(root: Path, relative: Path, checked: dict[Path, bool]) -> bool:
+    """Whether a path is one its author cannot see, so cannot exclude by name.
+
+    A dot-prefixed directory is where tooling keeps state of its own: .git,
+    .venv, .vscode. A dot-prefixed *file* is not hidden by that convention alone,
+    since .gitignore and .editorconfig are ordinary files a skill may well ship,
+    so only the directories a path passes through are read that way. Directory
+    answers are remembered because one pattern usually matches many files under
+    the same parent.
+    """
+    for depth, part in enumerate(relative.parts[:-1], start=1):
+        directory = root.joinpath(*relative.parts[:depth])
+        hidden = checked.get(directory)
+        if hidden is None:
+            hidden = part.startswith(".") or _has_hidden_attribute(directory)
+            checked[directory] = hidden
+        if hidden:
+            return True
+    return _has_hidden_attribute(root / relative)
+
+
+def _admits_hidden(pattern: str) -> bool:
+    """Whether a pattern asks for hidden paths rather than sweeping them in.
+
+    A wildcard is written without knowing what it will match, so it must not
+    reach a file the author never sees. A pattern that spells out a dot-prefixed
+    directory, or that names a path without any wildcard, was written about that
+    exact path, so it selects what it names.
+    """
+    if not any(character in pattern for character in "*?["):
+        return True
+    return any(part.startswith(".") for part in PurePosixPath(pattern).parts)
+
+
+def _excluded_by(matches: set[Path], path: Path) -> bool:
+    """Whether an exclusion's matches cover a path, as the path or as a parent."""
+    return path in matches or any(parent in matches for parent in path.parents)
+
+
+def _glob(skill: Skill, patterns: Iterable[str], diagnostics: Diagnostics) -> list[Path]:
+    """The files a pattern list selects, built up in the order the list gives.
+
+    Patterns apply in sequence, as in .gitignore: one prefixed with `!` removes
+    what the patterns before it selected, and a pattern after that can put a file
+    back. An exclusion that matches a directory removes everything selected
+    beneath it, since naming the directory is the shorter way to say the same
+    thing. What no pattern can select is a file the author cannot see, or one the
+    host wrote for itself.
+    """
+    selected: dict[Path, None] = {}
+    hidden_directories: dict[Path, bool] = {}
     for pattern in patterns:
+        excluding = pattern.startswith(CONTENT_EXCLUDE_PREFIX)
+        body = pattern.removeprefix(CONTENT_EXCLUDE_PREFIX)
         try:
             ensure_within(
-                skill.root / pattern,
+                skill.root / body,
                 skill.root,
                 f"{skill.name}: content patterns",
             )
         except DegardisError as exc:
             diagnostics.error(exc, "content.outside-skill")
             continue
-        for path in sorted(p for p in skill.root.glob(pattern) if p.is_file()):
+        matches = sorted(skill.root.glob(body))
+        if excluding:
+            covered = set(matches)
+            for path in [p for p in selected if _excluded_by(covered, p)]:
+                del selected[path]
+            continue
+        admits_hidden = _admits_hidden(body)
+        for path in matches:
+            relative = path.relative_to(skill.root)
+            if not path.is_file() or _is_bytecode(relative):
+                continue
+            if _is_platform_metadata(relative):
+                continue
+            if not admits_hidden and _is_hidden(
+                skill.root, relative, hidden_directories
+            ):
+                continue
             try:
                 ensure_within(
                     path,
@@ -93,8 +223,19 @@ def _glob(
             except DegardisError as exc:
                 diagnostics.error(exc, "content.outside-skill", path)
                 continue
-            paths.append(path)
-    return list(dict.fromkeys(paths))
+            selected.setdefault(path, None)
+    return list(selected)
+
+
+def _is_usable_pattern(item: object) -> bool:
+    """Whether one content pattern can select or exclude anything at all.
+
+    The exclusion marker says what to do with a pattern, so a pattern that is
+    only the marker says nothing, and the matcher has no empty pattern to give it.
+    """
+    if not isinstance(item, str):
+        return False
+    return bool(item.strip().removeprefix(CONTENT_EXCLUDE_PREFIX).strip())
 
 
 def _content_patterns(
@@ -107,10 +248,11 @@ def _content_patterns(
     """One content key's patterns, or None where the manifest gave none usable."""
     value = config.get(key, default)
     if not isinstance(value, list) or any(
-        not isinstance(item, str) or not item.strip() for item in value
+        not _is_usable_pattern(item) for item in value
     ):
         diagnostics.error(
-            f"{skill.name}: content.{key} must be a list of non-empty strings",
+            f"{skill.name}: content.{key} must be a list of non-empty glob strings, "
+            f"each optionally prefixed with {CONTENT_EXCLUDE_PREFIX} to exclude",
             "content.invalid-type",
             skill.root / "skill.yaml",
         )

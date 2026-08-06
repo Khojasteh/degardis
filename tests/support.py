@@ -38,8 +38,18 @@ def folder_text(path: Path, name: str) -> str:
 
 
 def copy_skills(destination: Path) -> Path:
+    """Copy the fixture skills, without any bytecode a local run left behind.
+
+    Running the fixture scripts writes `__pycache__` beside them. Leaving it out
+    keeps a copied tree identical whether or not that has happened, so a test
+    that cares about bytecode creates its own.
+    """
     root = destination / "demo"
-    shutil.copytree(FIXTURES, root)
+    shutil.copytree(
+        FIXTURES,
+        root,
+        ignore=shutil.ignore_patterns("__pycache__", "*.py[co]"),
+    )
     return root
 
 
@@ -60,6 +70,13 @@ def write_raster_icon(
         )
     else:
         image.save(path, format=format_name)
+
+
+def set_content_patterns(root: Path, skill_name: str, **patterns: list[str]) -> None:
+    source = root / skill_name / "skill.yaml"
+    data = yaml.safe_load(source.read_text(encoding="utf-8"))
+    data.setdefault("content", {}).update(patterns)
+    source.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
 
 
 def set_interface_icons(root: Path, skill_name: str, **icons: str) -> None:

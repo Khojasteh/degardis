@@ -321,7 +321,8 @@ CHECKS: dict[str, CheckExplanation] = {
     "content.invalid-type": CheckExplanation(
         trigger=(
             "The manifest content is not a mapping, or one of entries, workflows, "
-            "scripts, or assets is not a list of non-empty glob strings."
+            "scripts, or assets is not a list of non-empty glob strings, or holds "
+            "a pattern that is only the ! exclusion marker."
         ),
         impact=(
             "The compiler cannot tell which files belong to the skill, so it "

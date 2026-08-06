@@ -20,10 +20,11 @@ DIAGNOSTIC_MODULES = (
 )
 
 # A check code is a namespace and a hyphenated name. A dotted literal whose name
-# is a file suffix is a filename, such as skill.yaml, and not a code.
+# is a file suffix is a filename, such as skill.yaml or the desktop.ini a content
+# filter names, and not a code.
 CHECK_CODE_PATTERN = re.compile(r"[a-z][a-z0-9]*\.[a-z][a-z0-9_]*(?:-[a-z0-9_]+)*")
 FILENAME_SUFFIXES = frozenset(
-    {"yaml", "yml", "md", "py", "json", "zip", "png", "svg", "ico", "txt"}
+    {"yaml", "yml", "md", "py", "json", "zip", "png", "svg", "ico", "txt", "db", "ini"}
 )
 
 

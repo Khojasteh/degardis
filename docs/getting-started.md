@@ -1,8 +1,8 @@
 # Getting started
 
-This tutorial validates, builds, and installs the repository's canonical
-`structured-summary` example. You need Python 3.10 or later, a local checkout,
-and a terminal at the repository root.
+This tutorial validates, builds, and installs the `structured-summary` example.
+You need Python 3.10 or newer, a local copy of this repository, and a terminal
+open at the repository root.
 
 ## Install Degardis
 
@@ -11,10 +11,15 @@ python -m pip install degardis
 degardis --help
 ```
 
-This installs Degardis from PyPI. Contributors can instead install the current
-checkout with `python -m pip install -e .`. If your shell cannot find
-the `degardis` command after installation, use `python -m degardis` in its
-place in the commands below.
+This installs Degardis from PyPI. If you are working on Degardis itself,
+install the current checkout instead:
+
+```console
+python -m pip install -e .
+```
+
+If your shell cannot find `degardis` after installation, use
+`python -m degardis` in place of `degardis` in the commands below.
 
 ## Validate the source
 
@@ -32,7 +37,7 @@ Validation
 Summary: 1 passed, 0 failed, 1 total.
 ```
 
-Validation reads the source without creating an artifact. The manifest at
+Validation reads the source without writing an artifact. The manifest at
 [`examples/structured-summary/skill.yaml`](../examples/structured-summary/skill.yaml)
 declares source format 1 and skill version 1.0.0.
 
@@ -42,9 +47,9 @@ declares source format 1 and skill version 1.0.0.
 degardis list examples/structured-summary
 ```
 
-The output identifies the skill, its version, optional `detailed` profile,
-bundled scripts, legal metadata, and absolute source path. Look for these
-lines; the source path differs by machine:
+The output shows the skill title, description, optional `detailed` profile,
+whether it includes scripts, legal metadata, and the absolute source path.
+Look for these lines; the source path differs by machine:
 
 ```text
 Profiles    detailed
@@ -89,7 +94,7 @@ Inspect the generated folder:
     template.md
 ```
 
-Sources remain authoritative; do not edit the generated folder.
+The source files remain authoritative. Do not edit the generated folder.
 
 ## Include the optional profile
 
@@ -97,9 +102,9 @@ Sources remain authoritative; do not edit the generated folder.
 degardis build examples/structured-summary --profile detailed --output .artifacts
 ```
 
-The rebuilt artifact includes `references/profiles/detailed.md`. Explicit
+The rebuilt artifact now includes `references/profiles/detailed.md`. Explicit
 profile selectors replace manifest defaults. Use `--profile all` to include
-every profile.
+every profile a skill defines.
 
 ## Build a ZIP
 
@@ -107,16 +112,16 @@ every profile.
 degardis build examples/structured-summary --zip --output .artifacts
 ```
 
-This replaces the uncompressed `structured-summary/` folder with
-`.artifacts/structured-summary.zip`. Use ZIP output for ChatGPT upload and an
-uncompressed folder for filesystem-based agents.
+This replaces the uncompressed folder with `.artifacts/structured-summary.zip`.
+Use a ZIP for ChatGPT upload and a folder for filesystem-based agents.
 
 ## Install an uncompressed bundle
 
 Choose an agent location from [Artifact format](artifact-format.md#install-an-uncompressed-bundle).
+
 Building directly into a skill directory replaces any existing
 `structured-summary/` folder or `structured-summary.zip` in that directory.
-Inspect third-party skill instructions and scripts before installing them.
+Review third-party skill instructions and scripts before installing them.
 
 For example, install the skill for Codex in the current repository:
 
@@ -125,10 +130,10 @@ degardis build examples/structured-summary --output .agents/skills
 ```
 
 The command creates `.agents/skills/structured-summary/SKILL.md`. Start a new
-agent session if the installed skill does not appear immediately.
+agent session if the skill does not appear immediately.
 
-To make it available across local projects in Codex and other hosts that read
-the personal `.agents/skills` directory:
+To make the skill available across local projects in Codex and other agents
+that read the personal `.agents/skills` directory:
 
 ```console
 degardis build examples/structured-summary --output ~/.agents/skills
@@ -137,29 +142,29 @@ degardis build examples/structured-summary --output ~/.agents/skills
 ## Troubleshooting
 
 - **`degardis` is not recognized or not found:** run
-  `python -m degardis --help`. If that works, use
-  `python -m degardis` in place of `degardis`, or add your Python scripts
-  directory to `PATH`.
+  `python -m degardis --help`. If that works, use `python -m degardis` in
+  place of `degardis`, or add your Python scripts directory to `PATH`.
 
-- **`No skills found inside`:** the supplied directory is neither a skill nor
-  contains skill descendants. Pass the directory containing `skill.yaml`, or
-  an ancestor directory that contains one or more skills.
+- **`No skills found inside`:** the directory you supplied is neither a skill
+  nor contains skills below it. Pass the directory that contains `skill.yaml`,
+  or an ancestor directory that contains one or more skills.
 
-- **`Profile selector matched no selected skill`:** the selected skill does
-  not define that profile. Run `degardis list` with the same path and use one
-  of the reported profile names.
+- **`Profile selector matched no selected skill`:** the selected skill does not
+  define that profile. Run `degardis list` with the same path and use one of
+  the profile names it reports.
 
 - **`Output directory ... must not overlap skill source`:** use a separate
-  output such as `.artifacts`, `dist`, or an agent skill directory outside the
-  source. This check protects authored files from artifact replacement.
+  output directory such as `.artifacts`, `dist`, or an agent skill directory
+  outside the source. This check protects your authored files from being
+  overwritten.
 
-- **`[FAIL]` or `[ERROR]`:** `[FAIL]` identifies an invalid skill. `[ERROR]`
-  means the command itself could not complete, for example because a path or
-  profile selector was invalid. Correct the reported issue and validate again
-  before building.
+- **`[FAIL]` or `[ERROR]`:** `[FAIL]` means a skill is invalid. `[ERROR]`
+  means the command could not complete, for example because a path or profile
+  selector was invalid. Fix the reported issue and validate again before
+  building.
 
 ## Next steps
 
-- Read [Concepts](concepts.md) for the source and artifact models.
-- Follow [Authoring skills](authoring-guide.md) to make a new skill.
+- Read [Concepts](concepts.md) to learn the source and artifact models.
+- Follow [Authoring skills](authoring-guide.md) to create a new skill.
 - Use [Reference](reference.md) for exact fields and command behavior.

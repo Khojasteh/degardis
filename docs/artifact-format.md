@@ -1,8 +1,7 @@
 # Artifact format
 
-`degardis build` requires an output root and writes one self-contained,
-uncompressed folder per selected skill. For example, with
-`--output .artifacts`:
+`degardis build` requires an output root. By default it writes one
+self-contained folder per selected skill:
 
 ```text
 .artifacts/<skill-name>/
@@ -14,9 +13,9 @@ Add `--zip` to write a `.zip` archive per skill instead:
 .artifacts/<skill-name>.zip
 ```
 
-The output root contains one named folder or ZIP per selected skill. Inside
-that folder—or at the root of the ZIP—`SKILL.md` and its companion directories
-appear directly, with no additional skill-name or target-specific wrapper.
+The output root contains one named folder or ZIP per selected skill. `SKILL.md`
+and its companion directories sit directly inside that folder, or at the root of
+the ZIP. There is no extra skill-name folder and no target-specific wrapper.
 
 ## Bundle contents
 
@@ -34,16 +33,18 @@ agents/
   openai.yaml
 ```
 
-Only populated directories are emitted. Declared icon sources produce
-`assets/icon-small.png` and/or `assets/icon-large.png`; generated interface
-metadata points to those self-contained PNGs rather than to the authored source
-path. There are no dependency skill directories or related-skill links: a
-skill's archive contains exactly that skill's content. `references/` contains
-compiler-generated entries, supporting workflows, and selected profiles only.
+Degardis emits only the directories that have content. Declared icon sources
+produce `assets/icon-small.png`, `assets/icon-large.png`, or both, and the
+generated interface metadata points to those PNGs rather than to the authored
+source path.
+
+A bundle holds exactly one skill's content. There are no dependency skill
+directories and no links to related skills. `references/` holds only
+compiler-generated entries, supporting workflows, and selected profiles.
 
 Generated `SKILL.md` frontmatter includes metadata for the skill version and
-producing Degardis version. This provenance travels with both folder and ZIP
-artifacts.
+the Degardis version that produced it. This provenance travels with both
+folder and ZIP artifacts.
 
 `agents/openai.yaml` provides OpenAI interface metadata: display name,
 description, icon paths, and default prompt.
@@ -53,13 +54,14 @@ their bytes but do not change host filesystem permissions.
 
 ## Replace an artifact
 
-For each selected skill, Degardis stages a complete artifact before replacing
-the matching `<skill-name>/` and `<skill-name>.zip` paths. If replacement
-fails, Degardis restores that skill's previous matching artifacts. Artifacts
-for unselected skills and other entries remain unchanged.
+For each selected skill, Degardis stages the complete new artifact before
+replacing the matching `<skill-name>/` and `<skill-name>.zip` paths. If the
+replacement fails, Degardis restores that skill's previous matching artifacts.
+Artifacts for unselected skills and other entries in the output root remain
+unchanged.
 
 Replacement is atomic per skill, not per command. If a multi-skill build fails
-partway through, earlier skills remain updated, the failing skill is restored,
+partway through, earlier skills stay updated, the failing skill is restored,
 and later skills are untouched. If restoration also fails, the error reports
 the temporary backup location. Degardis rejects an output directory that
 overlaps a selected skill's source directory.
@@ -67,8 +69,11 @@ overlaps a selected skill's source directory.
 ## Install an uncompressed bundle
 
 An uncompressed bundle can be staged for review or built directly into an
-agent's skill directory. Review a third-party skill's instructions and scripts
-before installing it; skills can contain executable code.
+agent's skill directory.
+
+> [!WARNING]
+> Review a third-party skill's instructions and scripts before installing it;
+> skills can contain executable code.
 
 1. Choose the project or personal skill directory:
 
@@ -114,8 +119,8 @@ before installing it; skills can contain executable code.
    in their skill directory is not installed.
 
 4. For ChatGPT, `--zip` produces an archive for upload. Open
-   [Skills in ChatGPT](https://chatgpt.com/skills), select **Create**, choose
-   **Upload from your computer**, and upload the archive as-is.
+   [Skills in ChatGPT](https://chatgpt.com/skills), select the **+** button,
+   choose **Upload from your computer**, and upload the archive as-is.
    Availability and workspace permissions vary; see the
    [ChatGPT skills documentation](https://help.openai.com/en/articles/20001066-skills-in-chatgpt/).
 

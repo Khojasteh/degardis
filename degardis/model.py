@@ -15,6 +15,28 @@ class DegardisError(ValueError):
     pass
 
 
+class SourceError(DegardisError):
+    """A source file that cannot be read, with where it failed and which check.
+
+    Reading a file is the one failure that happens before any check runs, so the
+    reader is the only part of the compiler that knows which of the source checks
+    applies and which line to point at. Carrying both on the error keeps that
+    knowledge with the failure instead of leaving each caller to guess it.
+    """
+
+    def __init__(
+        self,
+        message: object,
+        code: str,
+        path: Path | None = None,
+        line: int | None = None,
+    ) -> None:
+        super().__init__(str(message))
+        self.code = code
+        self.path = path
+        self.line = line
+
+
 @dataclass(frozen=True)
 class Diagnostic:
     """One problem, with the location and check an agent needs to act on it."""
@@ -97,6 +119,18 @@ class Diagnostics:
     ) -> None:
         self._add("warning", message, code, path, line)
 
+    def source_failure(self, exc: Exception, path: Path, code: str) -> None:
+        """Record one source that could not be read, as the reader described it.
+
+        A SourceError already knows the check it failed and the line it failed
+        on, so both are taken from it; anything else is recorded under the code
+        the caller expected.
+        """
+        if isinstance(exc, SourceError):
+            self.error(exc, exc.code, exc.path or path, exc.line)
+            return
+        self.error(exc, code, path)
+
     def add_errors(
         self,
         messages: Iterable[object],
@@ -153,20 +187,6 @@ def ensure_within(path: Path, root: Path, label: str) -> None:
         raise DegardisError(
             f"{label} must stay within {resolved_root}: {path}"
         ) from exc
-
-
-def load_yaml(path: Path) -> dict[str, Any]:
-    try:
-        text = path.read_text(encoding="utf-8")
-    except (OSError, UnicodeError) as exc:
-        raise DegardisError(f"Cannot read YAML {path}: {exc}") from exc
-    try:
-        data = yaml.safe_load(text)
-    except yaml.YAMLError as exc:
-        raise DegardisError(f"Invalid YAML in {path}: {exc}") from exc
-    if not isinstance(data, dict):
-        raise DegardisError(f"Expected mapping in {path}")
-    return data
 
 
 @dataclass(frozen=True)

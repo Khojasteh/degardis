@@ -14,7 +14,6 @@ from .model import (
     SkillBundle,
     SkillContent,
     ensure_within,
-    load_yaml,
 )
 from .registry import (
     discover_skill_paths,
@@ -22,6 +21,7 @@ from .registry import (
     load_skill_path,
     profile_source_paths,
 )
+from .yamlsource import load_yaml, yaml_scalar_warnings
 
 
 ALLOWED_CONTENT_KEYS = {"entries", "workflows", "scripts", "assets"}
@@ -136,7 +136,7 @@ def _load_entry(
     try:
         data = load_yaml(path)
     except DegardisError as exc:
-        collector.error(exc, "source.invalid-yaml", path)
+        collector.source_failure(exc, path, "source.invalid-yaml")
         if diagnostics is None:
             collector.raise_if_errors()
         return None
@@ -227,7 +227,7 @@ def _load_workflow(
     try:
         data = load_yaml(path)
     except DegardisError as exc:
-        collector.error(exc, "source.invalid-yaml", path)
+        collector.source_failure(exc, path, "source.invalid-yaml")
         if diagnostics is None:
             collector.raise_if_errors()
         return None
@@ -487,6 +487,7 @@ def _load_entries(
     entries: list[Entry] = []
     patterns = ["entries/*.yaml"]
     for path in _content_files(skill, config, "entries", patterns, diagnostics):
+        diagnostics.add(yaml_scalar_warnings(path))
         entry = _load_entry(path, skill, diagnostics)
         if entry is not None:
             entries.append(entry)
@@ -505,6 +506,7 @@ def _load_workflows(
     workflow_paths: dict[str, Path] = {}
     patterns = ["workflows/*.yaml"]
     for path in _content_files(skill, config, "workflows", patterns, diagnostics):
+        diagnostics.add(yaml_scalar_warnings(path))
         data = _load_workflow(path, skill, diagnostics)
         if data is None:
             continue
@@ -546,10 +548,11 @@ def _load_profiles(skill: Skill, diagnostics: Diagnostics) -> list[Profile]:
         return []
     profiles: list[Profile] = []
     for path in paths:
+        diagnostics.add(yaml_scalar_warnings(path))
         try:
             profile = load_profile(path, skill.name, skill.root, diagnostics)
         except (OSError, UnicodeError) as exc:
-            diagnostics.error(exc, "source.unreadable", path)
+            diagnostics.source_failure(exc, path, "source.unreadable")
             continue
         if profile is not None:
             profiles.append(profile)
@@ -579,6 +582,7 @@ def load_content(
     than a report, so everything gathered here is raised together at the end.
     """
     collector = diagnostics if diagnostics is not None else Diagnostics()
+    collector.add(yaml_scalar_warnings(skill.root / "skill.yaml"))
     config = _content_config(skill, collector)
 
     entries = _load_entries(skill, config, collector)

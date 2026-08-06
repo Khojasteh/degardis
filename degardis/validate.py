@@ -423,7 +423,7 @@ def _inspect_skill(path: Path, profiles: list[str] | None = None) -> dict[str, A
     try:
         skill = load_skill_path(path)
     except (DegardisError, OSError, UnicodeError) as exc:
-        diagnostics.error(exc, "source.unreadable", source / "skill.yaml")
+        diagnostics.source_failure(exc, source / "skill.yaml", "source.unreadable")
         return _finish(result, diagnostics)
 
     result.update(_identity(skill))

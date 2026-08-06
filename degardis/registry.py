@@ -3,14 +3,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from .model import (
-    DegardisError,
-    Diagnostics,
-    Profile,
-    Skill,
-    ensure_within,
-    load_yaml,
-)
+from .model import DegardisError, Diagnostics, Profile, Skill, ensure_within
+from .yamlsource import load_yaml
 
 
 PROFILE_FIELDS = {
@@ -168,7 +162,7 @@ def load_profile(
     try:
         data = load_yaml(path)
     except DegardisError as exc:
-        collector.error(exc, "source.invalid-yaml", path)
+        collector.source_failure(exc, path, "source.invalid-yaml")
         return finish(None)
 
     unknown = sorted(set(data) - PROFILE_FIELDS)

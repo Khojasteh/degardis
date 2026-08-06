@@ -42,11 +42,14 @@ def entry_markdown(entry: Entry) -> str:
     for key in ("rationale", "scope", "constraint"):
         if data.get(key):
             lines += ["", f"## {humanize(key)}", "", str(data[key])]
+    # Conditions qualify whether the requirements below bind, so they precede
+    # them: an agent reading top-down learns the rule may not apply before it
+    # has taken on what the rule demands.
     for key in (
+        "conditions",
         "require",
         "allow",
         "reject",
-        "conditions",
         "exceptions",
         "examples",
     ):

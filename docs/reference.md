@@ -284,6 +284,16 @@ Excluding a directory removes everything selected beneath it, so
 that names something outside the skill directory is an error, exactly as a
 selection is.
 
+#### How patterns are matched
+
+`/` is the only separator a pattern may use, on every platform. Each segment is
+matched against the names a directory actually holds, including their case, so
+which files a skill ships follows from the source alone and not from the machine
+building it. A matched path keeps the case the filesystem holds.
+
+`*` and `?` match within one segment. `**` stands for any number of directories,
+including none. A symlinked directory is never descended into.
+
 Some files are never content, whatever the patterns say:
 
 - files and directories the filesystem marks hidden or system;

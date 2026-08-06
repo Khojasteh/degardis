@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import fnmatch
 import stat
 from pathlib import Path, PurePosixPath
-from typing import Iterable
+from typing import Iterable, Iterator
 
 from .markdown import entry_filename, workflow_filename
 from .icons import (
@@ -173,6 +174,57 @@ def _excluded_by(matches: set[Path], path: Path) -> bool:
     return path in matches or any(parent in matches for parent in path.parents)
 
 
+def _children(directory: Path) -> list[Path]:
+    """What one directory holds, or nothing where it cannot be listed."""
+    try:
+        return sorted(directory.iterdir())
+    except OSError:
+        return []
+
+
+def _descend(directory: Path, segments: tuple[str, ...]) -> Iterator[Path]:
+    """Walk one pattern's segments down from a directory, yielding what matches.
+
+    `**` stands for any number of directories, including none, so it is tried
+    first against the rest of the pattern and then against each subdirectory. A
+    symlinked directory is never descended into, so a link that points at one of
+    its own ancestors cannot make the walk run forever.
+    """
+    if not segments:
+        yield directory
+        return
+    head, rest = segments[0], segments[1:]
+    if head == "**":
+        yield from _descend(directory, rest)
+        for child in _children(directory):
+            if child.is_dir() and not child.is_symlink():
+                yield from _descend(child, segments)
+        return
+    for child in _children(directory):
+        if fnmatch.fnmatchcase(child.name, head):
+            yield from _descend(child, rest)
+
+
+def _matching_paths(root: Path, pattern: str) -> list[Path]:
+    """Every path under root one pattern names, matched the same way anywhere.
+
+    Path.glob defers each comparison to the host filesystem, which matches names
+    without regard to case on Windows and macOS and with regard to it elsewhere.
+    That makes which files a skill ships a property of the machine building it:
+    `!ENTRIES/one.yaml` drops `entries/one.yaml` on one host and nothing on the
+    next. Comparing each segment against the names a directory actually holds,
+    case included, keeps the selection a property of the source alone. `/` is
+    the only separator a pattern has, for the same reason.
+    """
+    segments = tuple(
+        part for part in PurePosixPath(pattern).parts if part not in (".", "/")
+    )
+    found: dict[Path, None] = {}
+    for path in _descend(root, segments):
+        found.setdefault(path, None)
+    return sorted(found)
+
+
 def _glob(skill: Skill, patterns: Iterable[str], diagnostics: Diagnostics) -> list[Path]:
     """The files a pattern list selects, built up in the order the list gives.
 
@@ -197,7 +249,7 @@ def _glob(skill: Skill, patterns: Iterable[str], diagnostics: Diagnostics) -> li
         except DegardisError as exc:
             diagnostics.error(exc, "content.outside-skill")
             continue
-        matches = sorted(skill.root.glob(body))
+        matches = _matching_paths(skill.root, body)
         if excluding:
             covered = set(matches)
             for path in [p for p in selected if _excluded_by(covered, p)]:

@@ -231,6 +231,60 @@ class ContentExclusionTests(unittest.TestCase):
             self.assertEqual([], inspect_skills([root / "alpha"])[0]["assets"])
 
 
+class ContentPatternMatchingTests(unittest.TestCase):
+    """Which files a source selects is a property of the source, not the host."""
+
+    def test_pattern_segments_are_matched_case_sensitively(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_skills(Path(directory))
+            set_content_patterns(root, "alpha", entries=["ENTRIES/*.yaml"])
+
+            result = inspect_skills([root / "alpha"])[0]
+
+            self.assertEqual([], result["entries"])
+
+    def test_a_wrongly_cased_exclusion_removes_nothing_anywhere(self):
+        """The destructive half: on a case-folding host this dropped the entry."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_skills(Path(directory))
+            set_content_patterns(
+                root, "alpha", entries=["entries/*.yaml", "!ENTRIES/RULE-ONE.yaml"]
+            )
+
+            result = inspect_skills([root / "alpha"])[0]
+
+            self.assertEqual(
+                ["entries/rule-one.yaml"],
+                [item["path"] for item in result["entries"]],
+            )
+
+    def test_a_matched_path_keeps_the_case_the_filesystem_holds(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_skills(Path(directory))
+            set_content_patterns(root, "alpha", assets=["assets/template.md"])
+
+            result = inspect_skills([root / "alpha"])[0]
+
+            self.assertEqual(
+                ["assets/template.md"], [item["path"] for item in result["assets"]]
+            )
+
+    def test_a_double_star_stands_for_any_number_of_directories(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_skills(Path(directory))
+            nested = root / "alpha" / "assets" / "one" / "two"
+            nested.mkdir(parents=True)
+            (nested / "deep.md").write_text("Deep\n", encoding="utf-8")
+            set_content_patterns(root, "alpha", assets=["assets/**/*.md"])
+
+            result = inspect_skills([root / "alpha"])[0]
+
+            self.assertEqual(
+                ["assets/one/two/deep.md", "assets/template.md"],
+                sorted(item["path"] for item in result["assets"]),
+            )
+
+
 class HiddenContentTests(unittest.TestCase):
     """Files the author cannot see, and files the host wrote, are not content."""
 

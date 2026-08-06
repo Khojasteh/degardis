@@ -161,6 +161,15 @@ degardis build examples/structured-summary --output ~/.agents/skills
   selector was invalid. Fix the reported issue and validate again before
   building.
 
+- **A message you do not understand:** every validation message ends with the
+  check that reported it, in parentheses, such as `(entry.missing-priority)`.
+  Pass that code to `degardis explain` for what triggers the check, why it
+  matters, and a failing and passing example:
+
+  ```console
+  degardis explain entry.missing-priority
+  ```
+
 ## Next steps
 
 - Read [Concepts](concepts.md) to learn the source and artifact models.

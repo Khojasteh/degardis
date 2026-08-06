@@ -45,7 +45,20 @@ error, which fails the skill, or a warning, which does not. Warnings cover:
 - a workflow no `use:` step reaches from the primary workflow.
 
 Each skill is reported as a pass or failure, with its findings grouped below
-it. The final summary reports passed, failed, error, warning, and total counts.
+it. Every finding ends with the check that reported it, in parentheses, and the
+report closes with the one line that turns a code into an explanation:
+
+```text
+[FAIL] Structured Summary (structured-summary)
+       1. entries/audience.yaml: rule must be a non-empty string (entry.missing-rule)
+       Warning: entries/fidelity.yaml: title is missing; the reference index
+                shows the entry id (entry.missing-title)
+
+Summary: 0 passed, 1 failed, 1 error, 1 warning, 1 total.
+Run `degardis explain CODE [CODE ...]` for the checks behind the codes above.
+```
+
+The final summary reports passed, failed, error, warning, and total counts.
 Success exits with status 0; any failed skill exits with status 1.
 
 ### `degardis agent PATH [PATH ...]`
@@ -119,10 +132,26 @@ knows one.
 `<code>` names the check, not its wording, and reads as `<namespace>.<check>`.
 The namespace is the construct the check concerns: `manifest`, `interface`,
 `content`, `entry`, `workflow`, `profile`, `output`, `yaml`, `icon`, or
-`source`.
+`source`. Pass any reported code to
+[`degardis explain`](#degardis-explain-code-code-) for the check behind it.
 
 `agent` exits with status 0 when no errors are found and status 1 when any
 selected skill has one or more errors, whichever sections were selected.
+
+### `degardis explain CODE [CODE ...]`
+
+Explains the check each diagnostic code names: what triggers it, why it
+matters, and a failing and a passing example. It reads no source and takes no
+skill path, so a code from any report can be looked up on its own.
+
+Every code given is explained in one run, in the order supplied, and a repeated
+code is explained once. An unrecognized code exits with status 1 and lists
+every code this version can report, grouped by namespace, so a guessed code
+leads to the right one rather than to nothing.
+
+Explanations are written by hand rather than derived from the checks. A check
+knows the condition it tests, not why an author should care or what the source
+should say instead.
 
 ### `degardis build PATH [PATH ...] --output PATH`
 

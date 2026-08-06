@@ -142,3 +142,30 @@ class ValidateCommandTests(unittest.TestCase):
         ):
             with self.subTest(message=message):
                 self.assertIn(message, report)
+
+    def test_validate_names_the_check_behind_every_finding(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_skills(Path(directory))
+            entry = root / "alpha" / "entries" / "rule-one.yaml"
+            text = entry.read_text(encoding="utf-8")
+            text += "priority: high\nscope: &Shared applies everywhere\n"
+            entry.write_text(text, encoding="utf-8")
+
+            stdout = io.StringIO()
+            with contextlib.redirect_stdout(stdout):
+                code = main(["validate", str(root / "alpha")])
+
+        report = " ".join(stdout.getvalue().split())
+        self.assertEqual(1, code)
+        self.assertIn("priority must be an integer (entry.invalid-type)", report)
+        self.assertIn("quote the value (yaml.altered-scalar)", report)
+        self.assertIn("Run `degardis explain CODE [CODE ...]`", report)
+
+    def test_validate_reports_no_explain_hint_when_nothing_is_found(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            code = main(["validate", str(FIXTURES / "alpha")])
+
+        report = stdout.getvalue()
+        self.assertEqual(0, code)
+        self.assertNotIn("degardis explain", report)

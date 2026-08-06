@@ -7,10 +7,12 @@ from pathlib import Path
 
 from . import __version__
 from .build import SkillCompiler
+from .explain import codes_by_namespace, explanation, known_codes, known_codes_message
 from .model import DegardisError
 from .output import (
     write_agent_report,
     write_build_report,
+    write_check_explanations,
     write_profile_matches,
     write_skill_list,
     write_validation_report,
@@ -68,6 +70,7 @@ Run `degardis COMMAND -h` for that command's options and examples.
 Examples:
   degardis list examples/structured-summary
   degardis validate examples/structured-summary
+  degardis explain entry.missing-priority
   degardis agent examples/structured-summary --all
   degardis build examples/structured-summary --profile detailed --output .artifacts
 """,
@@ -198,6 +201,35 @@ Examples:
     )
     _add_skill_paths(list_command)
 
+    explain_command = subcommands.add_parser(
+        "explain",
+        help="explain one or more diagnostic check codes",
+        description=(
+            "Explain the check each diagnostic code names: what triggers it, why "
+            "it matters, and a failing and passing example. Reads no source and "
+            "needs no skill path. Every code given is explained in one run; an "
+            "unrecognized code exits non-zero and lists every code this version "
+            "can report."
+        ),
+        epilog=f"""\
+Namespaces: {', '.join(sorted(codes_by_namespace()))}
+Codes: {len(known_codes())}
+
+Examples:
+  degardis explain yaml.altered-scalar
+  degardis explain entry.missing-priority entry.missing-title
+""",
+        formatter_class=HELP_FORMATTER,
+    )
+    explain_command.add_argument(
+        "codes",
+        nargs="+",
+        metavar="CODE",
+        help=(
+            "one or more check codes as reported by validate or agent, such as "
+            "entry.unknown-kind"
+        ),
+    )
     return command
 
 
@@ -218,9 +250,34 @@ def _normalize_help_position(argv: list[str]) -> list[str]:
     return argv
 
 
+def _explain(codes: list[str]) -> int:
+    """Explain every code given, then report every one this version does not know.
+
+    An agent reading a report has several codes at once, so all of them are
+    explained in one run and every unknown one is named together, rather than
+    stopping at the first.
+    """
+    requested = list(dict.fromkeys(codes))
+    found = [(code, explanation(code)) for code in requested]
+    unknown = [code for code, entry in found if entry is None]
+    write_check_explanations(
+        sys.stdout,
+        [(code, entry) for code, entry in found if entry is not None],
+    )
+    if unknown:
+        label = "code" if len(unknown) == 1 else "codes"
+        raise DegardisError(
+            f"Unknown check {label}: {', '.join(unknown)}\n{known_codes_message()}"
+        )
+    return 0
+
+
 def _run(argv: list[str] | None = None) -> int:
     tokens = list(sys.argv[1:] if argv is None else argv)
     args = parser().parse_args(_normalize_help_position(tokens))
+
+    if args.command == "explain":
+        return _explain(args.codes)
 
     skill_paths = discover_skill_paths(args.paths)
 

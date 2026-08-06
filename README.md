@@ -80,6 +80,7 @@ degardis list PATH [PATH ...]
 degardis validate PATH [PATH ...]
 degardis build PATH [PATH ...] --output PATH [--profile [SKILL:]PROFILE] [--zip]
 degardis agent PATH [PATH ...] [--only DIMENSION] [--all] [--profile PROFILE]
+degardis explain CODE [CODE ...]
 ```
 
 - `list` shows metadata and available profiles.
@@ -88,6 +89,9 @@ degardis agent PATH [PATH ...] [--only DIMENSION] [--all] [--profile PROFILE]
 - `agent` reports full skill intelligence in a compact form meant for AI
   agents, not humans. It covers entries, workflows, profiles, generated files,
   the workflow graph, loading cost, and diagnostics.
+- `explain` describes the checks behind reported diagnostic codes: what
+  triggers each one, why it matters, and a failing and passing example. Pass as
+  many codes as a report gave you.
 
 Run `degardis COMMAND --help` for exact options and examples.
 

@@ -53,8 +53,20 @@ INTERFACE_FIELDS = {
 }
 DERIVED_MANIFEST_FIELDS = {"entry_kinds"}
 PROFILES_FIELDS = {"directory", "defaults"}
-REQUIRED_MANIFEST_FIELDS = ("version", "description", "primary_workflow")
-REQUIRED_INTERFACE_FIELDS = ("display_name", "short_description", "default_prompt")
+
+# The required fields whose absence is its own check code, spelled out rather
+# than composed, so every code a run can report is a literal in the source that
+# `degardis explain` can be held to.
+REQUIRED_MANIFEST_CODES = {
+    "version": "manifest.missing-version",
+    "description": "manifest.missing-description",
+    "primary_workflow": "manifest.missing-primary_workflow",
+}
+REQUIRED_INTERFACE_CODES = {
+    "display_name": "interface.missing-display_name",
+    "short_description": "interface.missing-short_description",
+    "default_prompt": "interface.missing-default_prompt",
+}
 
 # Sections of the agent report. Ordered as they are rendered; the four marked
 # default answer "is it sound and what does it cost" without listing content the
@@ -116,10 +128,8 @@ def _validate_non_empty_string(
 def _validate_manifest_types(skill: Skill, diagnostics: Diagnostics) -> None:
     manifest = skill.manifest
     path = _manifest_path(skill)
-    for field in REQUIRED_MANIFEST_FIELDS:
-        _validate_non_empty_string(
-            skill, manifest, field, f"manifest.missing-{field}", diagnostics
-        )
+    for field, code in REQUIRED_MANIFEST_CODES.items():
+        _validate_non_empty_string(skill, manifest, field, code, diagnostics)
     format_version = manifest.get("format_version")
     if not isinstance(format_version, int) or isinstance(format_version, bool):
         diagnostics.error(
@@ -156,10 +166,10 @@ def _validate_manifest_types(skill: Skill, diagnostics: Diagnostics) -> None:
             )
 
     if "interface" not in manifest:
-        for field in REQUIRED_INTERFACE_FIELDS:
+        for field, code in REQUIRED_INTERFACE_CODES.items():
             diagnostics.error(
                 f"{skill.name}: interface.{field} is required",
-                f"interface.missing-{field}",
+                code,
                 path,
             )
         return
@@ -169,11 +179,11 @@ def _validate_manifest_types(skill: Skill, diagnostics: Diagnostics) -> None:
             f"{skill.name}: interface must be a mapping", "manifest.invalid-type", path
         )
         return
-    for field in REQUIRED_INTERFACE_FIELDS:
+    for field, code in REQUIRED_INTERFACE_CODES.items():
         if field not in interface:
             diagnostics.error(
                 f"{skill.name}: interface.{field} is required",
-                f"interface.missing-{field}",
+                code,
                 path,
             )
         elif (
@@ -468,7 +478,7 @@ def _check_interface(skill: Skill, diagnostics: Diagnostics) -> None:
     ):
         diagnostics.error(
             f"{skill.name}: interface.short_description must be 25-64 characters",
-            "interface.short_description-length",
+            "interface.short-description-length",
             _manifest_path(skill),
         )
     default_prompt = interface.get("default_prompt")
@@ -479,7 +489,7 @@ def _check_interface(skill: Skill, diagnostics: Diagnostics) -> None:
     ):
         diagnostics.error(
             f"{skill.name}: interface.default_prompt must mention ${skill.name}",
-            "interface.default_prompt-token",
+            "interface.default-prompt-token",
             _manifest_path(skill),
         )
 

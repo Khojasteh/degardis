@@ -284,6 +284,14 @@ Inspect metadata and profiles:
 degardis list my-skill
 ```
 
+Every message a report prints ends with the check that produced it. To find out
+what a check means and how to satisfy it, pass its code to `explain`, as many at
+a time as the report gave you:
+
+```console
+degardis explain entry.missing-priority entry.missing-title
+```
+
 Build and inspect the artifact:
 
 ```console

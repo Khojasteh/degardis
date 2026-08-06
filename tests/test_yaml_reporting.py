@@ -94,6 +94,46 @@ class YamlReportingTests(unittest.TestCase):
                     self.assertIn("[ERROR]", stderr.getvalue())
                     self.assertIn("invalid YAML", stderr.getvalue())
 
+    def test_a_manifest_that_does_not_parse_is_reported_inside_the_report(self):
+        """The one failure that stops every check still belongs to the report.
+
+        A skill whose manifest does not load is the most likely single point of
+        failure there is, and it used to be the one case the report shape could
+        not carry: no result line, no check code, and nothing for an agent
+        reading the fixed line shape to match.
+        """
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_skills(Path(directory))
+            manifest = root / "alpha" / "skill.yaml"
+            manifest.write_text("name: alpha\ntitle: Probe: x\n", encoding="utf-8")
+
+            stdout, stderr = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(stdout):
+                with contextlib.redirect_stderr(stderr):
+                    validated = main(["validate", str(root / "alpha")])
+            report = " ".join(stdout.getvalue().split())
+
+            agent_out = io.StringIO()
+            with contextlib.redirect_stdout(agent_out):
+                reported = main(
+                    ["agent", str(root / "alpha"), "--only", "diagnostics"]
+                )
+            lines = agent_out.getvalue().splitlines()
+
+        self.assertEqual(1, validated)
+        self.assertEqual("", stderr.getvalue())
+        self.assertIn("[FAIL] alpha (alpha)", report)
+        self.assertIn("a colon followed by a space", report)
+        self.assertIn("(source.invalid-yaml)", report)
+        self.assertIn("Summary: 0 passed, 1 failed, 1 error", report)
+        self.assertIn("Run `degardis explain CODE", report)
+
+        self.assertEqual(1, reported)
+        failure = next(line for line in lines if line.startswith("error "))
+        _, location, code, _ = failure.split(" ", 3)
+        self.assertEqual("skill.yaml:2", location)
+        self.assertEqual("source.invalid-yaml", code)
+
     def test_validate_warns_for_yaml_values_that_change_silently(self):
         with tempfile.TemporaryDirectory() as directory:
             root = copy_skills(Path(directory))

@@ -4,6 +4,7 @@ from pathlib import Path
 from textwrap import TextWrapper
 from typing import Any, TextIO
 
+from .explain import CheckExplanation
 from .model import Diagnostic, Profile, Skill
 from .resolver import collect_skills
 
@@ -83,10 +84,11 @@ def write_skill_list(
 
 
 def _reported(result: dict, severity: str) -> list[str]:
-    """One skill's findings of one severity, in the order they were reported.
+    """One skill's findings of one severity, each naming the check that found it.
 
-    Results that carry only messages, as an embedded caller's can, are reported
-    as they arrive.
+    The check code is what `degardis explain` takes, so a reader can ask why a
+    finding matters without leaving the report. Results that carry only messages,
+    as an embedded caller's can, are reported as they arrive.
     """
     records = [
         record
@@ -94,7 +96,10 @@ def _reported(result: dict, severity: str) -> list[str]:
         if isinstance(record, Diagnostic) and record.severity == severity
     ]
     if records:
-        return [record.message for record in records]
+        return [
+            f"{record.message} ({record.code})" if record.code else record.message
+            for record in records
+        ]
     key = "errors" if severity == "error" else "warnings"
     return [str(value) for value in result.get(key, [])]
 
@@ -105,6 +110,11 @@ def write_validation_report(
 ) -> None:
     print("Validation", file=stream)
     print(file=stream)
+    explainable = any(
+        isinstance(record, Diagnostic) and record.code
+        for result in results
+        for record in result.get("diagnostics", [])
+    )
     failed = 0
     error_count = 0
     warning_count = 0
@@ -150,6 +160,40 @@ def write_validation_report(
         ),
         file=stream,
     )
+    if explainable:
+        print(
+            "Run `degardis explain CODE [CODE ...]` for the checks behind the "
+            "codes above.",
+            file=stream,
+        )
+
+
+def write_check_explanations(
+    stream: TextIO,
+    entries: list[tuple[str, CheckExplanation]],
+) -> None:
+    """Explain each check code, with its examples left exactly as written.
+
+    Trigger and impact are prose and wrap like every other report field. The
+    examples are YAML, where indentation is meaning, so they are indented as a
+    block and never rewrapped. A blank line separates one code from the next, so
+    an agent asking about several codes at once can split them on the code lines.
+    """
+    for index, (code, explanation) in enumerate(entries):
+        if index:
+            print(file=stream)
+        print(code, file=stream)
+        print(file=stream)
+        _write_field(stream, "Trigger", explanation.trigger)
+        _write_field(stream, "Impact", explanation.impact)
+        for label, sample in (
+            ("Failing", explanation.failing),
+            ("Passing", explanation.passing),
+        ):
+            print(file=stream)
+            print(f"  {label}", file=stream)
+            for line in sample.splitlines():
+                print(f"    {line}".rstrip(), file=stream)
 
 
 def _columns(rows: list[tuple[str, ...]]) -> list[str]:

@@ -10,13 +10,13 @@ import yaml
 
 from degardis.build import build_skills
 from degardis.model import DegardisError
-from degardis.validate import validate
+from degardis.validate import inspect_skills, validate
 
 from tests.support import copy_skills
 
 
 class ContentValidationTests(unittest.TestCase):
-    def test_unsupported_content_field_is_rejected(self):
+    def test_unsupported_content_field_is_reported_as_a_warning(self):
         with tempfile.TemporaryDirectory() as directory:
             root = copy_skills(Path(directory))
             source = root / "alpha" / "skill.yaml"
@@ -26,14 +26,15 @@ class ContentValidationTests(unittest.TestCase):
                 yaml.safe_dump(data, sort_keys=False), encoding="utf-8"
             )
 
-            errors = validate(source.parent)
+            result = inspect_skills([source.parent])[0]
 
-            self.assertTrue(
-                any(
-                    "unsupported content fields: documents" in error
-                    for error in errors
-                )
+        self.assertEqual([], result["errors"])
+        self.assertTrue(
+            any(
+                "unrecognized content fields ignored: documents" in warning
+                for warning in result["warnings"]
             )
+        )
 
     def test_content_globs_must_stay_inside_skill_directory(self):
         with tempfile.TemporaryDirectory() as directory:

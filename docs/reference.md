@@ -30,12 +30,23 @@ profile defaults, validate the full source, execute scripts, or create output.
 
 Validates discovery, manifests, entries, workflows, profiles, generated
 artifact-path collisions, and generated links for the selected skills. It does
-not execute bundled scripts. It also warns when the generated `SKILL.md`, using
-manifest-default profiles, exceeds the recommended 500-line maximum. This
-warning does not fail validation. The command creates no artifact. Each skill
-is reported as a pass or failure, with validation messages grouped below it.
-The final summary reports passed, failed, and total counts plus any warning
-count. Success exits with status 0; any failed skill exits with status 1.
+not execute bundled scripts and creates no artifact.
+
+Every check runs before the command reports, so one run lists everything wrong
+with a skill rather than stopping at the first problem. A finding is either an
+error, which fails the skill, or a warning, which does not. Warnings cover:
+
+- a field the compiler does not recognize, at any level of the source, which
+  is ignored rather than applied;
+- an omitted optional field whose default silently changes the output, such as
+  an entry without a `title` or a primary workflow without a `description`;
+- an ordering the compiler rather than the author decided, such as entries that
+  declare no `priority` or share one;
+- a workflow no `use:` step reaches from the primary workflow.
+
+Each skill is reported as a pass or failure, with its findings grouped below
+it. The final summary reports passed, failed, error, warning, and total counts.
+Success exits with status 0; any failed skill exits with status 1.
 
 ### `degardis build PATH [PATH ...] --output PATH`
 
@@ -58,10 +69,8 @@ of them. A named selector that matches no selected skill is an error.
 `--profile all` remains valid when selected skills define no profiles and
 builds them without profile additions.
 
-The build checks the generated `SKILL.md` using the profiles selected for
-that build. More than 500 lines produces a warning but does not prevent
-artifact creation. The warning is written to standard error after the
-artifacts are built.
+Warnings collected while checking the sources are written to standard error
+after the artifacts are built, and counted in the summary line.
 
 An uncompressed build installs the selected skills when `--output` is an
 agent's project or personal skill directory, such as `.agents/skills`,
@@ -118,10 +127,12 @@ descendant skills is an error.
 | `profiles`         | no       | Profile directory and defaults                                                                 |
 | `interface`        | yes      | Agent-facing display metadata                                                                  |
 
-`dependencies` is not supported.
+`dependencies` is not supported. Unlisted skill fields are ignored with a
+warning, as are unlisted `interface`, `content`, `profiles`, entry, workflow,
+and workflow-step fields: a misspelled key is reported rather than applied.
 
 `content` accepts only `entries`, `workflows`, `scripts`, and `assets`;
-unknown fields are errors. Each value is a list of non-empty glob strings.
+an unrecognized key is ignored with a warning. Each value is a list of non-empty glob strings.
 Default patterns are `entries/*.yaml`, `workflows/*.yaml`, `scripts/**/*`, and
 `assets/**/*`. Patterns must stay inside the skill directory. Scripts and
 assets are copied into the output at the same relative path they have in the
@@ -261,9 +272,6 @@ output path per skill. `profiles` is a list containing the same selectors
 accepted by repeated CLI `--profile` options. `None` applies manifest defaults;
 an explicit list, including an empty list, replaces those defaults.
 `as_zip=True` returns paths to ZIP archives instead of bundle directories.
-If the selected profiles produce a `SKILL.md` longer than the recommended
-500-line maximum, the method emits `degardis.model.DegardisWarning` and
-continues building.
 
 As with the CLI, replacement is atomic per skill rather than across the whole
 call. A failed replacement restores that skill's previous folder and ZIP, but

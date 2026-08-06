@@ -328,6 +328,6 @@ become tutorial dependencies.
 - Every profile materially changes execution.
 - Workflow composition stays inside the skill.
 - Scripts are necessary and tested; assets are genuine output inputs.
-- `degardis validate` succeeds.
-- The generated `SKILL.md` stays within the recommended 500-line maximum.
+- `degardis validate` succeeds, and every warning it reports is either fixed
+  or a deliberate choice.
 - Folder and ZIP artifacts contain only expected files.

@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-import warnings
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from .model import DegardisError, DegardisWarning
+from .model import DegardisError, Diagnostics
 from .package import (
     ArchivePackager,
     ArtifactWriter,
     replace_skill_artifacts,
 )
 from .resolver import SkillResolver
-from .validate import bundle_warnings, validate_skill
+from .validate import inspect_skills
 
 
 class SkillCompiler:
@@ -19,6 +18,7 @@ class SkillCompiler:
         self.resolver = SkillResolver(sources)
         self.writer = ArtifactWriter()
         self.packager = ArchivePackager()
+        self.warnings: list[str] = []
 
     def _check_output_path(self, output: Path) -> None:
         resolved_output = output.resolve()
@@ -41,19 +41,15 @@ class SkillCompiler:
         as_zip: bool = False,
     ) -> list[Path]:
         self._check_output_path(output)
-        validation_errors = [
-            error
-            for skill_path in self.resolver.skill_paths
-            for error in validate_skill(skill_path)
-        ]
-        if validation_errors:
-            raise DegardisError("; ".join(validation_errors))
+        diagnostics = Diagnostics()
+        for result in inspect_skills(self.resolver.skill_paths):
+            diagnostics.add_errors(result["errors"])
+            diagnostics.add_warnings(result["warnings"])
+        self.warnings = list(diagnostics.warnings)
+        diagnostics.raise_if_errors()
         bundles = self.resolver.collect(profiles)
         if not bundles:
             raise DegardisError("at least one skill is required")
-        for bundle in bundles:
-            for message in bundle_warnings(bundle):
-                warnings.warn(message, DegardisWarning, stacklevel=2)
         output.mkdir(parents=True, exist_ok=True)
         paths: list[Path] = []
         for bundle in bundles:

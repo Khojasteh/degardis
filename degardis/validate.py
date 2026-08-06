@@ -1,20 +1,56 @@
 from __future__ import annotations
 
 import re
+from typing import Any
 from pathlib import Path
 
-from .markdown import entry_filename, skill_markdown, workflow_filename
+from .markdown import (
+    entry_filename,
+    entry_markdown,
+    skill_markdown,
+    workflow_filename,
+    workflow_markdown,
+)
 from .model import (
+    Diagnostics,
     SUPPORTED_FORMAT_VERSIONS,
     DegardisError,
     Skill,
     SkillBundle,
+    SkillContent,
 )
-from .registry import discover_skill_paths, load_skill_path, load_skill_profiles
-from .resolver import collect_skills
+from .registry import discover_skill_paths, load_skill_path
+from .resolver import load_content, select_profiles
+
+
 NAME_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 MARKDOWN_LINK_PATTERN = re.compile(r"\]\(([^)]+)\)")
-SKILL_MD_RECOMMENDED_LINES = 500
+MANIFEST_FIELDS = {
+    "name",
+    "title",
+    "format_version",
+    "version",
+    "license",
+    "copyright",
+    "description",
+    "primary_workflow",
+    "entry_kinds",
+    "profiles",
+    "content",
+    "interface",
+}
+INTERFACE_FIELDS = {
+    "display_name",
+    "short_description",
+    "default_prompt",
+    "brand_color",
+    "icon",
+    "icon_small",
+    "icon_large",
+}
+PROFILES_FIELDS = {"directory", "defaults"}
+REQUIRED_MANIFEST_FIELDS = ("version", "description", "primary_workflow")
+REQUIRED_INTERFACE_FIELDS = ("display_name", "short_description", "default_prompt")
 
 
 def _validate_name(value: str, label: str) -> list[str]:
@@ -29,41 +65,52 @@ def _validate_name(value: str, label: str) -> list[str]:
 
 
 def _validate_non_empty_string(
+    skill: Skill,
     data: dict,
     field: str,
-    label: str,
+    code: str,
+    diagnostics: Diagnostics,
     *,
     required: bool = True,
-) -> list[str]:
+) -> None:
+    path = _manifest_path(skill)
     if field not in data:
-        return [f"{label}: missing {field}"] if required else []
+        if required:
+            diagnostics.error(f"{skill.name}: missing {field}", code, path)
+        return
     value = data[field]
     if not isinstance(value, str) or not value.strip():
-        return [f"{label}: {field} must be a non-empty string"]
-    return []
+        diagnostics.error(
+            f"{skill.name}: {field} must be a non-empty string",
+            "manifest.invalid-type",
+            path,
+        )
 
 
-def _validate_manifest_types(skill: Skill) -> list[str]:
+def _validate_manifest_types(skill: Skill, diagnostics: Diagnostics) -> None:
     manifest = skill.manifest
-    errors: list[str] = []
-    for field in ("version", "description", "primary_workflow"):
-        errors.extend(_validate_non_empty_string(manifest, field, skill.name))
+    path = _manifest_path(skill)
+    for field in REQUIRED_MANIFEST_FIELDS:
+        _validate_non_empty_string(
+            skill, manifest, field, f"manifest.missing-{field}", diagnostics
+        )
     format_version = manifest.get("format_version")
     if not isinstance(format_version, int) or isinstance(format_version, bool):
-        errors.append(f"{skill.name}: format_version must be an integer")
+        diagnostics.error(
+            f"{skill.name}: format_version must be an integer",
+            "manifest.invalid-type",
+            path,
+        )
     elif format_version not in SUPPORTED_FORMAT_VERSIONS:
         supported = ", ".join(str(value) for value in sorted(SUPPORTED_FORMAT_VERSIONS))
-        errors.append(
+        diagnostics.error(
             f"{skill.name}: unsupported format_version {format_version}; "
-            f"supported versions: {supported}"
+            f"supported versions: {supported}",
+            "manifest.unsupported-format-version",
+            path,
         )
-    errors.extend(
-        _validate_non_empty_string(
-            manifest,
-            "title",
-            skill.name,
-            required=False,
-        )
+    _validate_non_empty_string(
+        skill, manifest, "title", "manifest.invalid-type", diagnostics, required=False
     )
 
     entry_kinds = manifest.get("entry_kinds")
@@ -71,165 +118,350 @@ def _validate_manifest_types(skill: Skill) -> list[str]:
         not isinstance(entry_kinds, list)
         or any(not isinstance(item, str) or not item.strip() for item in entry_kinds)
     ):
-        errors.append(f"{skill.name}: entry_kinds must be a list of strings")
+        diagnostics.error(
+            f"{skill.name}: entry_kinds must be a list of strings",
+            "manifest.invalid-type",
+            path,
+        )
 
     profiles = manifest.get("profiles", {})
     if not isinstance(profiles, dict):
-        errors.append(f"{skill.name}: profiles must be a mapping")
+        diagnostics.error(
+            f"{skill.name}: profiles must be a mapping", "manifest.invalid-type", path
+        )
     else:
         defaults = profiles.get("defaults", [])
-        if (
-            not isinstance(defaults, list)
-            or any(not isinstance(item, str) or not item.strip() for item in defaults)
+        if not isinstance(defaults, list) or any(
+            not isinstance(item, str) or not item.strip() for item in defaults
         ):
-            errors.append(
-                f"{skill.name}: profiles.defaults must be a list of strings"
+            diagnostics.error(
+                f"{skill.name}: profiles.defaults must be a list of strings",
+                "manifest.invalid-type",
+                path,
             )
 
     if "interface" not in manifest:
-        for field in ("display_name", "short_description", "default_prompt"):
-            errors.append(f"{skill.name}: interface.{field} is required")
-        return errors
+        for field in REQUIRED_INTERFACE_FIELDS:
+            diagnostics.error(
+                f"{skill.name}: interface.{field} is required",
+                f"interface.missing-{field}",
+                path,
+            )
+        return
     interface = manifest["interface"]
     if not isinstance(interface, dict):
-        errors.append(f"{skill.name}: interface must be a mapping")
-        return errors
-    for field in ("display_name", "short_description", "default_prompt"):
+        diagnostics.error(
+            f"{skill.name}: interface must be a mapping", "manifest.invalid-type", path
+        )
+        return
+    for field in REQUIRED_INTERFACE_FIELDS:
         if field not in interface:
-            errors.append(f"{skill.name}: interface.{field} is required")
+            diagnostics.error(
+                f"{skill.name}: interface.{field} is required",
+                f"interface.missing-{field}",
+                path,
+            )
         elif (
             not isinstance(interface[field], str)
             or not interface[field].strip()
         ):
-            errors.append(
-                f"{skill.name}: interface.{field} must be a non-empty string"
+            diagnostics.error(
+                f"{skill.name}: interface.{field} must be a non-empty string",
+                "interface.invalid-type",
+                path,
             )
     if "brand_color" in interface:
         value = interface["brand_color"]
         if not isinstance(value, str) or not value.strip():
-            errors.append(
-                f"{skill.name}: interface.brand_color must be a non-empty string"
+            diagnostics.error(
+                f"{skill.name}: interface.brand_color must be a non-empty string",
+                "interface.invalid-type",
+                path,
             )
-    return errors
 
 
-def bundle_warnings(bundle: SkillBundle) -> list[str]:
-    rendered = skill_markdown(bundle, bundle.primary.name)
-    line_count = len(rendered.splitlines())
-    if line_count <= SKILL_MD_RECOMMENDED_LINES:
+def _validate_manifest_warnings(skill: Skill, diagnostics: Diagnostics) -> None:
+    path = _manifest_path(skill)
+    unknown_manifest = sorted(set(skill.manifest) - MANIFEST_FIELDS)
+    if unknown_manifest:
+        diagnostics.warning(
+            f"{skill.name}: unrecognized manifest fields ignored: "
+            f"{', '.join(unknown_manifest)}",
+            "manifest.unknown-field",
+            path,
+        )
+    profiles = skill.manifest.get("profiles")
+    if isinstance(profiles, dict):
+        unknown_profiles = sorted(set(profiles) - PROFILES_FIELDS)
+        if unknown_profiles:
+            diagnostics.warning(
+                f"{skill.name}: unrecognized profiles fields ignored: "
+                f"{', '.join(unknown_profiles)}",
+                "manifest.unknown-profiles-field",
+                path,
+            )
+    interface = skill.manifest.get("interface")
+    if isinstance(interface, dict):
+        unknown_interface = sorted(set(interface) - INTERFACE_FIELDS)
+        if unknown_interface:
+            diagnostics.warning(
+                f"{skill.name}: unrecognized interface fields ignored: "
+                f"{', '.join(unknown_interface)}",
+                "interface.unknown-field",
+                path,
+            )
+
+
+def _manifest_path(skill: Skill) -> Path:
+    return skill.root / "skill.yaml"
+
+
+def _check_generated_references(
+    skill: Skill,
+    content: SkillContent,
+    diagnostics: Diagnostics,
+) -> str:
+    bundle = SkillBundle(primary=skill, contents=[content])
+    try:
+        rendered = skill_markdown(bundle, skill.name)
+    except (DegardisError, ValueError) as exc:
+        diagnostics.error(exc, "output.render-failed", _manifest_path(skill))
+        return ""
+    expected_references = {
+        f"references/entries/{entry_filename(entry)}" for entry in content.entries
+    }
+    expected_references.update(
+        f"references/workflows/{workflow_filename(workflow, skill.name)}"
+        for workflow in content.workflows
+        if workflow.get("id") != skill.primary_workflow
+    )
+    expected_references.update(
+        f"references/profiles/{profile.filename}" for profile in content.profiles
+    )
+    expected_references.update(
+        source.relative_to(skill.root).as_posix() for source in content.scripts
+    )
+    expected_references.update(
+        source.relative_to(skill.root).as_posix() for source in content.assets
+    )
+    for link in MARKDOWN_LINK_PATTERN.findall(rendered):
+        if link not in expected_references:
+            diagnostics.error(
+                f"{skill.name}: generated broken reference {link}",
+                "output.broken-reference",
+                _manifest_path(skill),
+            )
+    return rendered
+
+
+def _empty_result(source: Path) -> dict[str, Any]:
+    return {
+        "name": source.name,
+        "title": source.name,
+        "title_derived": False,
+        "version": "",
+        "source": source,
+        "description": "",
+        "license": None,
+        "copyright": None,
+        "primary_workflow": "",
+        "profiles": [],
+        "selected_profiles": [],
+        "default_profiles": [],
+        "diagnostics": [],
+        "errors": [],
+        "warnings": [],
+    }
+
+
+def _selected_profiles(
+    skill: Skill,
+    content: SkillContent,
+    selectors: list[str] | None,
+    diagnostics: Diagnostics,
+) -> list[str]:
+    """Resolve the same profile selection a build would make, or report why not."""
+    try:
+        selection = select_profiles([content], selectors)
+    except DegardisError as exc:
+        diagnostics.error(exc, "profile.unknown-selector", _manifest_path(skill))
         return []
-    return [
-        f"{bundle.primary.name}: generated SKILL.md has {line_count} lines; "
-        f"the recommended maximum is {SKILL_MD_RECOMMENDED_LINES}"
-    ]
+    return sorted(selection.get(skill.name, set()))
+
+
+def _identity(skill: Skill) -> dict[str, Any]:
+    """The fields a report states about the skill itself, before any check runs."""
+    return {
+        "name": skill.name,
+        "title": skill.title,
+        "title_derived": "title" not in skill.manifest,
+        "version": skill.version,
+        "source": skill.root.resolve(),
+        "description": skill.description,
+        "primary_workflow": skill.primary_workflow,
+    }
+
+
+def _check_manifest_fields(skill: Skill, diagnostics: Diagnostics) -> None:
+    """Check the manifest's own field names, types, and lengths."""
+    _validate_manifest_warnings(skill, diagnostics)
+    diagnostics.add_errors(
+        _validate_name(skill.name, f"{skill.name} name"),
+        "manifest.invalid-name",
+        _manifest_path(skill),
+    )
+    _validate_manifest_types(skill, diagnostics)
+    description = skill.manifest.get("description")
+    if isinstance(description, str) and len(description) > 1024:
+        diagnostics.error(
+            f"{skill.name}: description must be 1-1024 characters",
+            "manifest.description-length",
+            _manifest_path(skill),
+        )
+
+
+def _legal_metadata(skill: Skill, diagnostics: Diagnostics) -> dict[str, Any]:
+    """Read license and copyright, reporting either one that is not a string.
+
+    A field that fails to read is left out, so the report keeps the absent value
+    it started with rather than a partial one.
+    """
+    metadata: dict[str, Any] = {}
+    for field in ("license", "copyright"):
+        try:
+            metadata[field] = getattr(skill, field)
+        except DegardisError as exc:
+            diagnostics.error(exc, "manifest.invalid-type", _manifest_path(skill))
+    return metadata
+
+
+def _check_interface(skill: Skill, diagnostics: Diagnostics) -> None:
+    """Check the interface fields an agent surface displays."""
+    interface = skill.interface
+    short_description = interface.get("short_description")
+    if (
+        isinstance(short_description, str)
+        and short_description
+        and not 25 <= len(short_description) <= 64
+    ):
+        diagnostics.error(
+            f"{skill.name}: interface.short_description must be 25-64 characters",
+            "interface.short_description-length",
+            _manifest_path(skill),
+        )
+    default_prompt = interface.get("default_prompt")
+    if (
+        isinstance(default_prompt, str)
+        and default_prompt
+        and f"${skill.name}" not in default_prompt
+    ):
+        diagnostics.error(
+            f"{skill.name}: interface.default_prompt must mention ${skill.name}",
+            "interface.default_prompt-token",
+            _manifest_path(skill),
+        )
+
+
+def _check_profile_metadata(
+    skill: Skill,
+    content: SkillContent,
+    diagnostics: Diagnostics,
+) -> None:
+    """Check the name and description of every profile the skill resolved."""
+    for profile in content.profiles:
+        diagnostics.add_errors(
+            _validate_name(profile.name, f"{skill.name} profile {profile.path.name}"),
+            "profile.invalid-name",
+            profile.path,
+        )
+        if not profile.description or len(profile.description) > 1024:
+            diagnostics.error(
+                f"{profile.path}: description must be 1-1024 characters",
+                "profile.description-length",
+                profile.path,
+            )
+
+
+def _check_workflow_references(
+    skill: Skill,
+    content: SkillContent,
+    diagnostics: Diagnostics,
+) -> bool:
+    """Check that the primary workflow exists and every step reaches a known one.
+
+    Returns whether the primary workflow was found. Without it there is no body
+    to generate, so the caller measures no markdown for the skill.
+    """
+    workflow_ids = {str(workflow.get("id", "")) for workflow in content.workflows}
+    primary_workflow_found = skill.primary_workflow in workflow_ids
+    if not primary_workflow_found:
+        diagnostics.error(
+            f"{skill.name}: primary workflow not found: {skill.primary_workflow}",
+            "workflow.missing-primary",
+            _manifest_path(skill),
+        )
+    for workflow in content.workflows:
+        for step in workflow.get("steps", []):
+            if isinstance(step, dict) and step.get("use"):
+                referenced = str(step["use"])
+                if referenced not in workflow_ids:
+                    diagnostics.error(
+                        f"{workflow.get('_path')}: cross-skill or unknown "
+                        f"workflow reference {referenced}",
+                        "workflow.unknown-reference",
+                        workflow.get("_path"),
+                    )
+    return primary_workflow_found
+
+
+def _inspect_skill(path: Path, profiles: list[str] | None = None) -> dict[str, Any]:
+    """Check one skill, collecting everything wrong with it rather than the first.
+
+    A skill that cannot be loaded at all is reported on its own, since no later
+    check has a source to read.
+    """
+    source = path.resolve()
+    result = _empty_result(source)
+    diagnostics = Diagnostics()
+    try:
+        skill = load_skill_path(path)
+    except (DegardisError, OSError, UnicodeError) as exc:
+        diagnostics.error(exc, "source.unreadable", source / "skill.yaml")
+        return _finish(result, diagnostics)
+
+    result.update(_identity(skill))
+    _check_manifest_fields(skill, diagnostics)
+    result.update(_legal_metadata(skill, diagnostics))
+    _check_interface(skill, diagnostics)
+
+    content = load_content(skill, diagnostics)
+    _check_profile_metadata(skill, content, diagnostics)
+    selected = _selected_profiles(skill, content, profiles, diagnostics)
+    result["selected_profiles"] = selected
+    primary_workflow_found = _check_workflow_references(skill, content, diagnostics)
+    result["profiles"] = sorted(profile.name for profile in content.profiles)
+
+    if primary_workflow_found:
+        _check_generated_references(skill, content, diagnostics)
+    return _finish(result, diagnostics)
+
+
+def _finish(result: dict[str, Any], diagnostics: Diagnostics) -> dict[str, Any]:
+    result["diagnostics"] = list(diagnostics.records)
+    result["errors"] = diagnostics.errors
+    result["warnings"] = diagnostics.warnings
+    return result
 
 
 def validate_skill(path: Path) -> list[str]:
-    errors: list[str] = []
-    try:
-        skill = load_skill_path(path)
-        errors.extend(_validate_name(skill.name, f"{skill.name} name"))
-        manifest_errors = _validate_manifest_types(skill)
-        errors.extend(manifest_errors)
-        if manifest_errors:
-            return errors
-        if "dependencies" in skill.manifest:
-            errors.append(f"{skill.name}: dependencies is not supported")
-        description = skill.manifest.get("description")
-        if isinstance(description, str) and len(description) > 1024:
-            errors.append(
-                f"{skill.name}: description must be 1-1024 characters"
-            )
-        skill.license
-        skill.copyright
-        interface = skill.interface
-        short_description = interface.get("short_description")
-        if (
-            isinstance(short_description, str)
-            and short_description
-            and not 25 <= len(short_description) <= 64
-        ):
-            errors.append(
-                f"{skill.name}: interface.short_description must be 25-64 characters"
-            )
-        default_prompt = interface.get("default_prompt")
-        if (
-            isinstance(default_prompt, str)
-            and default_prompt
-            and f"${skill.name}" not in default_prompt
-        ):
-            errors.append(
-                f"{skill.name}: interface.default_prompt must mention ${skill.name}"
-            )
+    return _inspect_skill(path)["errors"]
 
-        bundle = collect_skills([path])[0]
-        content = bundle.content(skill.name)
-        workflow_ids = {
-            str(workflow.get("id", "")) for workflow in content.workflows
-        }
-        primary_workflow_found = skill.primary_workflow in workflow_ids
-        if not primary_workflow_found:
-            errors.append(
-                f"{skill.name}: primary workflow not found: "
-                f"{skill.primary_workflow}"
-            )
-        for workflow in content.workflows:
-            if not workflow.get("id") or not isinstance(
-                workflow.get("steps"), list
-            ):
-                errors.append(
-                    f"{skill.name}: invalid workflow {workflow.get('id')}"
-                )
-                continue
-            for step in workflow["steps"]:
-                if isinstance(step, dict) and step.get("use"):
-                    referenced = str(step["use"])
-                    if referenced not in workflow_ids:
-                        errors.append(
-                            f"{workflow.get('_path')}: cross-skill or unknown "
-                            f"workflow reference {referenced}"
-                        )
 
-        if primary_workflow_found:
-            rendered = skill_markdown(bundle, skill.name)
-            expected_references = {
-                f"references/entries/{entry_filename(entry)}"
-                for entry in content.entries
-            }
-            expected_references.update(
-                f"references/workflows/{workflow_filename(workflow, skill.name)}"
-                for workflow in content.workflows
-                if workflow.get("id") != skill.primary_workflow
-            )
-            expected_references.update(
-                f"references/profiles/{profile.filename}"
-                for profile in content.profiles
-            )
-            expected_references.update(
-                source.relative_to(skill.root).as_posix()
-                for source in content.scripts
-            )
-            expected_references.update(
-                source.relative_to(skill.root).as_posix()
-                for source in content.assets
-            )
-            for link in MARKDOWN_LINK_PATTERN.findall(rendered):
-                if link not in expected_references:
-                    errors.append(f"{skill.name}: generated broken reference {link}")
-
-        for profile in load_skill_profiles(skill):
-            errors.extend(
-                _validate_name(
-                    profile.name, f"{skill.name} profile {profile.path.name}"
-                )
-            )
-            if not profile.description or len(profile.description) > 1024:
-                errors.append(
-                    f"{profile.path}: description must be 1-1024 characters"
-                )
-    except (DegardisError, OSError, UnicodeError) as exc:
-        errors.append(str(exc))
-    return errors
+def inspect_skills(
+    paths: list[Path],
+    profiles: list[str] | None = None,
+) -> list[dict[str, Any]]:
+    return [_inspect_skill(path, profiles) for path in paths]
 
 
 def validate(sources: Path | list[Path]) -> list[str]:
@@ -240,5 +472,5 @@ def validate(sources: Path | list[Path]) -> list[str]:
         return [str(exc)]
     errors: list[str] = []
     for path in skill_paths:
-        errors.extend(validate_skill(path))
+        errors.extend(_inspect_skill(path)["errors"])
     return errors

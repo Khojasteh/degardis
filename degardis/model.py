@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 from textwrap import TextWrapper
-from typing import Any
+from typing import Any, Iterable
 
 import yaml
 
@@ -15,8 +15,133 @@ class DegardisError(ValueError):
     pass
 
 
-class DegardisWarning(UserWarning):
-    pass
+@dataclass(frozen=True)
+class Diagnostic:
+    """One problem, with the location and check an agent needs to act on it."""
+
+    severity: str
+    message: str
+    code: str = ""
+    path: Path | None = None
+    line: int | None = None
+
+    @property
+    def key(self) -> tuple:
+        return (self.severity, self.code, self.path, self.line, self.message)
+
+    def location(self, root: Path | None = None) -> str:
+        """Render the source position, relative to root where possible."""
+        if self.path is None:
+            return "-"
+        text = self.path.as_posix()
+        if root is not None:
+            try:
+                text = self.path.resolve().relative_to(root.resolve()).as_posix()
+            except ValueError:
+                pass
+        return f"{text}:{self.line}" if self.line else text
+
+    def summary(self, skill_name: str = "") -> str:
+        """Strip the prefix the message repeats from its own location."""
+        text = self.message
+        prefixes = [f"{skill_name}: "] if skill_name else []
+        if self.path is not None:
+            prefixes.append(f"{self.path}: ")
+            if self.line:
+                prefixes.append(f"{self.path}:{self.line}: ")
+        for prefix in sorted(prefixes, key=len, reverse=True):
+            if text.startswith(prefix):
+                return text[len(prefix) :]
+        return text
+
+
+@dataclass
+class Diagnostics:
+    """Collects every problem found in one run instead of stopping at the first."""
+
+    records: list[Diagnostic] = field(default_factory=list)
+
+    def _add(
+        self,
+        severity: str,
+        message: object,
+        code: str,
+        path: Path | None,
+        line: int | None,
+    ) -> None:
+        record = Diagnostic(
+            severity=severity,
+            message=str(message),
+            code=code,
+            path=path,
+            line=line,
+        )
+        if all(existing.key != record.key for existing in self.records):
+            self.records.append(record)
+
+    def error(
+        self,
+        message: object,
+        code: str = "",
+        path: Path | None = None,
+        line: int | None = None,
+    ) -> None:
+        self._add("error", message, code, path, line)
+
+    def warning(
+        self,
+        message: object,
+        code: str = "",
+        path: Path | None = None,
+        line: int | None = None,
+    ) -> None:
+        self._add("warning", message, code, path, line)
+
+    def add_errors(
+        self,
+        messages: Iterable[object],
+        code: str = "",
+        path: Path | None = None,
+    ) -> None:
+        for message in messages:
+            self.error(message, code, path)
+
+    def add_warnings(
+        self,
+        messages: Iterable[object],
+        code: str = "",
+        path: Path | None = None,
+    ) -> None:
+        for message in messages:
+            self.warning(message, code, path)
+
+    def add(self, records: Iterable[Diagnostic]) -> None:
+        for record in records:
+            if all(existing.key != record.key for existing in self.records):
+                self.records.append(record)
+
+    def select(self, severity: str) -> list[Diagnostic]:
+        return [record for record in self.records if record.severity == severity]
+
+    @property
+    def errors(self) -> list[str]:
+        return [record.message for record in self.select("error")]
+
+    @property
+    def warnings(self) -> list[str]:
+        return [record.message for record in self.select("warning")]
+
+    def merge(self, other: "Diagnostics") -> None:
+        self.add(other.records)
+
+    def raise_if_errors(self) -> None:
+        errors = self.errors
+        if not errors:
+            return
+        if len(errors) == 1:
+            raise DegardisError(errors[0])
+        body = "\n".join(f"  - {error}" for error in errors)
+        raise DegardisError(f"{len(errors)} errors:\n{body}")
 
 
 def ensure_within(path: Path, root: Path, label: str) -> None:

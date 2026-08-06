@@ -12,11 +12,7 @@ from unittest import mock
 from degardis.build import SkillCompiler
 from degardis.cli import main, parser
 
-from tests.support import (
-    FIXTURES,
-    copy_skills,
-    make_skill_markdown_cross_warning_boundary,
-)
+from tests.support import FIXTURES, copy_skills
 
 
 class BuildCommandTests(unittest.TestCase):
@@ -40,7 +36,7 @@ class BuildCommandTests(unittest.TestCase):
             self.assertIn("[BUILT] Alpha (alpha)", report)
             self.assertIn("[BUILT] Beta (beta)", report)
             self.assertIn("[BUILT] Gamma (gamma)", report)
-            self.assertIn("Summary: 3 skills built as folders.", report)
+            self.assertIn("Summary: 3 skills built as folders, 0 warnings.", report)
 
     def test_build_recursively_discovers_nested_skills(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -89,7 +85,7 @@ class BuildCommandTests(unittest.TestCase):
             self.assertEqual(0, code)
             self.assertEqual(3, len(list(output.glob("*.zip"))))
             self.assertIn(
-                "Summary: 3 skills built as archives.",
+                "Summary: 3 skills built as archives, 0 warnings.",
                 stdout.getvalue(),
             )
 
@@ -157,36 +153,3 @@ class BuildCommandTests(unittest.TestCase):
             "[ERROR] injected permission failure\n",
             stderr.getvalue(),
         )
-
-    def test_build_reports_oversized_selected_output_as_warning(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = copy_skills(Path(directory))
-            make_skill_markdown_cross_warning_boundary(root)
-            output = Path(directory) / "output"
-            stdout = io.StringIO()
-            stderr = io.StringIO()
-
-            with (
-                contextlib.redirect_stdout(stdout),
-                contextlib.redirect_stderr(stderr),
-            ):
-                code = main(
-                    [
-                        "build",
-                        str(root / "gamma"),
-                        "--profile",
-                        "all",
-                        "--output",
-                        str(output),
-                    ]
-                )
-
-            self.assertEqual(0, code)
-            self.assertTrue((output / "gamma" / "SKILL.md").is_file())
-            self.assertEqual(
-                (
-                    "[WARNING] gamma: generated SKILL.md has 507 lines; "
-                    "the recommended maximum is 500\n"
-                ),
-                stderr.getvalue(),
-            )

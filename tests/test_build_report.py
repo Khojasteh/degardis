@@ -2,20 +2,23 @@
 
 from __future__ import annotations
 
+import contextlib
+import io
 import tempfile
 import unittest
 from pathlib import Path
 
 import yaml
 
-from degardis.build import SkillCompiler, build_skills
-from degardis.model import DegardisError, DegardisWarning
+from degardis.build import build_skills
+from degardis.cli import main
+from degardis.model import DegardisError
 
-from tests.support import copy_skills, make_skill_markdown_cross_warning_boundary
+from tests.support import FIXTURES, copy_skills
 
 
 class BuildReportTests(unittest.TestCase):
-    def test_build_rejects_unsupported_content_field(self):
+    def test_build_warns_about_unrecognized_content_field(self):
         with tempfile.TemporaryDirectory() as directory:
             root = copy_skills(Path(directory))
             source = root / "alpha" / "skill.yaml"
@@ -25,10 +28,41 @@ class BuildReportTests(unittest.TestCase):
                 yaml.safe_dump(data, sort_keys=False), encoding="utf-8"
             )
 
-            with self.assertRaisesRegex(
-                DegardisError, "unsupported content fields: unknown"
-            ):
-                build_skills(source.parent, Path(directory) / "output")
+            stdout = io.StringIO()
+            with contextlib.redirect_stdout(stdout):
+                code = main(
+                    [
+                        "build",
+                        str(source.parent),
+                        "--output",
+                        str(Path(directory) / "output"),
+                    ]
+                )
+
+        self.assertEqual(0, code)
+        report = stdout.getvalue()
+        self.assertIn("unrecognized content fields ignored: unknown", report)
+        self.assertIn("Summary: 1 skill built as folder, 1 warning.", report)
+
+    def test_build_reports_every_validation_error_at_once(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_skills(Path(directory))
+            manifest = root / "alpha" / "skill.yaml"
+            data = yaml.safe_load(manifest.read_text(encoding="utf-8"))
+            data["interface"]["default_prompt"] = "Missing token"
+            data["profiles"]["defaults"] = ["missing-profile"]
+            manifest.write_text(
+                yaml.safe_dump(data, sort_keys=False),
+                encoding="utf-8",
+            )
+
+            with self.assertRaises(DegardisError) as raised:
+                build_skills(root / "alpha", root / "output")
+
+        message = str(raised.exception)
+        self.assertIn("2 errors:", message)
+        self.assertIn("interface.default_prompt must mention $alpha", message)
+        self.assertIn("Unknown default profiles for alpha: missing-profile", message)
 
     def test_build_rejects_invalid_interface_before_replacing_artifacts(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -51,28 +85,3 @@ class BuildReportTests(unittest.TestCase):
                 build_skills(root / "alpha", output)
 
             self.assertEqual("keep", marker.read_text(encoding="utf-8"))
-
-    def test_explicit_profiles_warn_for_oversized_selected_output(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = copy_skills(Path(directory))
-            make_skill_markdown_cross_warning_boundary(root)
-            output = Path(directory) / "output"
-
-            with self.assertWarnsRegex(
-                DegardisWarning,
-                "generated SKILL.md has 507 lines",
-            ):
-                artifact = SkillCompiler(root / "gamma").build(
-                    output,
-                    profiles=["all"],
-                )[0]
-
-            self.assertTrue(artifact.is_dir())
-            self.assertEqual(
-                507,
-                len(
-                    (artifact / "SKILL.md")
-                    .read_text(encoding="utf-8")
-                    .splitlines()
-                ),
-            )

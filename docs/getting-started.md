@@ -34,7 +34,7 @@ Validation
 
 [PASS] Structured Summary (structured-summary)
 
-Summary: 1 passed, 0 failed, 1 total.
+Summary: 1 passed, 0 failed, 0 errors, 0 warnings, 1 total.
 ```
 
 Validation reads the source without writing an artifact. The manifest at
@@ -70,7 +70,7 @@ Build
 [BUILT] Structured Summary (structured-summary)
   Artifact    <repository-path>/.artifacts/structured-summary
 
-Summary: 1 skill built as folder.
+Summary: 1 skill built as folder, 0 warnings.
 ```
 
 Inspect the generated folder:

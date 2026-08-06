@@ -33,7 +33,7 @@ degardis build examples/structured-summary --output .artifacts
 A successful build reports the artifact path and ends with:
 
 ```text
-Summary: 1 skill built as folder.
+Summary: 1 skill built as folder, 0 warnings.
 ```
 
 The generated folder is ready to inspect or install:

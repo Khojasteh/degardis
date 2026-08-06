@@ -5,11 +5,22 @@ from pathlib import Path
 
 from .model import (
     DegardisError,
+    Diagnostics,
     Profile,
     Skill,
     ensure_within,
     load_yaml,
 )
+
+
+PROFILE_FIELDS = {
+    "name",
+    "label",
+    "description",
+    "instructions",
+    "details",
+    "details_files",
+}
 
 
 class SkillRepository:
@@ -141,47 +152,76 @@ def load_profile(
     path: Path,
     skill_name: str,
     skill_root: Path | None = None,
-) -> Profile:
-    if path.suffix != ".yaml":
-        raise DegardisError(f"Unsupported profile source: {path}")
+    diagnostics: Diagnostics | None = None,
+) -> Profile | None:
+    collector = diagnostics if diagnostics is not None else Diagnostics()
 
-    data = load_yaml(path)
-    allowed = {
-        "name",
-        "label",
-        "description",
-        "instructions",
-        "details",
-        "details_files",
-    }
-    unknown = set(data) - allowed
+    def finish(profile: Profile | None) -> Profile | None:
+        if diagnostics is None:
+            collector.raise_if_errors()
+        return profile
+
+    if path.suffix != ".yaml":
+        collector.error(f"Unsupported profile source: {path}", "profile.unsupported", path)
+        return finish(None)
+
+    try:
+        data = load_yaml(path)
+    except DegardisError as exc:
+        collector.error(exc, "source.invalid-yaml", path)
+        return finish(None)
+
+    unknown = sorted(set(data) - PROFILE_FIELDS)
     if unknown:
-        raise DegardisError(
-            f"{path}: unsupported profile fields: {', '.join(sorted(unknown))}"
+        collector.warning(
+            f"{path}: unrecognized profile fields ignored: {', '.join(unknown)}",
+            "profile.unknown-field",
+            path,
         )
+    usable = True
     name = data.get("name")
     if not isinstance(name, str) or not name.strip():
-        raise DegardisError(f"{path}: name must be a non-empty string")
-    if name != path.stem:
-        raise DegardisError(f"{path}: profile name must match filename")
+        collector.error(
+            f"{path}: name must be a non-empty string", "profile.missing-name", path
+        )
+        usable = False
+    elif name != path.stem:
+        collector.error(
+            f"{path}: profile name must match filename", "profile.name-mismatch", path
+        )
+        usable = False
     description = data.get("description")
     if not isinstance(description, str) or not description.strip():
-        raise DegardisError(f"{path}: description must be a non-empty string")
+        collector.error(
+            f"{path}: description must be a non-empty string",
+            "profile.missing-description",
+            path,
+        )
+        usable = False
     label = data.get("label")
     if not isinstance(label, str) or not label.strip():
-        raise DegardisError(f"{path}: label must be a non-empty string")
+        collector.error(
+            f"{path}: label must be a non-empty string", "profile.missing-label", path
+        )
+        usable = False
     instructions = data.get("instructions")
     if (
         not isinstance(instructions, list)
         or not instructions
         or any(not isinstance(item, str) or not item.strip() for item in instructions)
     ):
-        raise DegardisError(
-            f"{path}: instructions must be a non-empty list of strings"
+        collector.error(
+            f"{path}: instructions must be a non-empty list of strings",
+            "profile.missing-instructions",
+            path,
         )
+        usable = False
     details = data.get("details")
     if details is not None and not isinstance(details, str):
-        raise DegardisError(f"{path}: details must be a string")
+        collector.error(
+            f"{path}: details must be a string", "profile.invalid-type", path
+        )
+        details = None
     details_files = data.get("details_files")
     if details_files is not None and (
         not isinstance(details_files, list)
@@ -191,12 +231,17 @@ def load_profile(
             for item in details_files
         )
     ):
-        raise DegardisError(
-            f"{path}: details_files must be a non-empty list of strings"
+        collector.error(
+            f"{path}: details_files must be a non-empty list of strings",
+            "profile.invalid-type",
+            path,
         )
+        details_files = None
     if details is not None and details_files is not None:
-        raise DegardisError(
-            f"{path}: details and details_files are mutually exclusive"
+        collector.error(
+            f"{path}: details and details_files are mutually exclusive",
+            "profile.details-conflict",
+            path,
         )
     appended_details = str(details or "")
     if details_files:
@@ -206,26 +251,46 @@ def load_profile(
             source = (path.parent / detail_file).resolve()
             try:
                 source.relative_to(allowed_root)
-            except ValueError as exc:
-                raise DegardisError(
-                    f"{path}: detail files must stay within the skill directory"
-                ) from exc
-            if source.suffix != ".md":
-                raise DegardisError(
-                    f"{path}: detail files must reference Markdown files"
+            except ValueError:
+                collector.error(
+                    f"{path}: detail files must stay within the skill directory",
+                    "profile.detail-outside-skill",
+                    path,
                 )
+                continue
+            if source.suffix != ".md":
+                collector.error(
+                    f"{path}: detail files must reference Markdown files",
+                    "profile.detail-not-markdown",
+                    path,
+                )
+                continue
             if not source.is_file():
-                raise DegardisError(f"{path}: detail file not found: {detail_file}")
+                collector.error(
+                    f"{path}: detail file not found: {detail_file}",
+                    "profile.detail-missing",
+                    path,
+                )
+                continue
             chunks.append(source.read_text(encoding="utf-8").strip())
         appended_details = "\n\n".join(chunks)
     appended_details = appended_details.replace("\r\n", "\n").replace("\r", "\n")
     if _contains_level_one_heading(appended_details):
-        raise DegardisError(f"{path}: details must not contain a level-one heading")
-    return Profile(
-        path=path,
-        data=data,
-        skill=skill_name,
-        appended_details=appended_details,
+        collector.error(
+            f"{path}: details must not contain a level-one heading",
+            "profile.detail-heading",
+            path,
+        )
+        usable = False
+    if not usable:
+        return finish(None)
+    return finish(
+        Profile(
+            path=path,
+            data=data,
+            skill=skill_name,
+            appended_details=appended_details,
+        )
     )
 
 
@@ -253,10 +318,11 @@ def load_skill_profiles(skill: Skill) -> list[Profile]:
     config = skill.manifest.get("profiles", {})
     if not isinstance(config, dict):
         raise DegardisError(f"{skill.name}: profiles must be a mapping")
-    return [
+    profiles = [
         load_profile(path, skill.name, skill.root)
         for path in profile_source_paths(skill)
     ]
+    return [profile for profile in profiles if profile is not None]
 
 
 def available_profile_owners(root: Path) -> dict[str, list[str]]:

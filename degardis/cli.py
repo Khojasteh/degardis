@@ -3,12 +3,11 @@ from __future__ import annotations
 import argparse
 import os
 import sys
-import warnings
 from pathlib import Path
 
 from . import __version__
 from .build import SkillCompiler
-from .model import DegardisError, DegardisWarning
+from .model import DegardisError
 from .output import (
     write_build_report,
     write_profile_matches,
@@ -16,8 +15,8 @@ from .output import (
     write_validation_report,
 )
 from .registry import discover_skill_paths, load_skill_path, load_skill_profiles
-from .resolver import collect_skills, profile_matches
-from .validate import bundle_warnings, validate_skill
+from .resolver import profile_matches
+from .validate import inspect_skills
 
 
 HELP_FORMATTER = argparse.RawDescriptionHelpFormatter
@@ -156,18 +155,9 @@ def _run(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "validate":
-        results = []
-        for path in skill_paths:
-            skill = load_skill_path(path)
-            errors = validate_skill(path)
-            skill_warnings = (
-                []
-                if errors
-                else bundle_warnings(collect_skills([path])[0])
-            )
-            results.append((skill, errors, skill_warnings))
+        results = inspect_skills(skill_paths)
         write_validation_report(sys.stdout, results)
-        return int(any(errors for _, errors, _ in results))
+        return int(any(result["errors"] for result in results))
 
     compiler = SkillCompiler(skill_paths)
     if args.profiles:
@@ -175,13 +165,17 @@ def _run(argv: list[str] | None = None) -> int:
             sys.stdout,
             profile_matches(skill_paths, args.profiles),
         )
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always", DegardisWarning)
-        paths = compiler.build(args.output, args.profiles, as_zip=args.zip)
-    for warning in caught:
-        print(f"[WARNING] {warning.message}", file=sys.stderr)
+    paths = compiler.build(args.output, args.profiles, as_zip=args.zip)
+    for message in compiler.warnings:
+        print(f"[WARNING] {message}", file=sys.stderr)
     skills = [load_skill_path(path) for path in skill_paths]
-    write_build_report(sys.stdout, skills, paths, as_zip=args.zip)
+    write_build_report(
+        sys.stdout,
+        skills,
+        paths,
+        as_zip=args.zip,
+        warnings=compiler.warnings,
+    )
     return 0
 
 

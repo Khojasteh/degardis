@@ -11,7 +11,7 @@ import yaml
 
 from degardis.build import build_skills
 from degardis.model import DegardisError
-from degardis.validate import validate
+from degardis.validate import inspect_skills, validate
 
 from tests.support import FIXTURES, copy_skills
 
@@ -22,7 +22,7 @@ class ManifestValidationTests(unittest.TestCase):
 
     def test_validate_skill_does_not_mask_internal_compiler_failures(self):
         with mock.patch(
-            "degardis.validate.collect_skills",
+            "degardis.validate._inspect_skill",
             side_effect=RuntimeError("injected compiler defect"),
         ):
             with self.assertRaisesRegex(
@@ -70,17 +70,6 @@ class ManifestValidationTests(unittest.TestCase):
                     "primary workflow not found: gamma.missing" in error
                     for error in errors
                 )
-            )
-
-    def test_dependencies_field_is_rejected(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = copy_skills(Path(directory))
-            source = root / "alpha" / "skill.yaml"
-            data = yaml.safe_load(source.read_text(encoding="utf-8"))
-            data["dependencies"] = ["beta"]
-            source.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
-            self.assertTrue(
-                any("dependencies is not supported" in error for error in validate(source.parent))
             )
 
     def test_legal_metadata_fields_must_be_non_empty_strings(self):
@@ -141,16 +130,6 @@ class ManifestValidationTests(unittest.TestCase):
                 "title",
                 lambda data: data.__setitem__("title", []),
                 "title must be a non-empty string",
-            ),
-            (
-                "entry_kinds",
-                lambda data: data.__setitem__("entry_kinds", "policy"),
-                "entry_kinds must be a list of strings",
-            ),
-            (
-                "profile_defaults",
-                lambda data: data["profiles"].__setitem__("defaults", "extra"),
-                "profiles.defaults must be a list of strings",
             ),
             (
                 "interface",

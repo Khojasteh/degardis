@@ -67,27 +67,3 @@ def set_interface_icons(root: Path, skill_name: str, **icons: str) -> None:
     data = yaml.safe_load(source.read_text(encoding="utf-8"))
     data["interface"].update(icons)
     source.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
-
-
-def make_skill_markdown_cross_warning_boundary(root: Path) -> None:
-    workflow = root / "gamma" / "workflows" / "run.yaml"
-    data = yaml.safe_load(workflow.read_text(encoding="utf-8"))
-    data["steps"][0]["instruction"] = "\n".join(["Line"] * 480)
-    workflow.write_text(
-        yaml.safe_dump(data, sort_keys=False),
-        encoding="utf-8",
-    )
-    profile = root / "gamma" / "profiles" / "extra.yaml"
-    profile.parent.mkdir(exist_ok=True)
-    profile.write_text(
-        yaml.safe_dump(
-            {
-                "name": "extra",
-                "label": "Extra",
-                "description": "Use this extra profile.",
-                "instructions": ["Apply the extra profile."],
-            },
-            sort_keys=False,
-        ),
-        encoding="utf-8",
-    )

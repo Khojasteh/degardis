@@ -50,7 +50,7 @@ The generated folder is ready to inspect or install:
 Degardis only writes inside the output directory you choose. Rebuilding a skill
 replaces that skill's folder and ZIP in that directory, but leaves everything
 else untouched. Before you build directly into an agent's skill directory, read
-[how Degardis replaces artifacts](docs/artifact-format.md#replace-an-artifact).
+[how Degardis replaces artifacts](https://github.com/Khojasteh/degardis/blob/main/docs/artifact-format.md#replace-an-artifact).
 
 Add the example's optional profile or build a ZIP:
 
@@ -105,17 +105,17 @@ A build includes a profile only when `--profile` names it; without the option,
 the bundle ships none.
 
 For exact command behavior, profile selectors, source schemas, and the Python
-API, see the [reference](docs/reference.md).
+API, see the [reference](https://github.com/Khojasteh/degardis/blob/main/docs/reference.md).
 
 ## Documentation
 
 | Reader goal | Document |
 | --- | --- |
-| Build and install the example | [Getting started](docs/getting-started.md) |
-| Understand the source and artifact models | [Concepts](docs/concepts.md) |
-| Create or modify a skill | [Authoring guide](docs/authoring-guide.md) |
-| Look up commands, schemas, or the Python API | [Reference](docs/reference.md) |
-| Inspect and install generated output | [Artifact format](docs/artifact-format.md) |
+| Build and install the example | [Getting started](https://github.com/Khojasteh/degardis/blob/main/docs/getting-started.md) |
+| Understand the source and artifact models | [Concepts](https://github.com/Khojasteh/degardis/blob/main/docs/concepts.md) |
+| Create or modify a skill | [Authoring guide](https://github.com/Khojasteh/degardis/blob/main/docs/authoring-guide.md) |
+| Look up commands, schemas, or the Python API | [Reference](https://github.com/Khojasteh/degardis/blob/main/docs/reference.md) |
+| Inspect and install generated output | [Artifact format](https://github.com/Khojasteh/degardis/blob/main/docs/artifact-format.md) |
 
 ## Development
 

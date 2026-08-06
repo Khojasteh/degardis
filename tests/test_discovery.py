@@ -9,8 +9,8 @@ from pathlib import Path
 
 import yaml
 
-from degardis.model import DegardisError
 from degardis.build import build_skills
+from degardis.model import DegardisError
 from degardis.registry import discover_skill_paths
 from degardis.validate import inspect_skills
 

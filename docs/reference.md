@@ -7,63 +7,95 @@ schemas, and Python API. For a first build, follow
 
 ## CLI
 
-All commands require one or more paths. Each path may name a skill directory
-or a collection directory; see [Discovery](#discovery). CLI paths expand `~`
-and environment variables. Relative paths are resolved from the current
-working directory.
+Degardis has five commands. `build` is the only one that creates or replaces
+anything; the others read source and report. Each section below opens with the
+reader the command is written for.
 
-Completed commands return status 0. Reports and build paths are written to
-standard output. Warnings and `[ERROR]` messages are written to standard error.
-An invalid source, selection, path, or filesystem operation returns status 1
-without a traceback. Invalid command syntax returns status 2 with command
-usage.
+### Paths
+
+`list`, `validate`, `agent`, and `build` each take one or more paths. Each path
+may name a skill directory or a collection directory; see
+[Discovery](#discovery). These paths expand `~` and environment variables, and a
+relative path is resolved from the current working directory.
+
+`explain` is the exception. It takes check codes instead of paths and reads no
+source at all.
+
+### Exit status
+
+Reports and build paths go to standard output. Warnings and `[ERROR]` messages
+go to standard error.
+
+| Status | Meaning |
+| --- | --- |
+| 0 | The command completed. |
+| 1 | Invalid source, selection, path, or filesystem operation. Degardis reports the problem without a Python traceback. |
+| 2 | Invalid command syntax. The command prints its usage. |
 
 ### `degardis list PATH [PATH ...]`
+
+For a person surveying what is on disk. Creates nothing.
 
 Lists each selected skill's title, manifest name, version, description,
 available profiles, whether it includes scripts, license, copyright, and
 absolute source path. Missing optional legal metadata is reported as
-`Not specified`; a skill with no profiles reports `None`. It does not apply
-profile defaults, validate the full source, execute scripts, or create output.
+`Not specified`; a skill with no profiles reports `None`. It does not validate
+the full source, execute scripts, or create output.
 
 ### `degardis validate PATH [PATH ...]`
 
-Validates discovery, manifests, entries, workflows, profiles, generated
-artifact-path collisions, and generated links for the selected skills. It does
-not execute bundled scripts and creates no artifact.
+For a person or a CI job asking whether a skill passes. Creates nothing.
 
-Every check runs before the command reports, so one run lists everything wrong
-with a skill rather than stopping at the first problem. A finding is either an
-error, which fails the skill, or a warning, which does not. Warnings cover:
+Checks discovery, manifests, entries, workflows, profiles, generated
+artifact-path collisions, and generated links for the selected skills. It
+creates no artifact and does not run bundled scripts.
 
-- a field the compiler does not recognize, at any level of the source, which
-  is ignored rather than applied;
-- an omitted optional field whose default silently changes the output, such as
-  an entry without a `title` or a primary workflow without a `description`;
-- an ordering the compiler rather than the author decided, such as entries that
-  declare no `priority` or share one;
-- a workflow no `use:` step reaches from the primary workflow.
+One run reports every problem it can reach. Validation does not stop at the
+first problem, either inside a file or across files, so you can repair a whole
+skill from a single report.
 
-Each skill is reported as a pass or failure, with its findings grouped below
-it. Every finding ends with the check that reported it, in parentheses, and the
-report closes with the one line that turns a code into an explanation:
+A problem that still builds is reported as a warning rather than an error.
+Warnings cover, among others:
+
+- unrecognized fields in the manifest, `interface`, `content`, entries,
+  workflows, workflow steps, and profiles;
+- YAML values that can load as something other than the text you wrote;
+- an omitted field whose default changes the built bundle, such as an entry
+  `title` or `priority` (see
+  [Optional fields that carry a behavioral default](#optional-fields-that-carry-a-behavioral-default));
+- a workflow that ships but that no `use` chain reaches.
+
+For the full list of codes this version can report, see
+[`degardis explain`](#degardis-explain-code-code-).
+
+The report marks each skill as a pass or a failure and lists its messages
+below it. Each message ends with the check that reported it, in parentheses:
 
 ```text
-[FAIL] Structured Summary (structured-summary)
-       1. entries/audience.yaml: rule must be a non-empty string (entry.missing-rule)
-       Warning: entries/fidelity.yaml: title is missing; the reference index
-                shows the entry id (entry.missing-title)
+Validation
 
-Summary: 0 passed, 1 failed, 1 error, 1 warning, 1 total.
+[PASS] Alpha (alpha)
+       Warning: <skill-path>/entries/rule-one.yaml:
+                unrecognized entry fields ignored: bogus_field (entry.unknown-field)
+
+Summary: 1 passed, 0 failed, 0 errors, 1 warning, 1 total.
 Run `degardis explain CODE [CODE ...]` for the checks behind the codes above.
 ```
 
-The final summary reports passed, failed, error, warning, and total counts.
-Success exits with status 0; any failed skill exits with status 1.
+Paths in the report are absolute; `<skill-path>` stands in for one here. A
+message carries a line number as well when the check knows one.
+
+Pass the codes to [`degardis explain`](#degardis-explain-code-code-), together
+or one at a time, to learn why those checks matter. The final summary counts
+passed, failed, and total skills, plus any errors and warnings.
+
+Status is 0 when every skill passes, and 1 when any skill fails.
 
 ### `degardis agent PATH [PATH ...]`
 
-Reports everything an AI agent needs to review, repair, and budget the selected
+For an AI agent that needs everything about a skill at once. Creates nothing.
+
+Reports everything an agent needs to review, repair, and budget the selected
 skills, with every error and warning aggregated in one run. It creates no
 output artifact and executes no bundled script.
 
@@ -73,13 +105,9 @@ Its reader pays for every token, so the output is line-oriented and terse:
 - paths are relative to the root named in the header;
 - sizes are the bytes of the *generated* Markdown, which is what an agent
   loads;
-- nothing is wrapped into prose, and listed rows are aligned into columns.
+- nothing is wrapped or padded into columns.
 
-Treat the format as unstable. It is written to be read by an agent that can
-adapt to it, not parsed by a script.
-
-The report is not written for a person. To read one yourself, `list` shows a
-skill's metadata in readable form and `validate` gives the pass or fail.
+Treat the format as unstable.
 
 Options:
 
@@ -88,8 +116,8 @@ Options:
 - `--all`: report every section.
 - `--profile [SKILL:]PROFILE`: measure and inventory the bundle this profile
   selection would build, using the same selector grammar and the same errors as
-  `build`. Without it, the manifest defaults apply, exactly as an unqualified
-  `build` applies them.
+  `build`. Without it, the report describes a bundle with no profile, exactly as
+  an unqualified `build` produces one.
 
 Sections, in the order they are rendered. Every skill block opens with `skill`,
 whatever the selection, so multi-skill output stays unambiguous:
@@ -99,7 +127,7 @@ whatever the selection, so multi-skill output stays unambiguous:
 | `skill` | yes | name, version, title, root, id namespace, description length, primary workflow, and content counts |
 | `identity` | | the full description, license, and copyright |
 | `budget` | yes | the generated `SKILL.md` size for the selected profiles, and the on-demand weight of entries, supporting workflows, and selected profiles |
-| `workflows` | yes | each workflow, marked `primary` for the primary workflow, with the step that reaches a supporting one, or `unreached` |
+| `workflows` | yes | each workflow with the step that reaches it from the primary workflow, or `unreached` |
 | `entries` | | each entry's local id, kind, priority, source path, and generated size |
 | `profiles` | | each profile's name, whether the selection includes it, source path, and generated size |
 | `scripts`, `assets` | | selected source paths and sizes |
@@ -114,9 +142,6 @@ are selected.
 would produce, so both agree with `build` under the same selector without
 anything being written to disk.
 
-The `budget` section measures the whole generated `SKILL.md` and, separately, its
-body without the YAML frontmatter — the prompt itself.
-
 Diagnostics use one fixed line shape, so an agent can locate a finding without
 parsing prose:
 
@@ -129,31 +154,53 @@ warn  <path>[:<line>] <code> <message>
 skill as a whole rather than a file. `<line>` appears only where the check
 knows one.
 
-`<code>` names the check, not its wording, and reads as `<namespace>.<check>`.
-The namespace is the construct the check concerns: `manifest`, `interface`,
-`content`, `entry`, `workflow`, `profile`, `output`, `yaml`, `icon`, or
-`source`. Pass any reported code to
-[`degardis explain`](#degardis-explain-code-code-) for the check behind it.
+`<code>` names the check, not its wording. Every code reads as
+`<namespace>.<check>`. The namespace is the construct the check concerns:
+`manifest`, `interface`, `content`, `entry`, `workflow`, `profile`, `output`,
+`yaml`, `icon`, or `source`. The check is written as hyphenated words, with one
+exception: where it names a field of the source, it spells that field exactly as
+the key does. The check for a missing `short_description` is therefore
+`interface.missing-short_description`, keeping the underscore of the key. If you
+know the key, you can write the code without looking it up. Pass any reported
+code to [`degardis explain`](#degardis-explain-code-code-) for the check behind
+it.
 
 `agent` exits with status 0 when no errors are found and status 1 when any
 selected skill has one or more errors, whichever sections were selected.
 
 ### `degardis explain CODE [CODE ...]`
 
-Explains the check each diagnostic code names: what triggers it, why it
-matters, and a failing and a passing example. It reads no source and takes no
-skill path, so a code from any report can be looked up on its own.
+For a person or agent holding a diagnostic code. Reads no skill source and
+creates nothing.
 
-Every code given is explained in one run, in the order supplied, and a repeated
-code is explained once. An unrecognized code exits with status 1 and lists
-every code this version can report, grouped by namespace, so a guessed code
-leads to the right one rather than to nothing.
+Explains each code given: what triggers the check, why it matters, and a failing
+and a passing example of the source it concerns.
 
-Explanations are written by hand rather than derived from the checks. A check
-knows the condition it tests, not why an author should care or what the source
-should say instead.
+```console
+degardis explain yaml.altered-scalar
+degardis explain entry.missing-priority entry.missing-title workflow.unreachable
+```
+
+Give as many codes as you like. A report usually names several, and one run
+explains all of them, so an agent repairing a skill needs one call rather than
+one per code. Codes are explained in the order given, separated by a blank line,
+and each block opens with its code on a line of its own. A code repeated in the
+same run is explained once.
+
+Every code any check can report has an entry. An unrecognized code exits with
+status 1 and lists every code this version knows, grouped by namespace. You
+therefore need no separate index to find the codes. When a run mixes known and
+unknown codes, the known ones are still explained on standard output, and the
+unknown ones are named together on standard error.
+
+Each entry is written by hand for the person or agent reading it, not derived
+from the check itself. It states what a one-line message cannot: what goes
+wrong in the built bundle when the check fires, and what corrected source looks
+like.
 
 ### `degardis build PATH [PATH ...] --output PATH`
+
+Produces the installable bundle. This is the only command that writes files.
 
 Builds one uncompressed skill folder per selected skill by default, or one
 `.zip` archive per skill with `--zip`.
@@ -167,22 +214,22 @@ Options:
 - `--profile all`: include every selected skill's profiles.
 - `--profile SKILL:all`: include every profile owned by one selected skill.
 
-The `--profile` option may be repeated. Providing one or more explicit
-selectors replaces all manifest defaults for that build. An unqualified
-selector that exists in several selected skills includes that profile in each
-of them. A named selector that matches no selected skill is an error.
-`--profile all` remains valid when selected skills define no profiles and
-builds them without profile additions.
+You may repeat `--profile`. Four rules govern how selectors resolve:
 
-Warnings collected while checking the sources are written to standard error
-after the artifacts are built, and counted in the summary line.
+- A build that supplies no selector includes no profile. Nothing in the
+  manifest adds one; only `--profile` does.
+- An unqualified selector that several selected skills define includes that
+  profile in each of them.
+- A named selector that matches no selected skill is an error.
+- `--profile all` stays valid when the selected skills define no profiles. It
+  then builds them without adding any profile.
 
-An uncompressed build installs the selected skills when `--output` is an
-agent's project or personal skill directory, such as `.agents/skills`,
+An uncompressed build installs the selected skills directly when `--output` is
+an agent's project or personal skill directory, such as `.agents/skills`,
 `.claude/skills`, `~/.agents/skills`, or `~/.claude/skills`. Degardis creates
-one `<skill-name>/` child in that directory. ZIP files are not installed
-skills in those locations; `--zip` instead produces archives ready for
-direct upload to ChatGPT.
+one `<skill-name>/` child inside that directory. A ZIP file placed in such a
+directory is not an installed skill; `--zip` instead produces archives ready to
+upload to ChatGPT.
 
 Before replacing output, Degardis validates every selected source and
 resolves every requested profile. It then processes skills one at a time.
@@ -199,35 +246,37 @@ Other entries in the output root are always preserved.
 
 For safety, Degardis rejects an output directory that is the same as,
 contains, or is contained by a selected skill source directory. A relative
-output path is resolved from the current working directory. On success, the
-command reports each skill with the absolute path of its generated folder or
-archive and the measurements of its generated `SKILL.md`, then closes with a
-summary. The measurement gives total bytes and lines first, then the body bytes,
-lines, and words, which exclude the frontmatter. It reflects the profiles this
-build included, so it matches what `degardis agent` reports for the same
-`--profile` selection.
+output path is resolved from the current working directory.
+
+On success, the command reports each skill with the absolute path of its
+generated folder or archive and the measurements of its generated `SKILL.md`,
+then closes with a summary. The measurement gives total bytes and lines first,
+then the body bytes, lines, and words, which exclude the frontmatter. It
+reflects the profiles this build included, so it matches what `degardis agent`
+reports for the same `--profile` selection.
 
 Generated text is written with `\n` line endings on every platform, so the same
 source produces the same bundle bytes wherever it is built.
 
 ## Discovery
 
-A path containing `skill.yaml` selects that skill. Otherwise, Degardis selects
-all descendant directories containing `skill.yaml`, recursively. Once discovery
-finds a skill directory, it does not search inside that skill for additional
-skills. Duplicate paths are ignored; duplicate names at different paths are
-rejected. A missing path, a non-directory path, or a directory with no
-descendant skills is an error.
+A path that contains `skill.yaml` selects that skill. Any other path is treated
+as a collection: Degardis searches it recursively and selects every descendant
+directory that contains `skill.yaml`. Once discovery finds a skill directory, it
+does not search inside that skill for more skills.
 
-A generated bundle is not a source. A directory that holds a `SKILL.md` but no
-`skill.yaml` is refused, whether it is named directly or found while searching a
-collection, and so is a `.zip` archive. Without that check, discovery would
-descend past a bundle and pick up any Markdown template the skill ships as an
-asset, then report a pass for a skill nobody asked about.
+Degardis ignores a duplicate path, but rejects the same skill name found at two
+different paths. A missing path, a path that is not a directory, and a directory
+with no skills below it are each an error.
 
-A skill whose manifest cannot be read is left for the command to report. It has
-no name to collide with, and a command that reports on skills has to reach it in
-order to report it, against the check that found the failure.
+Degardis commands read source, never generated output. A directory that holds a
+root `SKILL.md` and no `skill.yaml` is a built bundle. Degardis refuses such a
+directory, a collection that contains one, and a `.zip` archive, and the error
+says which one it found.
+
+This check matters because a bundle may ship a Markdown template as an asset.
+Without the check, discovery would continue into the bundle, treat that
+template as a skill, and report a pass for a skill you never named.
 
 ## `skill.yaml`
 
@@ -241,32 +290,71 @@ order to report it, against the check that found the failure.
 | `copyright`        | no       | Non-empty copyright notice                                                                     |
 | `description`      | yes      | Runtime selection description, at most 1024 characters                                         |
 | `primary_workflow` | yes      | ID of a workflow in this skill                                                                 |
-| `entry_kinds`      | no       | Derived from the entries; a manifest value is ignored with a warning                           |
-| `content`          | no       | Entry, workflow, script, and asset globs                                                       |
-| `profiles`         | no       | Profile directory and defaults                                                                 |
+| `content`          | yes      | Globs that select the entry, workflow, profile, script, and asset files the skill ships        |
 | `interface`        | yes      | Agent-facing display metadata                                                                  |
 
-`dependencies` is not supported. Unlisted skill fields are ignored with a
-warning, as are unlisted `interface`, `content`, `profiles`, entry, workflow,
-and workflow-step fields: a misspelled key is reported rather than applied.
-
-`content` accepts only `entries`, `workflows`, `scripts`, and `assets`;
-an unrecognized key is ignored with a warning. Each value is a list of non-empty glob strings.
-Default patterns are `entries/*.yaml`, `workflows/*.yaml`, `scripts/**/*`, and
-`assets/**/*`. Patterns must stay inside the skill directory. Scripts and
-assets are copied into the output at the same relative path they have in the
-skill source; ZIP output marks scripts executable.
+Unlisted skill fields are ignored with a warning.
 
 `name` is 1–64 lowercase letters, digits, or single hyphens, must match its
 directory name, and cannot be `all`.
 
 ### Content configuration
 
-Each `content` key takes a list of glob patterns, relative to the skill root.
+`content` says which files the skill ships. It has five keys:
 
-Patterns apply in order, as in `.gitignore`. A pattern prefixed with `!`
-excludes what the patterns before it selected, and a later pattern can add a
-file back:
+| Key         | Selects                                              |
+| ----------- | ---------------------------------------------------- |
+| `entries`   | entry sources, written in YAML                       |
+| `workflows` | workflow sources, written in YAML                    |
+| `profiles`  | profile sources, written in YAML                     |
+| `scripts`   | executable helpers, copied into the bundle unchanged |
+| `assets`    | supporting files, copied into the bundle unchanged   |
+
+Each key takes a list of glob patterns, and each pattern must be a non-empty
+string. Any other `content` key is ignored, with a warning.
+
+No key has a default. A key you leave out means the skill ships no content of
+that kind, and Degardis looks for none. Nothing is included because it happens
+to sit in a directory with a familiar name; the manifest alone decides.
+
+Every skill therefore needs at least `workflows`. Without it, no workflow is
+loaded, the primary workflow cannot be found, and validation fails.
+
+Two mistakes leave content out of the bundle without the bundle showing it, so
+Degardis reports both as errors:
+
+- a pattern that matches nothing in the skill directory, an exclusion included
+  (`content.unmatched-pattern`);
+- a key you declared that selects no file in the end, for example because an
+  exclusion removed everything it selected (`content.empty-selection`).
+
+A pattern cannot point outside the skill directory. Degardis copies each
+selected script and asset to the same relative path in the output. In ZIP
+output, scripts are marked executable.
+
+`profiles` must select profile sources only. A profile's Markdown detail files
+are not profile sources: the profile names them in `details_files`, and a
+pattern that also matches them, such as `profiles/**/*`, fails. Write
+`profiles/*.yaml` instead.
+
+#### How patterns are matched
+
+Patterns use `/` as their only separator, on every platform. Names are compared
+exactly, upper and lower case included, even on Windows and macOS, where the
+filesystem itself ignores case. If the directory is named `entries`, the pattern
+`Entries/*.yaml` matches nothing and is reported as
+`content.unmatched-pattern`. The same source therefore selects the same files on
+every computer.
+
+Within one name, `*` matches any run of characters and `?` matches one. As a
+whole segment, `**` matches any number of directories, including none, so
+`assets/**/*` selects everything under `assets/` at any depth. `**` does not
+descend into a symbolic link, so a link pointing back at one of its own parent
+directories cannot make matching run forever.
+
+Start a pattern with `!` to exclude the files it matches. Degardis reads a list
+from top to bottom. An exclusion drops the files that the patterns above it
+selected, and a pattern below the exclusion can select a file again:
 
 ```yaml
 content:
@@ -276,50 +364,34 @@ content:
   - assets/drafts/keep.md
 ```
 
-Quote any pattern beginning with `!`. Unquoted, YAML reads it as a type tag and
-the file does not parse.
+Always put quotes around a pattern that starts with `!`. Without them, YAML
+treats it as a tag, and the manifest does not load.
 
-Excluding a directory removes everything selected beneath it, so
-`"!assets/drafts"` and `"!assets/drafts/**"` do the same thing. An exclusion
-that names something outside the skill directory is an error, exactly as a
-selection is.
+An exclusion that matches a directory drops every selected file inside it. This
+is why `!assets/drafts` and `!assets/drafts/**` do the same thing.
 
-#### How patterns are matched
+An exclusion matches from the skill directory downwards, like every other
+pattern. To exclude a file at any depth, write `!assets/**/*.tmp`, not `!*.tmp`.
 
-`/` is the only separator a pattern may use, on every platform. Each segment is
-matched against the names a directory actually holds, including their case, so
-which files a skill ships follows from the source alone and not from the machine
-building it. A matched path keeps the case the filesystem holds.
+Degardis excludes two kinds of path on its own: anything hidden, and anything
+inside a directory whose name starts with a dot. A dot on a file's own name does
+not count, so `assets/**/*` still selects `assets/.gitignore`.
 
-`*` and `?` match within one segment. `**` stands for any number of directories,
-including none. A symlinked directory is never descended into.
+To include something Degardis excluded this way, name that file or directory in
+the pattern instead of matching it with a wildcard:
 
-Some files are never content, whatever the patterns say:
+```yaml
+content:
+  assets:
+  - assets/**/*       # by design, skips assets/.vscode/
+  - assets/.vscode/*  # selects it again
+```
 
-- files and directories the filesystem marks hidden or system;
-- anything inside a dot-prefixed directory, such as `.git` or `.venv` — a
-  dot-prefixed *file* is ordinary content, since `.gitignore` and
-  `.editorconfig` are files a skill may legitimately ship;
-- Python bytecode: `__pycache__` directories, `.pyc`, and `.pyo`;
-- host bookkeeping such as `.DS_Store`, `._` sidecars, `Thumbs.db`, and
-  `desktop.ini`.
+No pattern selects these files, and naming them explicitly does not change that:
 
-A wildcard is written without knowing what it will match, so it never reaches a
-hidden path. A pattern that spells out a dot-prefixed directory, or that names a
-path with no wildcard at all, selects exactly what it names.
-
-### Profile configuration
-
-The optional manifest `profiles` mapping accepts:
-
-| Field       | Required | Meaning                                                                             |
-| ----------- | -------- | ----------------------------------------------------------------------------------- |
-| `directory` | no       | Profile directory relative to the skill root; defaults to `profiles`                |
-| `defaults`  | no       | Profiles used when a build has no explicit `--profile`; defaults to an empty list   |
-
-The profile directory must stay inside the skill source. Supplying any explicit
-profile selector replaces `defaults` for that build; it does not add to them.
-Every default name must identify a profile in the same skill.
+- Python bytecode, which Python generates from the skill's own scripts.
+- The files an operating system creates for itself, such as a thumbnail cache
+  or a folder setting.
 
 ### Interface configuration
 
@@ -335,9 +407,11 @@ The required manifest `interface` mapping accepts:
 | `icon_small`        | no       | Source image for the small role; overrides `icon`               |
 | `icon_large`        | no       | Source image for the large role; overrides `icon`               |
 
+Unlisted `interface` fields are ignored with a warning.
+
 Icon paths must be relative to the skill directory, but may resolve outside it
-so several skills can reuse one source image. Builds convert populated roles to
-self-contained PNG files under `assets/` and emit only the standard
+so several skills can reuse one source image. Builds convert populated roles
+to self-contained PNG files under `assets/` and emit only the standard
 `icon_small` and `icon_large` paths in `agents/openai.yaml`.
 
 SVG and Pillow-supported raster inputs are accepted. Non-ICO images retain
@@ -366,10 +440,45 @@ are rejected.
 | `exceptions`  | no       | list of strings  | Explicit exceptions                           |
 | `examples`    | no       | list of strings  | Short examples that clarify application       |
 
-`kind` is one of `principle`, `policy`, `heuristic`, `pattern`, `constraint`,
-or `rule`. Entries render in ascending `(priority, kind, id)` order.
+Unlisted entry fields are ignored with a warning.
+
+The kinds this compiler knows are `principle`, `policy`, `heuristic`,
+`pattern`, `constraint`, and `rule`. This list is not closed. A kind outside it
+produces a warning rather than an error, and the entry still compiles with the
+kind it declares, so source written for a later compiler also builds on this
+one. An empty or non-string `kind` is an error.
+
+Entries render in ascending `(priority, kind, id)` order. `priority` has no
+required range and need not be unique; only the relative order matters.
+
+Two ordering cases produce a warning, because in both the compiler chooses the
+order instead of the author:
+
+- An omitted `priority` defaults to `100`. Any smaller value an author chose
+  sorts above it, so the entry lands last.
+- Entries that share a priority fall back to a sort by kind, then by id.
+
 Generated filenames are derived from IDs and must not collide, including
 case-insensitive collisions.
+
+### Optional fields that carry a behavioral default
+
+Most optional fields simply omit output when absent. These change what the
+build produces, so leaving one out is reported as a warning naming the default
+that was substituted:
+
+| Field | Default when omitted |
+| --- | --- |
+| entry `title` | the entry `id`, which is what the always-loaded reference index then shows |
+| entry `kind` | `rule`, which changes the generated filename, the sort order, and the recorded kind |
+| entry `priority` | `100`, sorting the entry below every authored priority |
+| workflow `title` | the workflow `id`, used as the link text in the supporting-workflow index |
+| primary workflow `description` | nothing, leaving the generated body with no statement of what the skill does |
+| a step's `instruction` | nothing, rendering the step as a heading alone; `use` steps are exempt |
+
+The manifest `title` is the exception: its default is derived from `name` and
+is usually correct, so it is not warned about. `degardis agent` marks it as
+derived instead.
 
 ## Workflow schema
 
@@ -380,14 +489,32 @@ case-insensitive collisions.
 | `title`       | no       | string           | Supporting-workflow heading; defaults to `id` |
 | `description` | no       | string           | Purpose shown before the generated steps      |
 
-A string step must be non-empty. A mapping step accepts only `id`, `action`,
-`instruction`, `when`, and `use`, each as a non-empty string. It must define at
-least one of `use`, `action`, `id`, or `instruction`. `use` may be combined
-with `id` or `when`, but not with `action` or `instruction`, and must reference
-a workflow ID in the same skill. Cross-skill and unknown references are
-invalid.
+Unlisted workflow fields are ignored with a warning.
+
+A string step must be non-empty. A mapping step accepts `id`, `action`,
+`instruction`, `when`, and `use`, each as a non-empty string.
+
+Unlisted step fields are ignored with a warning.
+
+A step must define at least one of `use`, `action`, `id`, or `instruction`.
+`use` may be combined with `id` or `when`, but not with `action` or
+`instruction`, and must reference a workflow ID in the same skill. Cross-skill
+and unknown references are invalid.
+
+A workflow that no chain of `use` steps reaches from the primary workflow is
+reported as a warning. It still builds and still appears in the generated
+supporting-workflow index, but nothing invokes it.
 
 ## Profile schema
+
+Degardis finds profile sources through `content.profiles`, in the same way it
+finds every other kind of content. A skill whose manifest has no
+`content.profiles` key has no profiles.
+
+Profiles are the one kind of content a bundle does not have to carry. A build
+includes only the profiles its `--profile` selectors name, and includes none
+when you name none. The manifest says which profiles exist; the build command
+says which of them ship.
 
 | Field           | Required | Type                      | Meaning                                       |
 | --------------- | -------- | ------------------------- | --------------------------------------------- |
@@ -397,6 +524,8 @@ invalid.
 | `instructions`  | yes      | non-empty list of strings | Profile-specific instructions                 |
 | `details`       | no       | Markdown string           | Additional generated reference content        |
 | `details_files` | no       | non-empty list of strings | Markdown files relative to the profile source |
+
+Unlisted profile fields are ignored with a warning.
 
 `details` and `details_files` are mutually exclusive. Detail files must stay
 inside the skill directory and must have a `.md` extension. Combined details
@@ -436,9 +565,9 @@ CLI. Discovery occurs when the compiler is created.
 
 Builds every selected skill and returns a `list[pathlib.Path]` containing one
 output path per skill. `profiles` is a list containing the same selectors
-accepted by repeated CLI `--profile` options. `None` applies manifest defaults;
-an explicit list, including an empty list, replaces those defaults.
-`as_zip=True` returns paths to ZIP archives instead of bundle directories.
+accepted by repeated CLI `--profile` options. `None` and an empty list both
+build without any profile. `as_zip=True` returns paths to ZIP archives instead
+of bundle directories.
 
 As with the CLI, replacement is atomic per skill rather than across the whole
 call. A failed replacement restores that skill's previous folder and ZIP, but

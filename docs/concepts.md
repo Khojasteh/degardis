@@ -33,9 +33,13 @@ The manifest supplies:
 - the skill name, title, and version,
 - a description that helps an agent decide when to use the skill,
 - the primary workflow,
-- the content patterns,
-- optional profile configuration,
+- the globs that select the entries, workflows, profiles, scripts, and assets
+  the skill ships,
 - agent-facing interface metadata.
+
+A bundle carries only what the manifest selects. The directory names above are
+a convention, not a rule: a directory Degardis is not told about is not part of
+the skill.
 
 The format version selects the compiler contract. The skill version identifies
 the authored content; it is not dependency-resolution metadata.
@@ -85,9 +89,10 @@ A profile adds environment-specific instructions at build time, such as a
 different audience, format, technology, or environment. Profiles stay inside
 the owning skill's bundle.
 
-A skill can define defaults, while `--profile` selects explicit profiles. If
-any explicit selector is supplied, it replaces manifest defaults for that
-build.
+A profile is the one kind of content a bundle does not have to carry. The
+manifest says which profiles the skill defines; the `--profile` option of the
+build command says which of them this bundle ships. A build that names no
+profile ships none.
 
 ## Scripts and assets
 

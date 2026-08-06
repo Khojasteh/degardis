@@ -38,7 +38,6 @@ MANIFEST_FIELDS = {
     "description",
     "primary_workflow",
     "entry_kinds",
-    "profiles",
     "content",
     "interface",
 }
@@ -52,7 +51,6 @@ INTERFACE_FIELDS = {
     "icon_large",
 }
 DERIVED_MANIFEST_FIELDS = {"entry_kinds"}
-PROFILES_FIELDS = {"directory", "defaults"}
 
 # The required fields whose absence is its own check code, spelled out rather
 # than composed, so every code a run can report is a literal in the source that
@@ -142,28 +140,12 @@ def _validate_manifest_types(skill: Skill, diagnostics: Diagnostics) -> None:
         diagnostics.error(
             f"{skill.name}: unsupported format_version {format_version}; "
             f"supported versions: {supported}",
-            "manifest.unsupported-format-version",
+            "manifest.unsupported-format_version",
             path,
         )
     _validate_non_empty_string(
         skill, manifest, "title", "manifest.invalid-type", diagnostics, required=False
     )
-
-    profiles = manifest.get("profiles", {})
-    if not isinstance(profiles, dict):
-        diagnostics.error(
-            f"{skill.name}: profiles must be a mapping", "manifest.invalid-type", path
-        )
-    else:
-        defaults = profiles.get("defaults", [])
-        if not isinstance(defaults, list) or any(
-            not isinstance(item, str) or not item.strip() for item in defaults
-        ):
-            diagnostics.error(
-                f"{skill.name}: profiles.defaults must be a list of strings",
-                "manifest.invalid-type",
-                path,
-            )
 
     if "interface" not in manifest:
         for field, code in REQUIRED_INTERFACE_CODES.items():
@@ -222,16 +204,6 @@ def _validate_manifest_warnings(skill: Skill, diagnostics: Diagnostics) -> None:
             "manifest.derived-field",
             path,
         )
-    profiles = skill.manifest.get("profiles")
-    if isinstance(profiles, dict):
-        unknown_profiles = sorted(set(profiles) - PROFILES_FIELDS)
-        if unknown_profiles:
-            diagnostics.warning(
-                f"{skill.name}: unrecognized profiles fields ignored: "
-                f"{', '.join(unknown_profiles)}",
-                "manifest.unknown-profiles-field",
-                path,
-            )
     interface = skill.manifest.get("interface")
     if isinstance(interface, dict):
         unknown_interface = sorted(set(interface) - INTERFACE_FIELDS)
@@ -413,6 +385,8 @@ def _selected_profiles(
     diagnostics: Diagnostics,
 ) -> list[str]:
     """Resolve the same profile selection a build would make, or report why not."""
+    if selectors is None:
+        return []
     try:
         selection = select_profiles([content], selectors)
     except DegardisError as exc:
@@ -478,7 +452,7 @@ def _check_interface(skill: Skill, diagnostics: Diagnostics) -> None:
     ):
         diagnostics.error(
             f"{skill.name}: interface.short_description must be 25-64 characters",
-            "interface.short-description-length",
+            "interface.short_description-length",
             _manifest_path(skill),
         )
     default_prompt = interface.get("default_prompt")
@@ -489,7 +463,7 @@ def _check_interface(skill: Skill, diagnostics: Diagnostics) -> None:
     ):
         diagnostics.error(
             f"{skill.name}: interface.default_prompt must mention ${skill.name}",
-            "interface.default-prompt-token",
+            "interface.default_prompt-token",
             _manifest_path(skill),
         )
 

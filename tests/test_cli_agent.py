@@ -16,16 +16,6 @@ from degardis.cli import main
 from tests.support import FIXTURES, copy_skills
 
 
-def with_an_unreached_workflow(root: Path) -> None:
-    """Give one fixture skill a workflow no step reaches."""
-    source = root / "gamma" / "workflows" / "run.yaml"
-    data = yaml.safe_load(source.read_text(encoding="utf-8"))
-    (source.parent / "orphan.yaml").write_text(
-        yaml.safe_dump(dict(data, id="gamma.orphan", title="Orphan"), sort_keys=False),
-        encoding="utf-8",
-    )
-
-
 class AgentCommandTests(unittest.TestCase):
     def test_agent_reports_the_default_sections_only(self):
         stdout = io.StringIO()

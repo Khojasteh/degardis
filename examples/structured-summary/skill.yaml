@@ -11,13 +11,12 @@ content:
   - entries/*.yaml
   workflows:
   - workflows/*.yaml
+  profiles:
+  - profiles/*.yaml
   scripts:
   - scripts/*.py
   assets:
   - assets/*.md
-profiles:
-  directory: profiles
-  defaults: []
 interface:
   display_name: Structured Summary
   short_description: Turn supplied material into a clear summary

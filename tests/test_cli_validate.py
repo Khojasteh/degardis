@@ -21,7 +21,7 @@ class ValidateCommandTests(unittest.TestCase):
             root = copy_skills(Path(directory))
             source = root / "alpha" / "skill.yaml"
             data = yaml.safe_load(source.read_text(encoding="utf-8"))
-            data["profiles"]["defaults"] = ["missing-profile"]
+            data["content"]["assets"] = ["assets/*.png"]
             source.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
 
             stdout = io.StringIO()
@@ -33,7 +33,7 @@ class ValidateCommandTests(unittest.TestCase):
             self.assertIn("Validation\n", report)
             self.assertIn("[FAIL] Alpha (alpha)", report)
             self.assertIn(
-                "1. Unknown default profiles for alpha: missing-profile", report
+                "1. alpha: content.assets pattern assets/*.png matches nothing", report
             )
             self.assertIn("Summary: 0 passed, 1 failed, 1 error, 0 warnings, 1 total.", report)
 
@@ -102,6 +102,7 @@ class ValidateCommandTests(unittest.TestCase):
             manifest = root / "alpha" / "skill.yaml"
             data = yaml.safe_load(manifest.read_text(encoding="utf-8"))
             data["unknown_field"] = "on"
+            data["content"]["assets"] = ["assets/*.png"]
             data["interface"]["default_prompt"] = "Missing token"
             data["content"]["unknown"] = ["unknown/**/*"]
             text = yaml.safe_dump(data, sort_keys=False)
@@ -131,6 +132,7 @@ class ValidateCommandTests(unittest.TestCase):
         self.assertEqual(1, code)
         report = stdout.getvalue()
         for message in (
+            "content.assets pattern assets/*.png matches nothing",
             "interface.default_prompt must mention $alpha",
             "cross-skill",
             "workflow reference beta.run",
@@ -139,6 +141,7 @@ class ValidateCommandTests(unittest.TestCase):
             "must be a list of strings",
             "Warning: alpha: unrecognized manifest fields ignored: unknown_field",
             "Warning: alpha: unrecognized content fields ignored: unknown",
+            "may coerce in YAML",
         ):
             with self.subTest(message=message):
                 self.assertIn(message, report)

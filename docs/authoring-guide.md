@@ -1,20 +1,21 @@
 # Authoring skills
 
-This guide takes a skill author from an empty directory to a validated,
-inspectable bundle. It uses a minimal `my-skill` source for the first build and
-the repository's public
-[`structured-summary`](../examples/structured-summary/) example for optional
-features. For exact field constraints, see the [reference](reference.md).
+This guide takes you from an empty directory to a validated, inspectable
+bundle. It starts with a minimal `my-skill` source, then shows optional
+features using the repository's public
+[`structured-summary`](../examples/structured-summary/) example. For exact
+field constraints, see the [reference](reference.md).
 
 ## 1. Start with one outcome
 
-Give a skill one outcome it can complete without another installed skill.
+Give your skill one outcome it can complete without another installed skill.
+
 `structured-summary` owns turning supplied material into a summary for a
-defined reader and purpose. The material can concern any subject.
+defined reader and purpose. The material can be about any subject.
 
 Use a lowercase, hyphenated name of at most 64 characters. The directory name
-and manifest `name` must match. Write the description in ordinary request
-language so an agent can recognize when the skill applies:
+and the manifest `name` must match. Write the description as an ordinary
+request so an agent can recognize when the skill applies:
 
 ```yaml
 name: structured-summary
@@ -44,6 +45,9 @@ format_version: 1
 version: 0.1.0
 description: Turn supplied notes into a concise action list.
 primary_workflow: my-skill.run
+content:
+  workflows:
+  - workflows/*.yaml
 interface:
   display_name: My Skill
   short_description: Turn notes into a concise action list
@@ -66,7 +70,7 @@ steps:
     details.
 ```
 
-From the directory containing `my-skill/`, verify the source and build its
+From the directory that contains `my-skill/`, verify the source and build its
 first artifact:
 
 ```console
@@ -75,7 +79,7 @@ degardis build my-skill --output .artifacts
 ```
 
 Success creates `.artifacts/my-skill/SKILL.md`. Keep editing the YAML source,
-then validate and rebuild; generated files are replaceable output.
+then validate and rebuild. Generated files are replaceable output.
 
 The canonical example shows the optional directories:
 
@@ -104,8 +108,10 @@ Only `skill.yaml` and the primary workflow are universally required.
 Add entries, supporting workflows, profiles, scripts, and assets only when
 they materially improve repeated execution.
 
-Degardis applies default content globs when `content` is omitted, so a
-minimal source can use `workflows/*.yaml` without declaring it explicitly.
+Every directory you use must be declared under `content` in the manifest.
+Degardis ships nothing you have not asked for, so a directory you create but do
+not declare is simply not part of the skill. This is why the minimal manifest
+above already declares `workflows`.
 
 The manifest must still provide the required `interface` metadata shown in the
 minimal manifest.
@@ -128,13 +134,12 @@ content:
   - entries/*.yaml
   workflows:
   - workflows/*.yaml
+  profiles:
+  - profiles/*.yaml
   scripts:
   - scripts/*.py
   assets:
   - assets/*.md
-profiles:
-  directory: profiles
-  defaults: []
 interface:
   display_name: Structured Summary
   short_description: Turn supplied material into a clear summary
@@ -152,6 +157,11 @@ The version fields have separate meanings:
 Content globs are relative to the skill root and cannot escape it. Scripts and
 assets are copied byte-for-byte. Icons are rendered to agent-compatible PNG
 assets.
+
+Declare a content key only for the files the skill really ships. A key you
+declare must select at least one file, and every pattern in it must match
+something, or validation fails. This is deliberate: a misspelled pattern is
+otherwise invisible, because the bundle it produces looks complete.
 
 The three interface fields serve different readers:
 
@@ -218,9 +228,9 @@ A step may be a non-empty string or a mapping. A mapping can use:
 - `when` as an agent-evaluated condition; and
 - `use` to follow another workflow in the same skill.
 
-A mapping must contain at least one of `use`, `action`, `id`, or `instruction`.
-`use` cannot be combined with `action` or `instruction`, and it cannot
-reference another skill. Supporting workflows are generated under
+A mapping must contain at least one of `use`, `action`, `id`, or
+`instruction`. `use` cannot be combined with `action` or `instruction`, and it
+cannot reference another skill. Supporting workflows are generated under
 `references/workflows/`.
 
 ## 6. Add profiles only for material variants
@@ -241,8 +251,21 @@ details_files:
 
 The filename and `name` must match. A profile needs a label, a selection
 description, and at least one instruction. Use either inline `details` or
-`details_files`, not both. Detail files must remain inside the skill and must
+`details_files`, not both. Detail files must stay inside the skill and must
 not contain a level-one heading.
+
+Declare your profile sources like any other content, and keep the pattern to
+the profile files themselves so it does not also pick up their detail Markdown:
+
+```yaml
+content:
+  profiles:
+  - profiles/*.yaml
+```
+
+A build carries a profile only when you ask for it with `--profile`. Without
+that option, the bundle ships no profile at all, so write the skill so it works
+without one.
 
 Move shared guidance into the core workflow or entries. Delete a profile if it
 adds only generic advice.
@@ -254,10 +277,10 @@ that an agent reads, copies, or fills in.
 
 The example includes:
 
-- `scripts/list_headings.py`, a deterministic helper for exposing the structure
+- `scripts/list_headings.py`, a deterministic helper that exposes the structure
   of Markdown material;
 - `assets/template.md`, a starting structure for the summary; and
-- `assets/icon.svg`, an interface icon source.
+- `assets/icon.svg`, a source image for the interface icon.
 
 Keep instructions in YAML rather than hiding them in an asset.
 
@@ -270,26 +293,36 @@ exception: relative icon paths may resolve outside the skill so several skills
 can share a source image. The generated bundle remains self-contained because
 Degardis converts and copies the selected icons.
 
-
-Content patterns read from top to bottom. A pattern prefixed with `!` removes
-what the patterns above it selected, and a later pattern can put a file back:
+You can keep drafts and working notes next to the files you ship. Start a
+pattern with `!` to leave them out, instead of making the include pattern
+narrower until it happens to fit:
 
 ```yaml
 content:
   assets:
   - assets/**/*
   - "!assets/drafts/**/*"
-  - assets/drafts/keep.md
 ```
 
-Quote any pattern that begins with `!`. Left unquoted, YAML reads it as a type
-tag and the manifest does not parse.
+Degardis reads the patterns from top to bottom, so a pattern below an exclusion
+can bring a file back. Always put quotes around a pattern that starts with `!`,
+or YAML treats it as a tag.
 
-You do not have to exclude the files your tools leave behind. Hidden and system
-files, anything inside a dot-prefixed directory such as `.git` or `.venv`,
-Python bytecode, and host bookkeeping like `.DS_Store` and `Thumbs.db` are never
-content, whatever the patterns say. See
-[content patterns](reference.md#content-configuration) for the full rules.
+Write every pattern with `/` between its parts, and match the upper and lower
+case of your directory and file names exactly. `!Assets/drafts/**/*` excludes
+nothing from a directory named `assets`, even on Windows and macOS, where the
+computer itself ignores case. Degardis reports a pattern that matches nothing,
+so such a mistake fails validation instead of shipping different files on
+different computers.
+
+Some files need no exclusion at all. Degardis never ships Python bytecode or
+the files your operating system creates for itself. It also leaves out
+anything hidden and anything inside a directory whose name starts with a dot,
+but not a file whose own name starts with one. This keeps files that belong to
+your computer or environment out of a bundle you hand to someone else.
+
+See [Content configuration](reference.md#content-configuration) for the full
+pattern rules.
 
 ## 8. Validate, build, and inspect
 
@@ -299,18 +332,19 @@ Validate your source without writing output:
 degardis validate my-skill
 ```
 
-Inspect metadata and profiles:
+Every finding names the check that reported it. When a message alone does not
+say why the problem matters, ask for the check behind its code. Pass several
+codes at once to work through a whole report:
+
+```console
+degardis explain entry.missing-priority
+degardis explain entry.missing-priority workflow.missing-description
+```
+
+Review metadata and available profiles:
 
 ```console
 degardis list my-skill
-```
-
-Every message a report prints ends with the check that produced it. To find out
-what a check means and how to satisfy it, pass its code to `explain`, as many at
-a time as the report gave you:
-
-```console
-degardis explain entry.missing-priority entry.missing-title
 ```
 
 Build and inspect the artifact:
@@ -328,14 +362,19 @@ Inspect:
 - copied scripts and assets; and
 - generated icon files.
 
-Some items are emitted only when the source declares them. To inspect a
-profile and icons, build the canonical example's detailed variant:
+If you are an AI agent rather than a person, `degardis agent my-skill --all`
+answers all of this in one command. It reports the file list a build would
+write without actually writing one. See
+[the reference](reference.md#degardis-agent-path-path-).
+
+Some items appear only when the source declares them. To inspect a profile and
+icons, build the canonical example's detailed variant:
 
 ```console
 degardis build examples/structured-summary --profile detailed --output .artifacts
 ```
 
-Run the bundled scripts with representative input as a separate check;
+Run the bundled scripts with representative input as a separate check.
 `degardis validate` verifies source structure and generated links but does not
 execute scripts.
 
@@ -344,11 +383,6 @@ Also exercise ZIP output when it is a distribution format:
 ```console
 degardis build my-skill --zip --output .artifacts
 ```
-
-If you are an AI agent rather than a person, `degardis agent my-skill --all`
-reports all of the above in one pass: every entry, workflow, and profile with
-its authored path and generated size, the files a build would write, what the
-skill costs to load, and every error and warning found.
 
 ## 9. Preserve the example boundary
 
@@ -369,6 +403,5 @@ become tutorial dependencies.
 - Every profile materially changes execution.
 - Workflow composition stays inside the skill.
 - Scripts are necessary and tested; assets are genuine output inputs.
-- `degardis validate` succeeds, and every warning it reports is either fixed
-  or a deliberate choice.
+- `degardis validate` succeeds.
 - Folder and ZIP artifacts contain only expected files.

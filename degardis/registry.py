@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from .model import DegardisError, Diagnostics, Profile, Skill, ensure_within
+from .model import DegardisError, Diagnostics, Profile, Skill
 from .yamlsource import load_yaml
 
 
@@ -38,16 +38,6 @@ class SkillRepository:
                 f"{manifest_name or '<missing>'}"
             )
         return Skill(name=name, root=path.parent, manifest=manifest)
-
-    def profile_owners(self) -> dict[str, list[str]]:
-        owners: dict[str, list[str]] = {}
-        for skill_name in self.names():
-            skill = self.load(skill_name)
-            for profile in load_skill_profiles(skill):
-                owners.setdefault(profile.name, []).append(skill_name)
-        return {
-            name: sorted(values) for name, values in sorted(owners.items())
-        }
 
 
 def available_skills(root: Path) -> list[str]:
@@ -156,20 +146,6 @@ def _discover_skill_directories(root: Path) -> list[Path]:
                 _reject_generated_bundle(child)
                 pending.append(child)
     return sorted(discovered)
-
-
-def profile_source_paths(skill: Skill) -> list[Path]:
-    config = skill.manifest.get("profiles", {})
-    if not isinstance(config, dict):
-        raise DegardisError(f"{skill.name}: profiles must be a mapping")
-    directory_value = config.get("directory", "profiles")
-    if not isinstance(directory_value, str) or not directory_value.strip():
-        raise DegardisError(
-            f"{skill.name}: profiles.directory must be a non-empty string"
-        )
-    directory = skill.root / directory_value
-    ensure_within(directory, skill.root, f"{skill.name}: profile directory")
-    return sorted(directory.glob("*.yaml"))
 
 
 def load_profile(
@@ -336,18 +312,3 @@ def _contains_level_one_heading(markdown: str) -> bool:
         if fence_character is None and re.match(r"^ {0,3}#(?:[ \t]|$)", line):
             return True
     return False
-
-
-def load_skill_profiles(skill: Skill) -> list[Profile]:
-    config = skill.manifest.get("profiles", {})
-    if not isinstance(config, dict):
-        raise DegardisError(f"{skill.name}: profiles must be a mapping")
-    profiles = [
-        load_profile(path, skill.name, skill.root)
-        for path in profile_source_paths(skill)
-    ]
-    return [profile for profile in profiles if profile is not None]
-
-
-def available_profile_owners(root: Path) -> dict[str, list[str]]:
-    return SkillRepository(root).profile_owners()

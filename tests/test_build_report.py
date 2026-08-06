@@ -67,7 +67,7 @@ class BuildReportTests(unittest.TestCase):
             manifest = root / "alpha" / "skill.yaml"
             data = yaml.safe_load(manifest.read_text(encoding="utf-8"))
             data["interface"]["default_prompt"] = "Missing token"
-            data["profiles"]["defaults"] = ["missing-profile"]
+            data["content"]["assets"] = ["assets/*.png"]
             manifest.write_text(
                 yaml.safe_dump(data, sort_keys=False),
                 encoding="utf-8",
@@ -79,7 +79,7 @@ class BuildReportTests(unittest.TestCase):
         message = str(raised.exception)
         self.assertIn("2 errors:", message)
         self.assertIn("interface.default_prompt must mention $alpha", message)
-        self.assertIn("Unknown default profiles for alpha: missing-profile", message)
+        self.assertIn("content.assets pattern assets/*.png matches nothing", message)
 
     def test_build_rejects_invalid_interface_before_replacing_artifacts(self):
         with tempfile.TemporaryDirectory() as directory:

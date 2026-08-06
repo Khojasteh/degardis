@@ -39,6 +39,7 @@ class EntryValidationTests(unittest.TestCase):
                 for warning in result["warnings"]
             )
         )
+        self.assertEqual({"guideline": 1}, result["entry_kind_counts"])
         self.assertIn("**Kind:** `guideline`", generated)
 
     def test_empty_entry_kind_remains_an_error(self):

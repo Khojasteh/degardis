@@ -101,7 +101,8 @@ subdirectories and build them all with one command.
 
 An unqualified profile name applies to every selected skill that defines it.
 `SKILL:PROFILE` selects one skill, and `all` selects every available profile.
-Supplying explicit selectors replaces manifest defaults for that build.
+A build includes a profile only when `--profile` names it; without the option,
+the bundle ships none.
 
 For exact command behavior, profile selectors, source schemas, and the Python
 API, see the [reference](docs/reference.md).

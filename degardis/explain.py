@@ -5,6 +5,13 @@ locate the problem; it is not enough to decide whether the problem matters, or
 what the source should say instead. This table answers both, and is written by
 hand rather than derived from the checks: a check knows the condition it tests,
 not why an author should care.
+
+A code is `<namespace>.<check>`, and the check reads as hyphenated words with one
+exception: where it names a field of the source, it spells that field exactly as
+the key does. `interface.missing-short_description` and
+`interface.short_description-length` both carry `short_description` because the
+manifest key is `short_description`. A reader who knows the key can therefore
+build the code rather than look it up.
 """
 
 from __future__ import annotations
@@ -29,7 +36,8 @@ CHECKS: dict[str, CheckExplanation] = {
     # source: reading the file at all
     "source.invalid-yaml": CheckExplanation(
         trigger=(
-            "A manifest, entry, workflow, or profile file does not parse as YAML."
+            "A manifest, entry, workflow, or profile file does not parse as "
+            "YAML, or parses as something other than a mapping of fields."
         ),
         impact=(
             "Nothing in the file reaches the bundle. The message names the line "
@@ -130,8 +138,7 @@ CHECKS: dict[str, CheckExplanation] = {
         trigger=(
             "A manifest field holds the wrong type: format_version is not an "
             "integer, title, license, or copyright is not a non-empty string, or "
-            "profiles, profiles.defaults, or interface is not the mapping or list "
-            "the schema states."
+            "interface is not the mapping the schema states."
         ),
         impact=(
             "The field cannot be used as declared, so the build stops rather than "
@@ -173,7 +180,7 @@ CHECKS: dict[str, CheckExplanation] = {
         failing="name: structured-summary",
         passing="name: structured-summary\nprimary_workflow: structured-summary.main",
     ),
-    "manifest.unsupported-format-version": CheckExplanation(
+    "manifest.unsupported-format_version": CheckExplanation(
         trigger=(
             "The manifest declares a source format_version this compiler does not "
             "support."
@@ -218,18 +225,6 @@ CHECKS: dict[str, CheckExplanation] = {
         ),
         failing="entry_kinds:\n  - rule\n  - policy",
         passing="# entry_kinds is derived from the entries themselves",
-    ),
-    "manifest.unknown-profiles-field": CheckExplanation(
-        trigger=(
-            "The manifest profiles mapping holds a field other than directory or "
-            "defaults."
-        ),
-        impact=(
-            "The field is ignored, so a profile directory or default selection it "
-            "was meant to change stays at its default."
-        ),
-        failing="profiles:\n  default: detailed",
-        passing="profiles:\n  defaults:\n    - detailed",
     ),
     # interface: the agent-facing display metadata
     "interface.missing-display_name": CheckExplanation(
@@ -284,7 +279,7 @@ CHECKS: dict[str, CheckExplanation] = {
         failing="interface:\n  display_name: ''",
         passing="interface:\n  display_name: Structured Summary",
     ),
-    "interface.short-description-length": CheckExplanation(
+    "interface.short_description-length": CheckExplanation(
         trigger=(
             "The interface short_description is outside 25-64 characters, the "
             "range agent interfaces display without truncating."
@@ -296,7 +291,7 @@ CHECKS: dict[str, CheckExplanation] = {
         failing="interface:\n  short_description: Summarize",
         passing="interface:\n  short_description: Summarize a document for review",
     ),
-    "interface.default-prompt-token": CheckExplanation(
+    "interface.default_prompt-token": CheckExplanation(
         trigger=(
             "The interface default_prompt does not contain the exact "
             "$<skill-name> token."
@@ -321,8 +316,8 @@ CHECKS: dict[str, CheckExplanation] = {
     "content.invalid-type": CheckExplanation(
         trigger=(
             "The manifest content is not a mapping, or one of entries, workflows, "
-            "scripts, or assets is not a list of non-empty glob strings, or holds "
-            "a pattern that is only the ! exclusion marker."
+            "profiles, scripts, or assets is not a list of non-empty glob "
+            "strings, or holds a pattern that is only the ! exclusion marker."
         ),
         impact=(
             "The compiler cannot tell which files belong to the skill, so it "
@@ -343,10 +338,44 @@ CHECKS: dict[str, CheckExplanation] = {
         failing="content:\n  assets:\n    - ../shared/logo.png",
         passing="content:\n  assets:\n    - assets/logo.png",
     ),
+    "content.unmatched-pattern": CheckExplanation(
+        trigger=(
+            "A content pattern names nothing that exists in the skill directory."
+        ),
+        impact=(
+            "The pattern does nothing, and only this check says so: a selection "
+            "that matches nothing leaves files out of the bundle, and an "
+            "exclusion that matches nothing leaves files in it. Patterns are "
+            "matched case-sensitively and separated by / on every platform, so "
+            "check the spelling of each segment before the path itself."
+        ),
+        failing="content:\n  entries:\n    - entries/*.yml",
+        passing="content:\n  entries:\n    - entries/*.yaml",
+    ),
+    "content.empty-selection": CheckExplanation(
+        trigger=(
+            "A content key the manifest declares resolves to no file, because "
+            "its patterns select none or an exclusion removes them all."
+        ),
+        impact=(
+            "Declaring the key states that the skill ships that content, and the "
+            "bundle would ship none of it. Nothing else reports this: no entry, "
+            "profile, script, or asset has to be referenced from anywhere, so "
+            "one that never arrives simply disappears from the built skill. "
+            "Leave the key out to ship none of that content on purpose."
+        ),
+        failing=(
+            "content:\n"
+            "  assets:\n"
+            "    - assets/**/*\n"
+            '    - "!assets/**/*"'
+        ),
+        passing="content:\n  assets:\n    - assets/**/*",
+    ),
     "content.unknown-field": CheckExplanation(
         trigger=(
             "The content mapping holds a field other than entries, workflows, "
-            "scripts, or assets."
+            "profiles, scripts, or assets."
         ),
         impact=(
             "The field is ignored, so files it was meant to include are left out "
@@ -773,18 +802,6 @@ CHECKS: dict[str, CheckExplanation] = {
         failing="instruction:\n  - Name every finding",
         passing="instructions:\n  - Name every finding",
     ),
-    "profile.invalid-directory": CheckExplanation(
-        trigger=(
-            "The manifest profiles mapping is not a mapping, its directory is not "
-            "a non-empty string, or the directory resolves outside the skill."
-        ),
-        impact=(
-            "No profile source can be located, so the skill builds with no "
-            "profiles even where profile files exist."
-        ),
-        failing="profiles:\n  directory: ../shared-profiles",
-        passing="profiles:\n  directory: profiles",
-    ),
     "profile.unknown-selector": CheckExplanation(
         trigger=(
             "A --profile selector matches no selected skill, or qualifies a skill "
@@ -963,8 +980,19 @@ def codes_by_namespace() -> dict[str, list[str]]:
 
 
 def known_codes_message() -> str:
-    """List every explainable code, one namespace at a time, for an error path."""
-    lines = ["Known codes:"]
+    """List every explainable code, one namespace at a time, for an error path.
+
+    The naming rule comes first. A reader who reached this list guessed a code,
+    and the rule is what makes the next guess right without reading the list.
+    """
+    lines = [
+        "A code is <namespace>.<check>, hyphenated, except where the check names "
+        "a field of",
+        "the source, which it spells exactly as the key does: "
+        "interface.short_description-length.",
+        "",
+        "Known codes:",
+    ]
     for namespace, names in codes_by_namespace().items():
         codes = ", ".join(f"{namespace}.{name}" for name in names)
         lines.extend(

@@ -84,3 +84,4 @@ def set_interface_icons(root: Path, skill_name: str, **icons: str) -> None:
     data = yaml.safe_load(source.read_text(encoding="utf-8"))
     data["interface"].update(icons)
     source.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+

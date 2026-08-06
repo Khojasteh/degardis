@@ -57,6 +57,29 @@ class YamlReportingTests(unittest.TestCase):
                     ):
                         self.assertNotIn(internal, report)
 
+    def test_an_unquoted_exclusion_pattern_reads_as_a_tag_not_a_traceback(self):
+        """The failure the ! exclusion marker invites, in the compiler's voice."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_skills(Path(directory))
+            manifest = root / "alpha" / "skill.yaml"
+            text = manifest.read_text(encoding="utf-8").replace(
+                "  - assets/**/*",
+                "  - assets/**/*\n  - !assets/drafts/**/*",
+            )
+            manifest.write_text(text, encoding="utf-8")
+
+            stdout = io.StringIO()
+            with contextlib.redirect_stdout(stdout):
+                code = main(["validate", str(root / "alpha")])
+
+        report = " ".join(stdout.getvalue().split())
+        self.assertEqual(1, code)
+        self.assertIn("read as a YAML type tag rather than as text", report)
+        self.assertIn("!assets/drafts/**/* is not the value", report)
+        self.assertIn("quote the value", report)
+        self.assertNotIn("could not determine a constructor", report)
+        self.assertNotIn("<unicode string>", report)
+
     def test_unrecognized_yaml_failure_keeps_the_parser_s_own_message(self):
         with tempfile.TemporaryDirectory() as directory:
             root = copy_skills(Path(directory))

@@ -10,9 +10,12 @@ content:
   - entries/*.yaml
   workflows:
   - workflows/*.yaml
-profiles:
-  directory: profiles
-  defaults: []
+  profiles:
+  - profiles/*.yaml
+  scripts:
+  - scripts/**/*
+  assets:
+  - assets/**/*
 interface:
   display_name: Alpha
   short_description: Minimal fixture skill for compiler behavior tests

@@ -10,9 +10,8 @@ content:
   - entries/*.yaml
   workflows:
   - workflows/*.yaml
-profiles:
-  directory: profiles
-  defaults: []
+  profiles:
+  - profiles/*.yaml
 interface:
   display_name: Beta
   short_description: Minimal fixture skill depending on alpha

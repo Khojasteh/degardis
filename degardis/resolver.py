@@ -22,16 +22,23 @@ from .model import (
     SkillContent,
     ensure_within,
 )
-from .registry import (
-    discover_skill_paths,
-    load_profile,
-    load_skill_path,
-    profile_source_paths,
-)
+from .registry import discover_skill_paths, load_profile, load_skill_path
 from .yamlsource import load_yaml, yaml_scalar_warnings
 
 
-ALLOWED_CONTENT_KEYS = {"entries", "workflows", "scripts", "assets"}
+# The content keys a manifest may set. None of them has a default: a key the
+# manifest leaves out says the skill ships none of that content, so the compiler
+# never assumes files the author did not ask for. Profiles are found the same way
+# as everything else a bundle carries; which of them a build selects is a
+# separate question, and only --profile answers it.
+CONTENT_KEYS: tuple[str, ...] = (
+    "entries",
+    "workflows",
+    "profiles",
+    "scripts",
+    "assets",
+)
+ALLOWED_CONTENT_KEYS = frozenset(CONTENT_KEYS)
 
 # The marker that turns a content pattern into an exclusion, as in .gitignore.
 CONTENT_EXCLUDE_PREFIX = "!"
@@ -94,8 +101,8 @@ ALLOWED_WORKFLOW_STEP_FIELDS = {
 def _is_bytecode(relative: Path) -> bool:
     """Whether a path is Python bytecode rather than authored content.
 
-    Python writes bytecode beside the scripts a skill ships, so a default
-    pattern such as `scripts/**/*` matches it once those scripts have run. It is
+    Python writes bytecode beside the scripts a skill ships, so a pattern such
+    as `scripts/**/*` matches it once those scripts have run. It is
     generated output of the author's own source and must never reach a bundle,
     where it would be stale on the first edit and wrong on another Python.
     """
@@ -225,8 +232,13 @@ def _matching_paths(root: Path, pattern: str) -> list[Path]:
     return sorted(found)
 
 
-def _glob(skill: Skill, patterns: Iterable[str], diagnostics: Diagnostics) -> list[Path]:
-    """The files a pattern list selects, built up in the order the list gives.
+def _glob(
+    skill: Skill,
+    key: str,
+    patterns: Iterable[str],
+    diagnostics: Diagnostics,
+) -> tuple[list[Path], bool]:
+    """The files a pattern list selects, and whether every pattern found one.
 
     Patterns apply in sequence, as in .gitignore: one prefixed with `!` removes
     what the patterns before it selected, and a pattern after that can put a file
@@ -234,9 +246,14 @@ def _glob(skill: Skill, patterns: Iterable[str], diagnostics: Diagnostics) -> li
     beneath it, since naming the directory is the shorter way to say the same
     thing. What no pattern can select is a file the author cannot see, or one the
     host wrote for itself.
+
+    A pattern that names nothing present is reported rather than passed over. It
+    is the only evidence of a misspelled path, a wrongly cased one, or a `!` that
+    now removes nothing, none of which the resulting bundle can show.
     """
     selected: dict[Path, None] = {}
     hidden_directories: dict[Path, bool] = {}
+    complete = True
     for pattern in patterns:
         excluding = pattern.startswith(CONTENT_EXCLUDE_PREFIX)
         body = pattern.removeprefix(CONTENT_EXCLUDE_PREFIX)
@@ -248,8 +265,18 @@ def _glob(skill: Skill, patterns: Iterable[str], diagnostics: Diagnostics) -> li
             )
         except DegardisError as exc:
             diagnostics.error(exc, "content.outside-skill")
+            complete = False
             continue
         matches = _matching_paths(skill.root, body)
+        if not matches:
+            diagnostics.error(
+                f"{skill.name}: content.{key} pattern {pattern} matches nothing "
+                "in the skill directory",
+                "content.unmatched-pattern",
+                skill.root / "skill.yaml",
+            )
+            complete = False
+            continue
         if excluding:
             covered = set(matches)
             for path in [p for p in selected if _excluded_by(covered, p)]:
@@ -276,7 +303,7 @@ def _glob(skill: Skill, patterns: Iterable[str], diagnostics: Diagnostics) -> li
                 diagnostics.error(exc, "content.outside-skill", path)
                 continue
             selected.setdefault(path, None)
-    return list(selected)
+    return list(selected), complete
 
 
 def _is_usable_pattern(item: object) -> bool:
@@ -294,11 +321,10 @@ def _content_patterns(
     skill: Skill,
     config: dict,
     key: str,
-    default: list[str],
     diagnostics: Diagnostics,
 ) -> list[str] | None:
-    """One content key's patterns, or None where the manifest gave none usable."""
-    value = config.get(key, default)
+    """One content key's patterns, or None where there are none to match with."""
+    value = config[key]
     if not isinstance(value, list) or any(
         not _is_usable_pattern(item) for item in value
     ):
@@ -316,14 +342,30 @@ def _content_files(
     skill: Skill,
     config: dict,
     key: str,
-    default: list[str],
     diagnostics: Diagnostics,
 ) -> list[Path]:
-    """The files one content key selects."""
-    patterns = _content_patterns(skill, config, key, default, diagnostics)
+    """The files one content key selects, reporting a key that ships nothing.
+
+    A key the manifest leaves out asks for no content of that kind, so nothing is
+    resolved for it and nothing is reported. A key the manifest does declare is a
+    statement that the skill ships those files, and the bundle is the one place
+    that statement coming out empty never shows: no other check reads an entry, a
+    script, or an asset, so a group that resolves to nothing simply disappears.
+    """
+    if key not in config:
+        return []
+    patterns = _content_patterns(skill, config, key, diagnostics)
     if patterns is None:
         return []
-    return _glob(skill, patterns, diagnostics)
+    files, complete = _glob(skill, key, patterns, diagnostics)
+    if not files and complete:
+        diagnostics.error(
+            f"{skill.name}: content.{key} selects no file, so the bundle would "
+            f"ship none; remove the key if the skill has no {key}",
+            "content.empty-selection",
+            skill.root / "skill.yaml",
+        )
+    return files
 
 
 def _load_entry(
@@ -684,8 +726,7 @@ def _load_entries(
 ) -> list[Entry]:
     """Load every entry file, in the order the generated skill presents them."""
     entries: list[Entry] = []
-    patterns = ["entries/*.yaml"]
-    for path in _content_files(skill, config, "entries", patterns, diagnostics):
+    for path in _content_files(skill, config, "entries", diagnostics):
         diagnostics.add(yaml_scalar_warnings(path))
         entry = _load_entry(path, skill, diagnostics)
         if entry is not None:
@@ -703,8 +744,7 @@ def _load_workflows(
     """Load every workflow file, refusing a second one that claims a used id."""
     workflows: list[dict] = []
     workflow_paths: dict[str, Path] = {}
-    patterns = ["workflows/*.yaml"]
-    for path in _content_files(skill, config, "workflows", patterns, diagnostics):
+    for path in _content_files(skill, config, "workflows", diagnostics):
         diagnostics.add(yaml_scalar_warnings(path))
         data = _load_workflow(path, skill, diagnostics)
         if data is None:
@@ -734,19 +774,19 @@ def _load_workflows(
     return workflows
 
 
-def _load_profiles(skill: Skill, diagnostics: Diagnostics) -> list[Profile]:
-    """Load every profile the skill defines, ordered by name.
+def _load_profiles(
+    skill: Skill,
+    config: dict,
+    diagnostics: Diagnostics,
+) -> list[Profile]:
+    """Load every profile source the content patterns select, ordered by name.
 
-    Name order is the order a reader chooses a profile in, so the generated
-    guidance does not depend on the order the directory happened to list.
+    Name order is the order a reader chooses a profile in, and it holds however
+    the patterns were written, so the generated guidance does not depend on which
+    pattern happened to match a file first.
     """
-    try:
-        paths = profile_source_paths(skill)
-    except DegardisError as exc:
-        diagnostics.error(exc, "profile.invalid-directory", skill.root / "skill.yaml")
-        return []
     profiles: list[Profile] = []
-    for path in paths:
+    for path in _content_files(skill, config, "profiles", diagnostics):
         diagnostics.add(yaml_scalar_warnings(path))
         try:
             profile = load_profile(path, skill.name, skill.root, diagnostics)
@@ -756,6 +796,14 @@ def _load_profiles(skill: Skill, diagnostics: Diagnostics) -> list[Profile]:
         if profile is not None:
             profiles.append(profile)
     profiles.sort(key=lambda profile: profile.name)
+    return profiles
+
+
+def load_skill_profiles(skill: Skill) -> list[Profile]:
+    """Every profile a skill defines, before any selection narrows them down."""
+    diagnostics = Diagnostics()
+    profiles = _load_profiles(skill, _content_config(skill, diagnostics), diagnostics)
+    diagnostics.raise_if_errors()
     return profiles
 
 
@@ -789,9 +837,9 @@ def load_content(
 
     entries = _load_entries(skill, config, collector)
     workflows = _load_workflows(skill, config, collector)
-    profiles = _load_profiles(skill, collector)
-    scripts = _content_files(skill, config, "scripts", ["scripts/**/*"], collector)
-    assets = _content_files(skill, config, "assets", ["assets/**/*"], collector)
+    profiles = _load_profiles(skill, config, collector)
+    scripts = _content_files(skill, config, "scripts", collector)
+    assets = _content_files(skill, config, "assets", collector)
     icon_sources = _load_icons(skill, collector)
 
     content = SkillContent(
@@ -812,26 +860,18 @@ def load_content(
 def select_profiles(
     contents: list[SkillContent], selectors: list[str] | None
 ) -> dict[str, set[str]]:
-    """Which profiles each skill ships, from the selectors the caller gave."""
+    """Which profiles each skill ships, from the selectors the caller gave.
+
+    A profile is optional by definition, so a build that names none includes
+    none. The manifest has no say in this: it declares which profiles exist, and
+    the command that builds decides which of them this bundle carries.
+    """
     selected: dict[str, set[str]] = {content.skill.name: set() for content in contents}
     available = {
         content.skill.name: {profile.name for profile in content.profiles}
         for content in contents
     }
-    if selectors is None:
-        for content in contents:
-            config = content.skill.manifest.get("profiles", {})
-            defaults = config.get("defaults", []) if isinstance(config, dict) else []
-            unknown = set(map(str, defaults)) - available[content.skill.name]
-            if unknown:
-                raise DegardisError(
-                    f"Unknown default profiles for {content.skill.name}: "
-                    f"{', '.join(sorted(unknown))}"
-                )
-            selected[content.skill.name].update(map(str, defaults))
-        return selected
-
-    for selector in selectors:
+    for selector in selectors or []:
         owner: str | None = None
         name = selector
         if ":" in selector:

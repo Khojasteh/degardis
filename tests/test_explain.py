@@ -62,6 +62,45 @@ class ExplainTests(unittest.TestCase):
                 self.assertTrue(entry.passing.strip())
                 self.assertNotEqual(entry.failing.strip(), entry.passing.strip())
 
+    def test_a_code_naming_a_source_field_spells_it_as_the_key_does(self):
+        """One rule for the whole vocabulary, so a code can be built not looked up.
+
+        A check code reads as hyphenated words, except where it names a field of
+        the source: there it reproduces the key. An author who knows the key
+        knows the code, and never has to remember which of the two spellings a
+        particular check chose.
+        """
+        for field in sorted(name for name in SOURCE_FIELDS if "_" in name):
+            with self.subTest(field=field):
+                hyphenated = field.replace("_", "-")
+                self.assertEqual(
+                    [],
+                    [code for code in CHECKS if hyphenated in code],
+                    f"a code hyphenates the source key {field}",
+                )
+
+    def test_every_code_naming_a_manifest_field_is_present_under_that_spelling(self):
+        for code in (
+            "manifest.missing-primary_workflow",
+            "manifest.unsupported-format_version",
+            "interface.missing-display_name",
+            "interface.missing-short_description",
+            "interface.short_description-length",
+            "interface.missing-default_prompt",
+            "interface.default_prompt-token",
+        ):
+            with self.subTest(code=code):
+                self.assertIn(code, CHECKS)
+
+    def test_the_code_naming_rule_is_stated_where_the_codes_are_listed(self):
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            main(["explain", "interface.short-description-length"])
+
+        report = " ".join(stderr.getvalue().split())
+        self.assertIn("spells exactly as the key does", report)
+        self.assertIn("interface.short_description-length", report)
+
     def test_explain_reports_one_code_without_reading_any_source(self):
         stdout = io.StringIO()
         with contextlib.redirect_stdout(stdout):

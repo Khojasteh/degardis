@@ -17,8 +17,8 @@ from .output import (
     write_skill_list,
     write_validation_report,
 )
-from .registry import discover_skill_paths, load_skill_path, load_skill_profiles
-from .resolver import ALLOWED_ENTRY_KINDS, profile_matches
+from .registry import discover_skill_paths, load_skill_path
+from .resolver import ALLOWED_ENTRY_KINDS, load_skill_profiles, profile_matches
 from .validate import (
     AGENT_DIMENSIONS,
     DEFAULT_AGENT_DIMENSIONS,
@@ -70,8 +70,8 @@ Run `degardis COMMAND -h` for that command's options and examples.
 Examples:
   degardis list examples/structured-summary
   degardis validate examples/structured-summary
-  degardis explain entry.missing-priority
   degardis agent examples/structured-summary --all
+  degardis explain entry.missing-priority
   degardis build examples/structured-summary --profile detailed --output .artifacts
 """,
         formatter_class=HELP_FORMATTER,
@@ -184,8 +184,8 @@ Examples:
         metavar="[SKILL:]PROFILE",
         help=(
             "measure and inventory the bundle this profile selection would "
-            "build; defaults to the manifest defaults, as an unqualified build "
-            "does"
+            "build; without it, the report covers a bundle with no profile, as "
+            "an unqualified build produces one"
         ),
     )
 

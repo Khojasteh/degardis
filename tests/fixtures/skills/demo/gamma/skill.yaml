@@ -10,9 +10,6 @@ content:
   - entries/*.yaml
   workflows:
   - workflows/*.yaml
-profiles:
-  directory: profiles
-  defaults: []
 interface:
   display_name: Gamma
   short_description: Minimal fixture skill depending on beta and alpha

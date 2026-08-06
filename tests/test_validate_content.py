@@ -231,6 +231,136 @@ class ContentExclusionTests(unittest.TestCase):
             self.assertEqual([], inspect_skills([root / "alpha"])[0]["assets"])
 
 
+class ContentCompletenessTests(unittest.TestCase):
+    """Content the manifest asks for, and never gets, is reported as such.
+
+    Nothing else can report it. Workflows are held together by referential
+    integrity, but no entry, script, or asset is referenced by id, so one that
+    fails to reach the bundle leaves no trace in anything a check reads.
+    """
+
+    def _codes(self, skill: Path, severity: str = "error") -> list[str]:
+        records = inspect_skills([skill])[0]["diagnostics"]
+        return [record.code for record in records if record.severity == severity]
+
+    def _rewrite_content(self, root: Path, skill_name: str, content: dict) -> None:
+        source = root / skill_name / "skill.yaml"
+        data = yaml.safe_load(source.read_text(encoding="utf-8"))
+        data["content"] = content
+        source.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+
+    def test_a_pattern_that_selects_nothing_is_reported(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_skills(Path(directory))
+            set_content_patterns(root, "alpha", entries=["entries/*.yml"])
+
+            self.assertIn("content.unmatched-pattern", self._codes(root / "alpha"))
+            self.assertEqual([], inspect_skills([root / "alpha"])[0]["entries"])
+            with self.assertRaisesRegex(DegardisError, "matches nothing"):
+                build_skills(root / "alpha", Path(directory) / "out")
+
+    def test_an_exclusion_that_removes_nothing_is_reported(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_skills(Path(directory))
+            set_content_patterns(
+                root, "alpha", assets=["assets/**/*", "!assets/drafts/**/*"]
+            )
+
+            errors = inspect_skills([root / "alpha"])[0]["errors"]
+
+            self.assertIn("content.unmatched-pattern", self._codes(root / "alpha"))
+            self.assertTrue(
+                any("!assets/drafts/**/*" in error for error in errors), errors
+            )
+
+    def test_a_key_an_exclusion_empties_is_reported(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_skills(Path(directory))
+            set_content_patterns(
+                root, "alpha", entries=["entries/*.yaml", "!entries/**/*"]
+            )
+
+            result = inspect_skills([root / "alpha"])[0]
+
+            self.assertIn("content.empty-selection", self._codes(root / "alpha"))
+            self.assertEqual([], result["entries"])
+
+    def test_an_emptied_key_is_reported_once_by_whichever_check_explains_it(self):
+        """A pattern naming nothing is the diagnosis; the empty key is its effect."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_skills(Path(directory))
+            set_content_patterns(root, "alpha", assets=["assets/*.rst"])
+
+            codes = self._codes(root / "alpha")
+
+            self.assertEqual(["content.unmatched-pattern"], codes)
+
+    def test_a_content_key_left_out_ships_none_of_that_content_in_silence(self):
+        """Leaving a key out is how an author says the skill ships none of it."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_skills(Path(directory))
+            self._rewrite_content(
+                root,
+                "alpha",
+                {"entries": ["entries/*.yaml"], "workflows": ["workflows/*.yaml"]},
+            )
+
+            result = inspect_skills([root / "alpha"])[0]
+
+            self.assertEqual([], result["errors"])
+            self.assertEqual([], result["warnings"])
+            self.assertEqual(0, result["counts"]["profiles"])
+            self.assertEqual(0, result["counts"]["scripts"])
+            self.assertEqual(0, result["counts"]["assets"])
+            self.assertEqual(1, result["counts"]["entries"])
+
+            output = Path(directory) / "out"
+            built = folder_names(build_skills(root / "alpha", output)[0])
+            for group in ("profiles", "scripts", "assets"):
+                self.assertFalse([name for name in built if group in name])
+
+    def test_profiles_are_found_by_a_content_pattern_like_every_other_group(self):
+        """Profiles are discovered the same way as everything else a bundle ships."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_skills(Path(directory))
+            set_content_patterns(
+                root, "alpha", profiles=["profiles/*.yaml", "!profiles/shared.yaml"]
+            )
+
+            result = inspect_skills([root / "alpha"])[0]
+
+            self.assertEqual([], result["errors"])
+            self.assertEqual(
+                ["profiles/alpha-only.yaml"],
+                [item["path"] for item in result["profiles"]],
+            )
+
+    def test_a_profiles_pattern_that_selects_nothing_is_reported(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_skills(Path(directory))
+            set_content_patterns(root, "alpha", profiles=["profiles/*.yml"])
+
+            self.assertIn("content.unmatched-pattern", self._codes(root / "alpha"))
+            self.assertEqual([], inspect_skills([root / "alpha"])[0]["profiles"])
+
+    def test_a_manifest_declaring_no_content_compiles_nothing(self):
+        """With no defaults left, an absent content section assumes no files."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_skills(Path(directory))
+            source = root / "alpha" / "skill.yaml"
+            data = yaml.safe_load(source.read_text(encoding="utf-8"))
+            del data["content"]
+            source.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+
+            result = inspect_skills([root / "alpha"])[0]
+
+            self.assertEqual(
+                {"entries": 0, "workflows": 0, "profiles": 0, "scripts": 0, "assets": 0},
+                result["counts"],
+            )
+            self.assertIn("workflow.missing-primary", self._codes(root / "alpha"))
+
+
 class ContentPatternMatchingTests(unittest.TestCase):
     """Which files a source selects is a property of the source, not the host."""
 
@@ -242,6 +372,10 @@ class ContentPatternMatchingTests(unittest.TestCase):
             result = inspect_skills([root / "alpha"])[0]
 
             self.assertEqual([], result["entries"])
+            self.assertTrue(
+                any("matches nothing" in error for error in result["errors"]),
+                result["errors"],
+            )
 
     def test_a_wrongly_cased_exclusion_removes_nothing_anywhere(self):
         """The destructive half: on a case-folding host this dropped the entry."""
@@ -256,6 +390,10 @@ class ContentPatternMatchingTests(unittest.TestCase):
             self.assertEqual(
                 ["entries/rule-one.yaml"],
                 [item["path"] for item in result["entries"]],
+            )
+            self.assertTrue(
+                any("!ENTRIES/RULE-ONE.yaml" in error for error in result["errors"]),
+                result["errors"],
             )
 
     def test_a_matched_path_keeps_the_case_the_filesystem_holds(self):

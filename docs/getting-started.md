@@ -100,9 +100,9 @@ The source files remain authoritative. Do not edit the generated folder.
 degardis build examples/structured-summary --profile detailed --output .artifacts
 ```
 
-The rebuilt artifact now includes `references/profiles/detailed.md`. Explicit
-profile selectors replace manifest defaults. Use `--profile all` to include
-every profile a skill defines.
+The rebuilt artifact now includes `references/profiles/detailed.md`. A bundle
+carries a profile only when you ask for it, which is why the earlier build had
+none. Use `--profile all` to include every profile a skill defines.
 
 ## Build a ZIP
 

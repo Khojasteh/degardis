@@ -48,6 +48,7 @@ INTERFACE_FIELDS = {
     "icon_small",
     "icon_large",
 }
+DERIVED_MANIFEST_FIELDS = {"entry_kinds"}
 PROFILES_FIELDS = {"directory", "defaults"}
 REQUIRED_MANIFEST_FIELDS = ("version", "description", "primary_workflow")
 REQUIRED_INTERFACE_FIELDS = ("display_name", "short_description", "default_prompt")
@@ -113,17 +114,6 @@ def _validate_manifest_types(skill: Skill, diagnostics: Diagnostics) -> None:
         skill, manifest, "title", "manifest.invalid-type", diagnostics, required=False
     )
 
-    entry_kinds = manifest.get("entry_kinds")
-    if entry_kinds is not None and (
-        not isinstance(entry_kinds, list)
-        or any(not isinstance(item, str) or not item.strip() for item in entry_kinds)
-    ):
-        diagnostics.error(
-            f"{skill.name}: entry_kinds must be a list of strings",
-            "manifest.invalid-type",
-            path,
-        )
-
     profiles = manifest.get("profiles", {})
     if not isinstance(profiles, dict):
         diagnostics.error(
@@ -188,6 +178,13 @@ def _validate_manifest_warnings(skill: Skill, diagnostics: Diagnostics) -> None:
             f"{skill.name}: unrecognized manifest fields ignored: "
             f"{', '.join(unknown_manifest)}",
             "manifest.unknown-field",
+            path,
+        )
+    for field in sorted(DERIVED_MANIFEST_FIELDS & set(skill.manifest)):
+        diagnostics.warning(
+            f"{skill.name}: {field} is derived from the skill content; the "
+            "manifest value is ignored and the field can be removed",
+            "manifest.derived-field",
             path,
         )
     profiles = skill.manifest.get("profiles")

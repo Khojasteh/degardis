@@ -122,7 +122,7 @@ descendant skills is an error.
 | `copyright`        | no       | Non-empty copyright notice                                                                     |
 | `description`      | yes      | Runtime selection description, at most 1024 characters                                         |
 | `primary_workflow` | yes      | ID of a workflow in this skill                                                                 |
-| `entry_kinds`      | no       | List of non-empty strings for author-facing inventory; does not restrict supported kinds       |
+| `entry_kinds`      | no       | Derived from the entries; a manifest value is ignored with a warning                           |
 | `content`          | no       | Entry, workflow, script, and asset globs                                                       |
 | `profiles`         | no       | Profile directory and defaults                                                                 |
 | `interface`        | yes      | Agent-facing display metadata                                                                  |

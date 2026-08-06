@@ -134,7 +134,7 @@ class ValidateCommandTests(unittest.TestCase):
             "interface.default_prompt must mention $alpha",
             "cross-skill",
             "workflow reference beta.run",
-            "unsupported kind guideline",
+            "unrecognized kind guideline compiled as declared",
             "must be an integer",
             "must be a list of strings",
             "Warning: alpha: unrecognized manifest fields ignored: unknown_field",

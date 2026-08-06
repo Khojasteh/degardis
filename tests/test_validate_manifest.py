@@ -185,3 +185,26 @@ class ManifestValidationTests(unittest.TestCase):
                     for error in errors
                 )
             )
+
+    def test_manifest_entry_kinds_are_ignored_and_derived_from_entries(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_skills(Path(directory))
+            manifest = root / "gamma" / "skill.yaml"
+            data = yaml.safe_load(manifest.read_text(encoding="utf-8"))
+            data["entry_kinds"] = "policy"
+            manifest.write_text(
+                yaml.safe_dump(data, sort_keys=False),
+                encoding="utf-8",
+            )
+
+            self.assertEqual([], validate(root / "gamma"))
+            result = inspect_skills([root / "gamma"])[0]
+            build_skills(root / "gamma", root / "output")
+
+        self.assertNotIn("declared_entry_kinds", result)
+        self.assertTrue(
+            any(
+                "entry_kinds is derived from the skill content" in warning
+                for warning in result["warnings"]
+            )
+        )

@@ -123,9 +123,6 @@ license: MIT
 copyright: Copyright (c) 2026 Example Organization
 description: Turn supplied material into a clear, audience-appropriate summary.
 primary_workflow: structured-summary.compose
-entry_kinds:
-- principle
-- policy
 content:
   entries:
   - entries/*.yaml
@@ -181,12 +178,22 @@ require:
 - Retain qualifications that materially affect a conclusion.
 ```
 
-Entry IDs must be unique within the skill. `kind` may be `principle`, `policy`,
-`heuristic`, `pattern`, `constraint`, or `rule`; it defaults to `rule`.
-`entry_kinds` is an author-facing inventory and does not restrict those
-compiler-supported values. Use optional `require`, `allow`, `reject`,
-`conditions`, `exceptions`, and `examples` lists only when they clarify
-application.
+Entry IDs must be unique within the skill.
+
+The kinds this compiler knows are `principle`, `policy`, `heuristic`,
+`pattern`, `constraint`, and `rule`, and `kind` defaults to `rule`. A kind
+outside that list produces a warning, not an error, and the entry compiles with
+the kind you declared. Source written for a later compiler therefore builds on
+this one too. No manifest field lists the kinds: a skill's kinds come from the
+entries it contains.
+
+Use the optional `require`, `allow`, `reject`, `conditions`, `exceptions`, and
+`examples` lists only where they clarify how the rule applies.
+
+Give every entry a `title` and a `priority`. Both are optional, but the title is
+what the always-loaded reference index shows, and the priority is what orders
+it. If you omit either, Degardis warns you and names the default it used
+instead.
 
 ## 5. Express procedures as workflows
 

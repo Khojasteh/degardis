@@ -58,10 +58,18 @@ collection itself has no manifest, metadata, routing rules, or artifact.
 
 ## Entry
 
-An entry is a focused rule, principle, policy, heuristic, pattern, or
-constraint. Entries render as Markdown references so the primary `SKILL.md`
-stays short. The optional manifest `entry_kinds` field records the kinds an
-author intends to use; it does not limit the compiler's supported kinds.
+An entry is a focused piece of guidance. Common kinds include:
+
+- `principle` — a core idea that shapes every decision;
+- `policy` — a rule that limits or requires specific behavior;
+- `heuristic` — a practical guideline for ambiguous situations;
+- `pattern` — a repeatable way to solve a common problem;
+- `constraint` — a hard boundary the output must respect;
+- `rule` — a clear directive that controls behavior.
+
+Entries render as Markdown references so the primary `SKILL.md` stays short.
+An entry file sets its own kind, so a skill's kinds come from the entries it
+actually contains.
 
 ## Workflow
 

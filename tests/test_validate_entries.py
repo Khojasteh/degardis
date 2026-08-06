@@ -16,6 +16,70 @@ from tests.support import copy_skills
 
 
 class EntryValidationTests(unittest.TestCase):
+    def test_unrecognized_entry_kind_warns_and_still_reaches_the_bundle(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_skills(Path(directory))
+            entry = root / "gamma" / "entries" / "rule-three.yaml"
+            data = yaml.safe_load(entry.read_text(encoding="utf-8"))
+            data["kind"] = "guideline"
+            entry.write_text(
+                yaml.safe_dump(data, sort_keys=False), encoding="utf-8"
+            )
+
+            result = inspect_skills([root / "gamma"])[0]
+            build_skills(root / "gamma", root / "output")
+            generated = (
+                root / "output" / "gamma" / "references" / "entries" / "rule-three.md"
+            ).read_text(encoding="utf-8")
+
+        self.assertEqual([], result["errors"])
+        self.assertTrue(
+            any(
+                "unrecognized kind guideline compiled as declared" in warning
+                for warning in result["warnings"]
+            )
+        )
+        self.assertIn("**Kind:** `guideline`", generated)
+
+    def test_empty_entry_kind_remains_an_error(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_skills(Path(directory))
+            entry = root / "gamma" / "entries" / "rule-three.yaml"
+            data = yaml.safe_load(entry.read_text(encoding="utf-8"))
+            data["kind"] = "  "
+            entry.write_text(
+                yaml.safe_dump(data, sort_keys=False), encoding="utf-8"
+            )
+
+            errors = validate(root / "gamma")
+
+        self.assertTrue(
+            any("kind must be a non-empty string" in error for error in errors)
+        )
+
+    def test_omitted_behavior_bearing_entry_fields_warn(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_skills(Path(directory))
+            entry = root / "gamma" / "entries" / "rule-three.yaml"
+            data = yaml.safe_load(entry.read_text(encoding="utf-8"))
+            for field in ("title", "kind", "priority", "rationale"):
+                data.pop(field, None)
+            entry.write_text(
+                yaml.safe_dump(data, sort_keys=False), encoding="utf-8"
+            )
+
+            result = inspect_skills([root / "gamma"])[0]
+
+        warnings = "\n".join(result["warnings"])
+        self.assertEqual([], result["errors"])
+        self.assertIn("title is missing", warnings)
+        self.assertIn("kind is missing", warnings)
+        # A skill that orders nothing is told once, not once per entry.
+        self.assertIn("no entry declares a priority", warnings)
+        self.assertNotIn("priority is missing", warnings)
+        # An inert optional field stays silent.
+        self.assertNotIn("rationale", warnings)
+
     def test_a_missing_priority_warns_when_other_entries_declare_one(self):
         with tempfile.TemporaryDirectory() as directory:
             root = copy_skills(Path(directory))

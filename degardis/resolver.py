@@ -169,12 +169,29 @@ def _load_entry(
             "entry.missing-title",
             path,
         )
-    kind = data.get("kind", "rule")
-    if kind not in ALLOWED_ENTRY_KINDS:
-        collector.error(
-            f"{path}: unsupported kind {kind}", "entry.unsupported-kind", path
+    if "kind" not in data:
+        collector.warning(
+            f"{path}: kind is missing; the entry is compiled as rule",
+            "entry.missing-kind",
+            path,
         )
-        usable = False
+    elif isinstance(data["kind"], str):
+        kind = data["kind"]
+        if not kind.strip():
+            collector.error(
+                f"{path}: kind must be a non-empty string",
+                "entry.invalid-type",
+                path,
+            )
+            usable = False
+        elif kind not in ALLOWED_ENTRY_KINDS:
+            known = ", ".join(sorted(ALLOWED_ENTRY_KINDS))
+            collector.warning(
+                f"{path}: unrecognized kind {kind} compiled as declared; "
+                f"kinds known to this compiler: {known}",
+                "entry.unknown-kind",
+                path,
+            )
     priority = data.get("priority", 100)
     if not isinstance(priority, int) or isinstance(priority, bool):
         collector.error(

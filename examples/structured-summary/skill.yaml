@@ -6,9 +6,6 @@ license: MIT
 copyright: Copyright (c) 2026 Example Organization
 description: Turn supplied material into a clear, audience-appropriate summary.
 primary_workflow: structured-summary.compose
-entry_kinds:
-- principle
-- policy
 content:
   entries:
   - entries/*.yaml

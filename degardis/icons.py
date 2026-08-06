@@ -22,6 +22,20 @@ UNSAFE_SVG_ELEMENTS = {"script", "foreignObject"}
 EXTERNAL_CSS_URL = re.compile(r"url\(\s*['\"]?(?!#|data:)", re.IGNORECASE)
 
 
+class IconError(DegardisError):
+    """An unusable interface icon, carrying the check code for what is wrong.
+
+    Icon sources fail in ways that need different repairs: a path to correct, a
+    file to add, an image to shrink, a format to replace, unsafe markup to
+    remove. Each failure names its own check so a report says which of those it
+    is, rather than one code for every icon problem.
+    """
+
+    def __init__(self, message: str, code: str) -> None:
+        super().__init__(message)
+        self.code = code
+
+
 def resolve_icon_sources(skill: Skill) -> dict[str, Path]:
     interface = skill.interface
     fallback = _resolve_icon_path(skill, "icon")
@@ -39,21 +53,24 @@ def _resolve_icon_path(skill: Skill, field: str) -> Path | None:
         return None
     value = skill.interface[field]
     if not isinstance(value, str) or not value.strip():
-        raise DegardisError(
-            f"{skill.name}: interface.{field} must be a non-empty relative path"
+        raise IconError(
+            f"{skill.name}: interface.{field} must be a non-empty relative path",
+            "icon.invalid-path",
         )
     if (
         Path(value).is_absolute()
         or PurePosixPath(value).is_absolute()
         or PureWindowsPath(value).is_absolute()
     ):
-        raise DegardisError(
-            f"{skill.name}: interface.{field} must be relative to the skill directory"
+        raise IconError(
+            f"{skill.name}: interface.{field} must be relative to the skill directory",
+            "icon.invalid-path",
         )
     source = (skill.root / value).resolve()
     if not source.is_file():
-        raise DegardisError(
-            f"{skill.name}: interface.{field} icon not found: {value}"
+        raise IconError(
+            f"{skill.name}: interface.{field} icon not found: {value}",
+            "icon.not-found",
         )
     return source
 
@@ -73,18 +90,21 @@ def render_icon_assets(sources: dict[str, Path]) -> dict[str, bytes]:
 def render_icon(source: Path, role: str) -> bytes:
     try:
         if source.stat().st_size > MAX_SOURCE_BYTES:
-            raise DegardisError(
-                f"Icon source exceeds {MAX_SOURCE_BYTES} bytes: {source}"
+            raise IconError(
+                f"Icon source exceeds {MAX_SOURCE_BYTES} bytes: {source}",
+                "icon.too-large",
             )
         if source.suffix.casefold() == ".svg":
             image = _render_svg(source)
         else:
             image = _open_raster(source, role)
         return _encode_png(image, source)
-    except DegardisError:
+    except IconError:
         raise
     except (OSError, UnidentifiedImageError, ValueError) as exc:
-        raise DegardisError(f"Cannot convert icon source {source}: {exc}") from exc
+        raise IconError(
+            f"Cannot convert icon source {source}: {exc}", "icon.unsupported"
+        ) from exc
 
 
 def _render_svg(source: Path) -> Image.Image:
@@ -104,12 +124,15 @@ def _validate_svg(markup: str, source: Path) -> None:
     try:
         root = ET.fromstring(markup)
     except ET.ParseError as exc:
-        raise DegardisError(f"Invalid SVG icon {source}: {exc}") from exc
+        raise IconError(
+            f"Invalid SVG icon {source}: {exc}", "icon.unsupported"
+        ) from exc
     for element in root.iter():
         name = element.tag.rsplit("}", 1)[-1]
         if name in UNSAFE_SVG_ELEMENTS:
-            raise DegardisError(
-                f"Unsafe SVG icon {source}: {name} is not allowed"
+            raise IconError(
+                f"Unsafe SVG icon {source}: {name} is not allowed",
+                "icon.unsafe",
             )
         for attribute, value in element.attrib.items():
             if attribute.rsplit("}", 1)[-1] == "href":
@@ -118,17 +141,37 @@ def _validate_svg(markup: str, source: Path) -> None:
                     reference.startswith("#")
                     or reference.casefold().startswith("data:image/")
                 ):
-                    raise DegardisError(
-                        f"Unsafe SVG icon {source}: external references are not allowed"
+                    raise IconError(
+                        f"Unsafe SVG icon {source}: external references are "
+                        "not allowed",
+                        "icon.unsafe",
                     )
             if EXTERNAL_CSS_URL.search(value):
-                raise DegardisError(
-                    f"Unsafe SVG icon {source}: external CSS URLs are not allowed"
+                raise IconError(
+                    f"Unsafe SVG icon {source}: external CSS URLs are not allowed",
+                    "icon.unsafe",
                 )
         if element.text and EXTERNAL_CSS_URL.search(element.text):
-            raise DegardisError(
-                f"Unsafe SVG icon {source}: external CSS URLs are not allowed"
+            raise IconError(
+                f"Unsafe SVG icon {source}: external CSS URLs are not allowed",
+                "icon.unsafe",
             )
+
+
+def _check_dimensions(image: Image.Image, source: Path) -> None:
+    """Reject an image no icon can be built from, and one too large to accept."""
+    width, height = image.size
+    if width <= 0 or height <= 0:
+        raise IconError(
+            f"Icon source has unusable dimensions {width}x{height}: {source}",
+            "icon.unsupported",
+        )
+    if width * height > MAX_SOURCE_PIXELS:
+        raise IconError(
+            f"Icon source exceeds {MAX_SOURCE_PIXELS} pixels "
+            f"at {width}x{height}: {source}",
+            "icon.too-large",
+        )
 
 
 def _open_raster(source: Path, role: str) -> Image.Image:
@@ -139,11 +182,7 @@ def _open_raster(source: Path, role: str) -> Image.Image:
             if sizes:
                 selected = _select_ico_size(sizes, role)
                 image = opened.ico.getimage(selected)
-        width, height = image.size
-        if width <= 0 or height <= 0 or width * height > MAX_SOURCE_PIXELS:
-            raise DegardisError(
-                f"Icon source has unsupported dimensions {width}x{height}: {source}"
-            )
+        _check_dimensions(image, source)
         image.load()
         return ImageOps.exif_transpose(image).convert("RGBA")
 
@@ -156,11 +195,7 @@ def _select_ico_size(
 
 
 def _encode_png(image: Image.Image, source: Path) -> bytes:
-    width, height = image.size
-    if width <= 0 or height <= 0 or width * height > MAX_SOURCE_PIXELS:
-        raise DegardisError(
-            f"Icon source has unsupported dimensions {width}x{height}: {source}"
-        )
+    _check_dimensions(image, source)
     output = io.BytesIO()
     image.save(output, format="PNG", compress_level=9, optimize=False)
     return output.getvalue()

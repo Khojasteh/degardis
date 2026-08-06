@@ -9,7 +9,8 @@ from pathlib import Path
 
 import yaml
 
-from degardis.validate import validate
+from degardis.icons import MAX_SOURCE_BYTES
+from degardis.validate import inspect_skills, validate
 
 from tests.support import copy_skills, set_interface_icons, write_raster_icon
 
@@ -44,6 +45,36 @@ class IconValidationTests(unittest.TestCase):
                     errors = validate(copied)
 
                     self.assertTrue(any(message in error for error in errors))
+
+    def test_each_icon_failure_reports_the_check_that_applies(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_skills(Path(directory))
+            (root / "not-an-image.png").write_text("plain text", encoding="utf-8")
+            (root / "unsafe.svg").write_text(
+                '<svg xmlns="http://www.w3.org/2000/svg"><script/></svg>',
+                encoding="utf-8",
+            )
+            (root / "oversized.png").write_bytes(b"\0" * (MAX_SOURCE_BYTES + 1))
+
+            for value, expected in (
+                ("", "icon.invalid-path"),
+                ("missing.png", "icon.not-found"),
+                ("../not-an-image.png", "icon.unsupported"),
+                ("../unsafe.svg", "icon.unsafe"),
+                ("../oversized.png", "icon.too-large"),
+            ):
+                with self.subTest(icon=value):
+                    set_interface_icons(root, "alpha", icon=value)
+
+                    result = inspect_skills([root / "alpha"])[0]
+
+                    codes = [
+                        record.code
+                        for record in result["diagnostics"]
+                        if record.severity == "error"
+                    ]
+                    self.assertIn(expected, codes)
+                    self.assertNotIn("icon.invalid", codes)
 
     def test_invalid_and_unsafe_icon_sources_are_rejected(self):
         with tempfile.TemporaryDirectory() as directory:

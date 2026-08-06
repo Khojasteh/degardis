@@ -4,7 +4,12 @@ from pathlib import Path
 from typing import Iterable
 
 from .markdown import entry_filename, workflow_filename
-from .icons import ICON_OUTPUTS, resolve_icon_sources, validate_icon_sources
+from .icons import (
+    ICON_OUTPUTS,
+    IconError,
+    resolve_icon_sources,
+    validate_icon_sources,
+)
 from .model import (
     DegardisError,
     Diagnostics,
@@ -565,8 +570,11 @@ def _load_icons(skill: Skill, diagnostics: Diagnostics) -> dict[str, Path]:
     try:
         icon_sources = resolve_icon_sources(skill)
         validate_icon_sources(icon_sources)
+    except IconError as exc:
+        diagnostics.error(exc, exc.code, skill.root / "skill.yaml")
+        return {}
     except (DegardisError, OSError, UnicodeError) as exc:
-        diagnostics.error(exc, "icon.invalid", skill.root / "skill.yaml")
+        diagnostics.error(exc, "icon.unreadable", skill.root / "skill.yaml")
         return {}
     return icon_sources
 

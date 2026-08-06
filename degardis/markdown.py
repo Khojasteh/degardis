@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 import yaml
 
 from . import __version__
@@ -121,6 +119,23 @@ def _frontmatter(
         width=1000,
     ).strip()
     return f"---\n{data}\n---"
+
+
+def markdown_metrics(rendered: str) -> dict[str, int]:
+    """Measure generated SKILL.md, separating the body from its frontmatter."""
+    body = rendered
+    if rendered.startswith("---\n"):
+        _, separator, after = rendered[len("---\n") :].partition("\n---\n")
+        if separator:
+            body = after
+    body = body.strip("\n")
+    return {
+        "bytes": len(rendered.encode("utf-8")),
+        "lines": len(rendered.splitlines()),
+        "body_bytes": len(body.encode("utf-8")),
+        "body_lines": len(body.splitlines()),
+        "body_words": len(body.split()),
+    }
 
 
 def _primary_workflow(content: SkillContent) -> dict:

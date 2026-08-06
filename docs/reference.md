@@ -48,6 +48,82 @@ Each skill is reported as a pass or failure, with its findings grouped below
 it. The final summary reports passed, failed, error, warning, and total counts.
 Success exits with status 0; any failed skill exits with status 1.
 
+### `degardis agent PATH [PATH ...]`
+
+Reports everything an AI agent needs to review, repair, and budget the selected
+skills, with every error and warning aggregated in one run. It creates no
+output artifact and executes no bundled script.
+
+Its reader pays for every token, so the output is line-oriented and terse:
+
+- identifiers omit the skill-name prefix, which the header states once;
+- paths are relative to the root named in the header;
+- sizes are the bytes of the *generated* Markdown, which is what an agent
+  loads;
+- nothing is wrapped into prose, and listed rows are aligned into columns.
+
+Treat the format as unstable. It is written to be read by an agent that can
+adapt to it, not parsed by a script.
+
+The report is not written for a person. To read one yourself, `list` shows a
+skill's metadata in readable form and `validate` gives the pass or fail.
+
+Options:
+
+- `--only DIMENSION[,DIMENSION...]`: report the named sections instead of the
+  default set. Repeat the option or comma-separate names to combine them.
+- `--all`: report every section.
+- `--profile [SKILL:]PROFILE`: measure and inventory the bundle this profile
+  selection would build, using the same selector grammar and the same errors as
+  `build`. Without it, the manifest defaults apply, exactly as an unqualified
+  `build` applies them.
+
+Sections, in the order they are rendered. Every skill block opens with `skill`,
+whatever the selection, so multi-skill output stays unambiguous:
+
+| Section | Default | Reports |
+| --- | --- | --- |
+| `skill` | yes | name, version, title, root, id namespace, description length, primary workflow, and content counts |
+| `identity` | | the full description, license, and copyright |
+| `budget` | yes | the generated `SKILL.md` size for the selected profiles, and the on-demand weight of entries, supporting workflows, and selected profiles |
+| `workflows` | yes | each workflow, marked `primary` for the primary workflow, with the step that reaches a supporting one, or `unreached` |
+| `entries` | | each entry's local id, kind, priority, source path, and generated size |
+| `profiles` | | each profile's name, whether the selection includes it, source path, and generated size |
+| `scripts`, `assets` | | selected source paths and sizes |
+| `outputs` | | every file a build would write, with its size and permission bits |
+| `diagnostics` | yes | aggregated errors and warnings |
+
+The `skill` section reports how long the description is. The `identity` section
+reports the description itself, and replaces the length line when both sections
+are selected.
+
+`outputs` and `budget` describe the bundle the current `--profile` selection
+would produce, so both agree with `build` under the same selector without
+anything being written to disk.
+
+The `budget` section measures the whole generated `SKILL.md` and, separately, its
+body without the YAML frontmatter — the prompt itself.
+
+Diagnostics use one fixed line shape, so an agent can locate a finding without
+parsing prose:
+
+```
+error <path>[:<line>] <code> <message>
+warn  <path>[:<line>] <code> <message>
+```
+
+`<path>` is relative to the skill root, or `-` when the diagnostic concerns the
+skill as a whole rather than a file. `<line>` appears only where the check
+knows one.
+
+`<code>` names the check, not its wording, and reads as `<namespace>.<check>`.
+The namespace is the construct the check concerns: `manifest`, `interface`,
+`content`, `entry`, `workflow`, `profile`, `output`, `yaml`, `icon`, or
+`source`.
+
+`agent` exits with status 0 when no errors are found and status 1 when any
+selected skill has one or more errors, whichever sections were selected.
+
 ### `degardis build PATH [PATH ...] --output PATH`
 
 Builds one uncompressed skill folder per selected skill by default, or one
@@ -95,8 +171,12 @@ Other entries in the output root are always preserved.
 For safety, Degardis rejects an output directory that is the same as,
 contains, or is contained by a selected skill source directory. A relative
 output path is resolved from the current working directory. On success, the
-command reports every skill and the absolute path of its generated folder or
-archive, followed by a summary.
+command reports each skill with the absolute path of its generated folder or
+archive and the measurements of its generated `SKILL.md`, then closes with a
+summary. The measurement gives total bytes and lines first, then the body bytes,
+lines, and words, which exclude the frontmatter. It reflects the profiles this
+build included, so it matches what `degardis agent` reports for the same
+`--profile` selection.
 
 Generated text is written with `\n` line endings on every platform, so the same
 source produces the same bundle bytes wherever it is built.

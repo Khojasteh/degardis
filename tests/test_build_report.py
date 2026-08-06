@@ -18,6 +18,23 @@ from tests.support import FIXTURES, copy_skills
 
 
 class BuildReportTests(unittest.TestCase):
+    def test_build_report_measures_the_generated_skill_markdown(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "output"
+            stdout = io.StringIO()
+            with contextlib.redirect_stdout(stdout):
+                code = main(
+                    ["build", str(FIXTURES / "alpha"), "--output", str(output)]
+                )
+            rendered = (output / "alpha" / "SKILL.md").read_text(encoding="utf-8")
+
+        report = stdout.getvalue()
+        self.assertEqual(0, code)
+        self.assertIn("SKILL.md", report)
+        self.assertIn(f"{len(rendered.encode('utf-8'))} bytes", report)
+        self.assertIn(f"{len(rendered.splitlines())} lines", report)
+        self.assertIn("body ", report)
+
     def test_build_warns_about_unrecognized_content_field(self):
         with tempfile.TemporaryDirectory() as directory:
             root = copy_skills(Path(directory))

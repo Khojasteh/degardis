@@ -17,6 +17,34 @@ from .markdown import (
 from .model import DegardisError, SkillBundle
 
 
+OPENAI_INTERFACE_FIELDS = (
+    "display_name",
+    "short_description",
+    "icon_small",
+    "icon_large",
+    "brand_color",
+    "default_prompt",
+)
+
+
+def openai_metadata(interface: dict, icon_roles: set[str]) -> str:
+    """Render agents/openai.yaml so callers can write it or measure it alike."""
+    emitted = dict(interface)
+    emitted.pop("icon", None)
+    for role in icon_roles:
+        emitted[f"icon_{role}"] = f"./{ICON_OUTPUTS[role]}"
+    lines = ["interface:"]
+    for key in OPENAI_INTERFACE_FIELDS:
+        if key in emitted:
+            lines.append(f"  {key}: {json.dumps(str(emitted[key]))}")
+    return "\n".join(lines) + "\n"
+
+
+def artifact_mode(relative: str) -> str:
+    """Report the permission bits the archive records for one bundle path."""
+    return "755" if relative.startswith("scripts/") else "644"
+
+
 def write_generated(path: Path, text: str) -> None:
     """Write one generated file with newlines the host cannot rewrite.
 
@@ -166,25 +194,9 @@ class ArtifactWriter:
         destination: Path,
         icon_roles: set[str],
     ) -> None:
-        emitted = dict(interface)
-        emitted.pop("icon", None)
-        for role in icon_roles:
-            emitted[f"icon_{role}"] = f"./{ICON_OUTPUTS[role]}"
-        fields = [
-            "display_name",
-            "short_description",
-            "icon_small",
-            "icon_large",
-            "brand_color",
-            "default_prompt",
-        ]
-        lines = ["interface:"]
-        for key in fields:
-            if key in emitted:
-                lines.append(f"  {key}: {json.dumps(str(emitted[key]))}")
         write_generated(
             destination / "agents" / "openai.yaml",
-            "\n".join(lines) + "\n",
+            openai_metadata(interface, icon_roles),
         )
 
 

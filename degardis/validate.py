@@ -4,9 +4,11 @@ import re
 from typing import Any
 from pathlib import Path
 
+from .icons import render_icon_assets
 from .markdown import (
     entry_filename,
     entry_markdown,
+    markdown_metrics,
     skill_markdown,
     workflow_filename,
     workflow_markdown,
@@ -19,6 +21,7 @@ from .model import (
     SkillBundle,
     SkillContent,
 )
+from .package import artifact_mode, openai_metadata
 from .registry import discover_skill_paths, load_skill_path
 from .resolver import load_content, select_profiles
 
@@ -52,6 +55,28 @@ DERIVED_MANIFEST_FIELDS = {"entry_kinds"}
 PROFILES_FIELDS = {"directory", "defaults"}
 REQUIRED_MANIFEST_FIELDS = ("version", "description", "primary_workflow")
 REQUIRED_INTERFACE_FIELDS = ("display_name", "short_description", "default_prompt")
+
+# Sections of the agent report. Ordered as they are rendered; the four marked
+# default answer "is it sound and what does it cost" without listing content the
+# caller has not asked to act on.
+AGENT_DIMENSIONS: tuple[str, ...] = (
+    "skill",
+    "identity",
+    "budget",
+    "workflows",
+    "entries",
+    "profiles",
+    "scripts",
+    "assets",
+    "outputs",
+    "diagnostics",
+)
+DEFAULT_AGENT_DIMENSIONS: tuple[str, ...] = (
+    "skill",
+    "budget",
+    "workflows",
+    "diagnostics",
+)
 
 
 def _validate_name(value: str, label: str) -> list[str]:
@@ -262,13 +287,113 @@ def _empty_result(source: Path) -> dict[str, Any]:
         "license": None,
         "copyright": None,
         "primary_workflow": "",
+        "entry_kind_counts": {},
+        "entries": [],
+        "workflows": [],
         "profiles": [],
         "selected_profiles": [],
-        "default_profiles": [],
+        "scripts": [],
+        "assets": [],
+        "counts": {
+            "entries": 0,
+            "workflows": 0,
+            "profiles": 0,
+            "scripts": 0,
+            "assets": 0,
+        },
+        "skill_markdown": {
+            "bytes": 0,
+            "lines": 0,
+            "body_bytes": 0,
+            "body_lines": 0,
+            "body_words": 0,
+        },
+        "reference_bytes": {"entries": 0, "workflows": 0, "profiles": 0},
+        "outputs": [],
         "diagnostics": [],
         "errors": [],
         "warnings": [],
     }
+
+
+def _workflow_reach(
+    skill: Skill,
+    content: SkillContent,
+) -> dict[str, str]:
+    """Map each workflow to the step that reaches it from the primary workflow.
+
+    The reference index and the bundle both carry a supporting workflow whether
+    or not a step invokes it, so an agent reviewing coverage needs the edge, not
+    just the list.
+    """
+    known = {str(workflow["id"]): workflow for workflow in content.workflows}
+    origin: dict[str, str] = {}
+    if skill.primary_workflow in known:
+        origin[skill.primary_workflow] = "primary"
+    pending = [skill.primary_workflow]
+    while pending:
+        current = pending.pop(0)
+        if current not in known:
+            continue
+        for index, step in enumerate(known[current].get("steps", []), start=1):
+            if not isinstance(step, dict) or not step.get("use"):
+                continue
+            target = str(step["use"])
+            if target in origin or target not in known:
+                continue
+            origin[target] = f"{_local(current, skill.name)}.{index}"
+            pending.append(target)
+    return origin
+
+
+def _local(identifier: str, skill_name: str) -> str:
+    prefix = f"{skill_name}."
+    return identifier[len(prefix) :] if identifier.startswith(prefix) else identifier
+
+
+def _bundle_outputs(
+    skill: Skill,
+    content: SkillContent,
+    rendered: str,
+) -> list[dict[str, Any]]:
+    """List what a build would write, so nothing has to be built to see it."""
+    outputs: list[dict[str, Any]] = []
+
+    def add(relative: str, size: int) -> None:
+        outputs.append(
+            {"path": relative, "bytes": size, "mode": artifact_mode(relative)}
+        )
+
+    if rendered:
+        add("SKILL.md", len(rendered.encode("utf-8")))
+    for entry in content.entries:
+        add(
+            f"references/entries/{entry_filename(entry)}",
+            len(entry_markdown(entry).encode("utf-8")),
+        )
+    for workflow in content.workflows:
+        if workflow.get("id") == skill.primary_workflow:
+            continue
+        add(
+            f"references/workflows/{workflow_filename(workflow, skill.name)}",
+            len(workflow_markdown(workflow).encode("utf-8")),
+        )
+    for profile in content.profiles:
+        add(
+            f"references/profiles/{profile.filename}",
+            len(profile.text.encode("utf-8")),
+        )
+    for source in [*content.scripts, *content.assets]:
+        add(source.relative_to(skill.root).as_posix(), source.stat().st_size)
+    for relative, data in render_icon_assets(content.icon_sources).items():
+        add(relative, len(data))
+    add(
+        "agents/openai.yaml",
+        len(
+            openai_metadata(skill.interface, set(content.icon_sources)).encode("utf-8")
+        ),
+    )
+    return sorted(outputs, key=lambda item: item["path"])
 
 
 def _selected_profiles(
@@ -411,11 +536,119 @@ def _check_workflow_references(
     return primary_workflow_found
 
 
-def _inspect_skill(path: Path, profiles: list[str] | None = None) -> dict[str, Any]:
-    """Check one skill, collecting everything wrong with it rather than the first.
+def _measured_content(content: SkillContent, selected: list[str]) -> SkillContent:
+    """The content a build would actually produce for this profile selection.
 
-    A skill that cannot be loaded at all is reported on its own, since no later
-    check has a source to read.
+    Measuring the selection rather than every resolved profile keeps the reported
+    numbers equal to a build's, rather than a variant nobody installs.
+    """
+    return SkillContent(
+        skill=content.skill,
+        entries=content.entries,
+        workflows=content.workflows,
+        profiles=[
+            profile for profile in content.profiles if profile.name in selected
+        ],
+        scripts=content.scripts,
+        assets=content.assets,
+        icon_sources=content.icon_sources,
+    )
+
+
+def _file_inventory(skill: Skill, sources: list[Path]) -> list[dict[str, Any]]:
+    """List copied sources by their path inside the skill, and their size."""
+    return [
+        {
+            "path": item.relative_to(skill.root).as_posix(),
+            "bytes": item.stat().st_size,
+        }
+        for item in sources
+    ]
+
+
+def _content_inventory(
+    skill: Skill,
+    content: SkillContent,
+    selected: list[str],
+) -> dict[str, Any]:
+    """Inventory every resolved source, with the bytes each contributes."""
+    counts: dict[str, int] = {}
+    for entry in content.entries:
+        counts[entry.kind] = counts.get(entry.kind, 0) + 1
+    entries = [
+        {
+            "id": _local(entry.id, skill.name),
+            "title": entry.title,
+            "kind": entry.kind,
+            "priority": entry.priority,
+            "path": entry.path.relative_to(skill.root).as_posix(),
+            "reference": f"references/entries/{entry_filename(entry)}",
+            "bytes": len(entry_markdown(entry).encode("utf-8")),
+        }
+        for entry in content.entries
+    ]
+    reach = _workflow_reach(skill, content)
+    workflows = [
+        {
+            "id": _local(str(workflow["id"]), skill.name),
+            "title": str(workflow.get("title", workflow["id"])),
+            "path": Path(workflow["_path"]).relative_to(skill.root).as_posix(),
+            "steps": len(workflow.get("steps", [])),
+            "reached_by": reach.get(str(workflow["id"]), ""),
+            "bytes": len(workflow_markdown(workflow).encode("utf-8")),
+        }
+        for workflow in sorted(
+            content.workflows,
+            key=lambda item: (
+                str(item["id"]) != skill.primary_workflow,
+                str(item["id"]),
+            ),
+        )
+    ]
+    profiles = [
+        {
+            "name": profile.name,
+            "label": profile.label,
+            "path": profile.path.relative_to(skill.root).as_posix(),
+            "selected": profile.name in selected,
+            "bytes": len(profile.text.encode("utf-8")),
+        }
+        for profile in sorted(content.profiles, key=lambda item: item.name)
+    ]
+    return {
+        "entry_kind_counts": dict(
+            sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+        ),
+        "entries": entries,
+        "workflows": workflows,
+        "profiles": profiles,
+        "scripts": _file_inventory(skill, content.scripts),
+        "assets": _file_inventory(skill, content.assets),
+        "reference_bytes": {
+            "entries": sum(item["bytes"] for item in entries),
+            "workflows": sum(
+                item["bytes"]
+                for item in workflows
+                if item["reached_by"] != "primary"
+            ),
+            "profiles": sum(item["bytes"] for item in profiles if item["selected"]),
+        },
+        "counts": {
+            "entries": len(content.entries),
+            "workflows": len(content.workflows),
+            "profiles": len(content.profiles),
+            "scripts": len(content.scripts),
+            "assets": len(content.assets),
+        },
+    }
+
+
+def _inspect_skill(path: Path, profiles: list[str] | None = None) -> dict[str, Any]:
+    """Check one skill and inventory what a build would produce from it.
+
+    Checking comes first and only reports; the inventory that follows measures
+    the sources the checks accepted. A skill that cannot be loaded at all is
+    reported without either.
     """
     source = path.resolve()
     result = _empty_result(source)
@@ -436,10 +669,15 @@ def _inspect_skill(path: Path, profiles: list[str] | None = None) -> dict[str, A
     selected = _selected_profiles(skill, content, profiles, diagnostics)
     result["selected_profiles"] = selected
     primary_workflow_found = _check_workflow_references(skill, content, diagnostics)
-    result["profiles"] = sorted(profile.name for profile in content.profiles)
 
+    measured = _measured_content(content, selected)
+    rendered = ""
     if primary_workflow_found:
-        _check_generated_references(skill, content, diagnostics)
+        rendered = _check_generated_references(skill, measured, diagnostics)
+        if rendered:
+            result["skill_markdown"] = markdown_metrics(rendered)
+    result["outputs"] = _bundle_outputs(skill, measured, rendered)
+    result.update(_content_inventory(skill, content, selected))
     return _finish(result, diagnostics)
 
 
@@ -459,6 +697,20 @@ def inspect_skills(
     profiles: list[str] | None = None,
 ) -> list[dict[str, Any]]:
     return [_inspect_skill(path, profiles) for path in paths]
+
+
+def select_agent_dimensions(dimensions: list[str] | None) -> tuple[str, ...]:
+    """Resolve the requested sections, keeping the rendering order fixed."""
+    if not dimensions:
+        return DEFAULT_AGENT_DIMENSIONS
+    unknown = sorted(set(dimensions) - set(AGENT_DIMENSIONS))
+    if unknown:
+        raise DegardisError(
+            f"Unknown dimensions: {', '.join(unknown)}; "
+            f"available: {', '.join(sorted(AGENT_DIMENSIONS))}"
+        )
+    selected = set(dimensions) | {"skill"}
+    return tuple(name for name in AGENT_DIMENSIONS if name in selected)
 
 
 def validate(sources: Path | list[Path]) -> list[str]:

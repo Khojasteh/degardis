@@ -4,6 +4,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from .model import DegardisError, Diagnostics
+from .markdown import markdown_metrics
 from .package import (
     ArchivePackager,
     ArtifactWriter,
@@ -19,6 +20,7 @@ class SkillCompiler:
         self.writer = ArtifactWriter()
         self.packager = ArchivePackager()
         self.warnings: list[str] = []
+        self.metrics: dict[str, dict[str, int]] = {}
 
     def _check_output_path(self, output: Path) -> None:
         resolved_output = output.resolve()
@@ -52,6 +54,7 @@ class SkillCompiler:
             raise DegardisError("at least one skill is required")
         output.mkdir(parents=True, exist_ok=True)
         paths: list[Path] = []
+        self.metrics = {}
         for bundle in bundles:
             name = bundle.primary.name
             with TemporaryDirectory(
@@ -60,6 +63,9 @@ class SkillCompiler:
                 staging_root = Path(directory)
                 staged_folder = staging_root / name
                 self.writer.write_skill(bundle, staged_folder)
+                self.metrics[name] = markdown_metrics(
+                    (staged_folder / "SKILL.md").read_text(encoding="utf-8")
+                )
                 if as_zip:
                     destination = output / f"{name}.zip"
                     staged = staging_root / f"{name}.zip"

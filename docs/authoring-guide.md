@@ -316,6 +316,11 @@ Also exercise ZIP output when it is a distribution format:
 degardis build my-skill --zip --output .artifacts
 ```
 
+If you are an AI agent rather than a person, `degardis agent my-skill --all`
+reports all of the above in one pass: every entry, workflow, and profile with
+its authored path and generated size, the files a build would write, what the
+skill costs to load, and every error and warning found.
+
 ## 9. Preserve the example boundary
 
 This repository contains exactly one public example so its documentation and

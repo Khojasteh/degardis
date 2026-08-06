@@ -79,11 +79,15 @@ installation, and it follows Degardis conventions for every part of a skill.
 degardis list PATH [PATH ...]
 degardis validate PATH [PATH ...]
 degardis build PATH [PATH ...] --output PATH [--profile [SKILL:]PROFILE] [--zip]
+degardis agent PATH [PATH ...] [--only DIMENSION] [--all] [--profile PROFILE]
 ```
 
 - `list` shows metadata and available profiles.
 - `validate` checks a skill source and reports every problem it finds.
 - `build` creates the installable folder or ZIP.
+- `agent` reports full skill intelligence in a compact form meant for AI
+  agents, not humans. It covers entries, workflows, profiles, generated files,
+  the workflow graph, loading cost, and diagnostics.
 
 Run `degardis COMMAND --help` for exact options and examples.
 

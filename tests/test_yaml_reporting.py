@@ -163,6 +163,31 @@ class YamlReportingTests(unittest.TestCase):
         self.assertIn("plain scalar begins with '!!str'", report)
         self.assertIn("consumed as a type tag instead of the value", report)
 
+    def test_altered_value_warnings_share_one_check_code(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_skills(Path(directory))
+            entry = root / "alpha" / "entries" / "rule-one.yaml"
+            text = entry.read_text(encoding="utf-8")
+            text += (
+                "scope: &Shared applies to every request\n"
+                "constraint: !!str tagged text\n"
+                "rationale: text #and a lost comment\n"
+                "require:\n"
+                "- *Shared\n"
+            )
+            entry.write_text(text, encoding="utf-8")
+
+            stdout = io.StringIO()
+            with contextlib.redirect_stdout(stdout):
+                main(["agent", str(root / "alpha"), "--only", "diagnostics"])
+
+        codes = [
+            line.split()[2]
+            for line in stdout.getvalue().splitlines()
+            if line.startswith("warn ")
+        ]
+        self.assertEqual(4, codes.count("yaml.altered-scalar"))
+
     def test_validate_accepts_quoted_and_block_multiline_values(self):
         with tempfile.TemporaryDirectory() as directory:
             root = copy_skills(Path(directory))

@@ -202,6 +202,7 @@ class ManifestValidationTests(unittest.TestCase):
             build_skills(root / "gamma", root / "output")
 
         self.assertNotIn("declared_entry_kinds", result)
+        self.assertEqual({"rule": 1}, result["entry_kind_counts"])
         self.assertTrue(
             any(
                 "entry_kinds is derived from the skill content" in warning

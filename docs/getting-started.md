@@ -41,7 +41,7 @@ Validation reads the source without writing an artifact. The manifest at
 [`examples/structured-summary/skill.yaml`](../examples/structured-summary/skill.yaml)
 declares source format 1 and skill version 1.0.0.
 
-## Inspect available profiles
+## See skill details
 
 ```console
 degardis list examples/structured-summary
@@ -49,12 +49,10 @@ degardis list examples/structured-summary
 
 The output shows the skill title, description, optional `detailed` profile,
 whether it includes scripts, legal metadata, and the absolute source path.
-Look for these lines; the source path differs by machine:
 
-```text
-Profiles    detailed
-Scripts     Yes
-```
+`degardis agent` reports the same skill in much more detail. It is designed
+for AI agents, not people, so its output is compact and its format may change.
+See [the reference](reference.md#degardis-agent-path-path-) before relying on it.
 
 ## Build the bundle
 

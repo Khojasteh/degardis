@@ -124,6 +124,9 @@ Options:
   selection would build, using the same selector grammar and the same errors as
   `build`. Without it, the report describes a bundle with no profile, exactly as
   an unqualified `build` produces one.
+- `--baseline REF`: also measure each selected skill as the git revision `REF`
+  has it, and report the difference in the `budget` section. See
+  [Comparing against a revision](#comparing-against-a-revision).
 
 Sections, in the order they are rendered. Every skill block opens with `skill`,
 whatever the selection, so multi-skill output stays unambiguous:
@@ -150,6 +153,51 @@ anything being written to disk.
 
 The `budget` section measures the whole generated `SKILL.md` and, separately, its
 body without the YAML frontmatter — the prompt itself.
+
+#### Comparing against a revision
+
+`--baseline REF` measures each selected skill twice, once as your working copy
+has it and once as the git revision `REF` has it, and reports the difference.
+
+```console
+degardis agent path/to/skill --only budget --baseline HEAD
+```
+
+```text
+body  SKILL.md 1524B 50L | text 1285B 40L 164w | profiles none
+refs  entries 1099B | workflows 492B | profiles 0B
+base  HEAD SKILL.md 1524B 50L | text 1285B 40L 164w | entries 1043B | workflows 492B | profiles 0B
+delta SKILL.md +0B +0L | text +0B +0L +0w | entries +56B | workflows +0B | profiles +0B
+```
+
+`base` repeats the sizes from `body` and `refs`, in that order, as `REF` has
+them. `delta` gives your copy minus `REF`, and every number carries a sign, so a
+size that did not change reads `+0`. The run above is an edit that added 56 bytes
+to an entry and nothing to the always-loaded `SKILL.md`.
+
+`--profile` applies to both sides, and the two can disagree. Where `REF` has no
+profile the selector matches, nothing is selected there, so the `delta` carries
+the whole cost of a profile added since — both the bytes it puts in `SKILL.md` and
+its own reference weight. A selector matching nothing in your working copy is an
+error, exactly as it is for `build`.
+
+`REF` is anything `git rev-parse` accepts: `HEAD`, `HEAD~3`, a branch, a tag, or
+a commit id. Degardis reads the revision without checking it out, so your working
+tree, index, and stash are left as they are, and measuring an edit never requires
+stashing it or switching branches first.
+
+Where there is nothing to compare against, `base` says so and no `delta`
+follows:
+
+| Reported | Meaning |
+| --- | --- |
+| `absent` | `REF` has no skill at that path, as for a skill added or renamed since |
+| `unmeasured` | `REF` has the skill, but no `SKILL.md` can be generated from it |
+
+Errors and warnings in `REF` are not reported and do not affect the exit status,
+which continues to reflect only the skills you selected. `--baseline` needs
+`budget` among the selected sections and reports an error when `--only` leaves it
+out.
 
 Diagnostics use one fixed line shape, so an agent can locate a finding without
 parsing prose:

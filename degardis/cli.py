@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 from . import __version__
+from .baseline import measure_baselines
 from .build import SkillCompiler
 from .explain import codes_by_namespace, explanation, known_codes, known_codes_message
 from .model import SUPPORTED_FORMAT_VERSIONS, DegardisError
@@ -187,6 +188,13 @@ separates sections and skills, and listed rows are indented and space-aligned.
                                   text is SKILL.md without its frontmatter
   refs  entries <n>B | workflows <n>B | profiles <n>B
                                   weight loaded on demand, not up front
+  base  <ref> <body and refs sizes on one line>|absent|unmeasured
+                                  --baseline only: those sizes as <ref> has them,
+                                  absent if <ref> has no such skill, unmeasured if
+                                  no SKILL.md could be built from the one it has
+  delta <the same sizes, each signed>
+                                  --baseline only: current minus base, and only
+                                  where both were measured
   workflows <n>                   rows: <id> primary|<step>|unreached <n> steps <path> <n>B
                                   <step> reaches this workflow, as <workflow>.<index>
   entries <n>  <kind> <n>...      rows: <id> <kind>/<priority> <path> <n>B
@@ -206,6 +214,7 @@ Examples:
   degardis agent examples/structured-summary --only entries,outputs
   degardis agent examples/structured-summary --all
   degardis agent examples/structured-summary --profile detailed --only budget
+  degardis agent examples/structured-summary --only budget --baseline HEAD
 """,
         formatter_class=HELP_FORMATTER,
     )
@@ -237,6 +246,20 @@ Examples:
             "measure and inventory the bundle this profile selection would "
             "build; without it, the report covers a bundle with no profile, as "
             "an unqualified build produces one"
+        ),
+    )
+    agent_command.add_argument(
+        "--baseline",
+        metavar="REF",
+        help=(
+            "also measure each skill as this git revision has it, and report "
+            "the budget difference, which needs budget among the reported "
+            "sections. Reads the revision without checking it out, so the "
+            "working tree and the index are left alone. The revision's own "
+            "errors and warnings are excluded from the report and from the "
+            "exit status. --profile applies to both sides; a profile the "
+            "revision does not have selects nothing there, so the delta "
+            "carries that profile's whole cost"
         ),
     )
 
@@ -344,15 +367,20 @@ def _run(argv: list[str] | None = None) -> int:
         return int(any(result["errors"] for result in results))
 
     if args.command == "agent":
-        results = inspect_skills(skill_paths, args.profiles)
         selected = [name for group in args.dimensions or [] for name in group]
         if args.all_dimensions:
             selected = list(AGENT_DIMENSIONS)
-        write_agent_report(
-            sys.stdout,
-            results,
-            select_agent_dimensions(selected),
-        )
+        dimensions = select_agent_dimensions(selected)
+        baselines = None
+        if args.baseline:
+            if "budget" not in dimensions:
+                raise DegardisError(
+                    "--baseline reports a budget difference, which the selected "
+                    "sections leave out; add budget to --only, or drop --only"
+                )
+            baselines = measure_baselines(skill_paths, args.baseline, args.profiles)
+        results = inspect_skills(skill_paths, args.profiles)
+        write_agent_report(sys.stdout, results, dimensions, baselines)
         return int(any(result["errors"] for result in results))
 
     compiler = SkillCompiler(skill_paths)

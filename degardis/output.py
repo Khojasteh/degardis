@@ -210,10 +210,64 @@ def _columns(rows: list[tuple[str, ...]]) -> list[str]:
     return lines
 
 
+def _budget_sizes(result: dict[str, Any]) -> tuple[int, ...]:
+    """The budget numbers of one measurement, in the order body and refs print them."""
+    markdown = result.get("skill_markdown", {})
+    weight = result.get("reference_bytes", {})
+    return (
+        markdown.get("bytes", 0),
+        markdown.get("lines", 0),
+        markdown.get("body_bytes", 0),
+        markdown.get("body_lines", 0),
+        markdown.get("body_words", 0),
+        weight.get("entries", 0),
+        weight.get("workflows", 0),
+        weight.get("profiles", 0),
+    )
+
+
+def _budget_line(label: str, sizes: tuple[int, ...], signed: bool = False) -> str:
+    """Lay the budget numbers out in the field order the `body` and `refs` lines use.
+
+    A delta always carries its sign, including on zero, so an unchanged size reads
+    as a measured comparison rather than as a size that happens to be small.
+    """
+    show = (lambda size: f"{size:+d}") if signed else str
+    return (
+        f"{label} SKILL.md {show(sizes[0])}B {show(sizes[1])}L"
+        f" | text {show(sizes[2])}B {show(sizes[3])}L {show(sizes[4])}w"
+        f" | entries {show(sizes[5])}B | workflows {show(sizes[6])}B"
+        f" | profiles {show(sizes[7])}B"
+    )
+
+
+def _write_agent_baseline(
+    stream: TextIO,
+    baseline: dict[str, Any],
+    sizes: tuple[int, ...],
+) -> None:
+    """Report the revision's own sizes and, where both were measured, the change."""
+    ref = str(baseline.get("ref", ""))
+    if baseline.get("state") != "measured":
+        print(f"base  {ref} {baseline.get('state', 'unmeasured')}", file=stream)
+        return
+    was = _budget_sizes(baseline)
+    print(_budget_line(f"base  {ref}", was), file=stream)
+    print(
+        _budget_line(
+            "delta",
+            tuple(now - before for now, before in zip(sizes, was)),
+            signed=True,
+        ),
+        file=stream,
+    )
+
+
 def _write_agent_skill(
     stream: TextIO,
     result: dict[str, Any],
     dimensions: tuple[str, ...],
+    baseline: dict[str, Any] | None = None,
 ) -> None:
     name = str(result.get("name", "unknown"))
     root = result.get("source")
@@ -272,6 +326,8 @@ def _write_agent_skill(
             f" | workflows {weight.get('workflows', 0)}B"
             f" | profiles {weight.get('profiles', 0)}B",
         )
+        if baseline:
+            _write_agent_baseline(stream, baseline, _budget_sizes(result))
 
     if "workflows" in dimensions:
         section("", f"workflows {len(workflows)}")
@@ -363,12 +419,14 @@ def write_agent_report(
     stream: TextIO,
     results: list[dict],
     dimensions: tuple[str, ...],
+    baselines: list[dict] | None = None,
 ) -> None:
     """Report source intelligence for an AI agent, in as few tokens as it takes."""
+    measured = baselines or [None] * len(results)
     for index, result in enumerate(results):
         if index:
             print(file=stream)
-        _write_agent_skill(stream, result, dimensions)
+        _write_agent_skill(stream, result, dimensions, measured[index])
     errors = sum(len(result.get("errors", [])) for result in results)
     warnings = sum(len(result.get("warnings", [])) for result in results)
     print(file=stream)

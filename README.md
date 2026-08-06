@@ -79,7 +79,7 @@ installation, and it follows Degardis conventions for every part of a skill.
 degardis list PATH [PATH ...]
 degardis validate PATH [PATH ...]
 degardis build PATH [PATH ...] --output PATH [--profile [SKILL:]PROFILE] [--zip]
-degardis agent PATH [PATH ...] [--only DIMENSION] [--all] [--profile PROFILE]
+degardis agent PATH [PATH ...] [--only DIMENSION] [--all] [--profile PROFILE] [--baseline REF]
 degardis explain CODE [CODE ...]
 ```
 
@@ -88,7 +88,9 @@ degardis explain CODE [CODE ...]
 - `build` creates the installable folder or ZIP.
 - `agent` reports full skill intelligence in a compact form meant for AI
   agents, not humans. It covers entries, workflows, profiles, generated files,
-  the workflow graph, loading cost, and diagnostics.
+  the workflow graph, loading cost, and diagnostics. `--baseline REF` also
+  reports what a skill cost at a git revision and how much your edits changed
+  it, without checking that revision out.
 - `explain` describes the checks behind reported diagnostic codes: what
   triggers each one, why it matters, and a failing and passing example. Pass as
   many codes as a report gave you.

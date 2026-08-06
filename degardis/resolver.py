@@ -206,7 +206,8 @@ def _validate_output_paths(content: SkillContent) -> None:
         claim(ICON_OUTPUTS[role], source)
 
 
-def _load_content(skill: Skill) -> SkillContent:
+def load_content(skill: Skill) -> SkillContent:
+    """Resolve every source one skill declares into the content a bundle ships."""
     content_config = skill.manifest.get("content", {})
     if not isinstance(content_config, dict):
         raise DegardisError(f"{skill.name}: content must be a mapping")
@@ -272,9 +273,10 @@ def _load_content(skill: Skill) -> SkillContent:
     return content
 
 
-def _select_profiles(
+def select_profiles(
     contents: list[SkillContent], selectors: list[str] | None
 ) -> dict[str, set[str]]:
+    """Which profiles each skill ships, from the selectors the caller gave."""
     selected = {content.skill.name: set() for content in contents}
     available = {
         content.skill.name: {profile.name for profile in content.profiles}
@@ -320,8 +322,8 @@ def _select_profiles(
 def collect_skills(
     skill_paths: list[Path], profiles: list[str] | None = None
 ) -> list[SkillBundle]:
-    contents = [_load_content(load_skill_path(path)) for path in skill_paths]
-    selections = _select_profiles(contents, profiles)
+    contents = [load_content(load_skill_path(path)) for path in skill_paths]
+    selections = select_profiles(contents, profiles)
     bundles: list[SkillBundle] = []
     for content in contents:
         content.profiles = [
@@ -336,7 +338,7 @@ def collect_skills(
 def profile_matches(
     skill_paths: list[Path], selectors: list[str]
 ) -> dict[str, list[str]]:
-    contents = [_load_content(load_skill_path(path)) for path in skill_paths]
+    contents = [load_content(load_skill_path(path)) for path in skill_paths]
     available = {
         content.skill.name: {profile.name for profile in content.profiles}
         for content in contents

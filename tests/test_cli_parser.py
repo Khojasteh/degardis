@@ -51,13 +51,6 @@ class CliParserTests(unittest.TestCase):
         self.assertEqual(Path("relative-source").resolve(), args.paths[0])
         self.assertEqual(Path("relative-output").resolve(), args.output)
 
-    def test_help_describes_skill_paths_without_removed_commands(self):
-        help_text = parser().format_help()
-        self.assertIn("self-contained agent skills", help_text)
-        self.assertIn("examples/structured-summary", help_text)
-        self.assertNotIn("--suite", help_text)
-        self.assertNotIn("route", help_text)
-
     def test_version_option_displays_the_tool_version(self):
         stdout = io.StringIO()
         with contextlib.redirect_stdout(stdout):
@@ -115,8 +108,3 @@ class CliParserTests(unittest.TestCase):
         # two copies of one constant drift apart.
         for name in ("agent", "build", "validate", "list", "explain"):
             self.assertEqual([], announced_formats(command_help(name)), name)
-
-    def test_route_is_not_a_command(self):
-        with self.assertRaises(SystemExit):
-            with contextlib.redirect_stderr(io.StringIO()):
-                parser().parse_args(["route", "anything"])

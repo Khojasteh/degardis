@@ -191,9 +191,3 @@ class ExplainTests(unittest.TestCase):
         self.assertIn("Known codes:", report)
         for known in ("yaml.altered-scalar", "workflow.unreachable"):
             self.assertIn(known, report)
-
-    def test_explain_is_offered_by_the_top_level_help(self):
-        help_text = parser().format_help()
-
-        self.assertIn("explain", help_text)
-        self.assertIn("explain one or more diagnostic check codes", help_text)

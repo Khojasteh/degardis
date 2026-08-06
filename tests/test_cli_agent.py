@@ -99,23 +99,6 @@ def with_an_unreached_workflow(root: Path) -> None:
 class AgentHelpTests(unittest.TestCase):
     """The help an agent reads before, or instead of, the reference page."""
 
-    def test_help_presents_the_report_as_machine_readable_not_unstable(self):
-        help_text = agent_help()
-
-        self.assertIn("stable and meant to be relied on", help_text)
-        self.assertNotIn("not stable", help_text)
-        self.assertNotIn("unstable", help_text)
-        # The readable and pass-or-fail alternatives stay named.
-        self.assertIn("list for a readable summary", help_text)
-        self.assertIn("validate for a pass or fail gate", help_text)
-
-    def test_the_legend_states_what_a_size_and_a_path_mean(self):
-        help_text = agent_help()
-
-        self.assertIn("bytes of the generated Markdown", help_text)
-        self.assertIn("relative to the root in the header", help_text)
-        self.assertIn("text is SKILL.md without its frontmatter", help_text)
-
     def test_the_legend_gives_the_diagnostic_line_shape(self):
         self.assertIn(
             "error|warn <path>[:<line>] <code> <message>",

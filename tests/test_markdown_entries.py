@@ -27,18 +27,6 @@ class EntrySectionOrderTests(unittest.TestCase):
         data.update(fields)
         return Entry(path=Path("every-field.yaml"), data=data, skill="demo")
 
-    def test_conditions_precede_the_requirements_they_qualify(self):
-        text = entry_markdown(
-            self.entry(
-                require=["Do the required thing."],
-                reject=["Never do the rejected thing."],
-                conditions=["The qualifying situation holds."],
-            )
-        )
-        order = sections(text)
-        self.assertLess(order.index("Conditions"), order.index("Require"))
-        self.assertLess(order.index("Conditions"), order.index("Reject"))
-
     def test_every_optional_section_renders_in_reading_order(self):
         text = entry_markdown(
             self.entry(

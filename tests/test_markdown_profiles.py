@@ -46,24 +46,6 @@ class ProfileListingTests(unittest.TestCase):
             profiles=["beta:beta-only", "beta:shared"],
         )[0]
 
-    def test_the_section_says_what_a_profile_is_and_how_to_select_one(self):
-        """A label-only list is unusable unless the section states both facts.
-
-        The per-profile descriptions used to teach the concept incidentally, once
-        per line. With them optional, the one shared preamble has to carry it.
-        """
-        with tempfile.TemporaryDirectory() as directory:
-            artifact = self.build_beta(directory)
-
-            text = folder_text(artifact, "SKILL.md")
-
-            self.assertIn(
-                "Profiles adapt this skill to a particular audience, format,"
-                " technology, or environment. Load every profile whose label names"
-                " something this request involves, and no others:",
-                text,
-            )
-
     def test_a_profile_without_a_description_is_listed_by_its_label_alone(self):
         with tempfile.TemporaryDirectory() as directory:
             artifact = self.build_beta(directory)

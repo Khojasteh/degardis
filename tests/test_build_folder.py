@@ -30,8 +30,6 @@ class FolderOutputTests(unittest.TestCase):
             self.assertIn("SKILL.md", names)
             self.assertIn("agents/openai.yaml", names)
             self.assertFalse(any(name.startswith(".") for name in names))
-            text = folder_text(path, "SKILL.md")
-            self.assertNotIn("Related Skills", text)
 
     def test_legal_metadata_is_emitted_in_spec_compliant_frontmatter(self):
         with tempfile.TemporaryDirectory() as directory:

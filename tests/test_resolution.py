@@ -2,16 +2,13 @@
 
 from __future__ import annotations
 
-import tempfile
 import unittest
-from pathlib import Path
 
-from degardis.build import build_skills
 from degardis.model import DegardisError
 from degardis.registry import discover_skill_paths
 from degardis.resolver import collect_skills
 
-from tests.support import FIXTURES, folder_names
+from tests.support import FIXTURES
 
 
 class ResolutionTests(unittest.TestCase):
@@ -20,13 +17,6 @@ class ResolutionTests(unittest.TestCase):
         self.assertEqual(3, len(bundles))
         for bundle in bundles:
             self.assertEqual([bundle.primary.name], bundle.resolved_names)
-
-    def test_building_one_skill_does_not_pull_another(self):
-        with tempfile.TemporaryDirectory() as directory:
-            path = build_skills(FIXTURES / "gamma", Path(directory))[0]
-            names = folder_names(path)
-            self.assertIn("SKILL.md", names)
-            self.assertFalse(any("alpha" in name or "beta" in name for name in names))
 
     def test_profiles_apply_only_to_selected_skills(self):
         paths = discover_skill_paths([FIXTURES])

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -44,8 +45,9 @@ class ListCommandTests(unittest.TestCase):
             code = main(["list", str(FIXTURES / "alpha"), str(FIXTURES / "gamma")])
 
         self.assertEqual(0, code)
-        report = stdout.getvalue()
-        self.assertRegex(report, r"Scripts\s+(Yes|No)")
+        # alpha ships scripts/greet.py and gamma ships none.
+        answers = re.findall(r"Scripts\s+(\S+)", stdout.getvalue())
+        self.assertEqual(["Yes", "No"], answers)
 
     def test_list_reports_missing_optional_metadata_and_profiles(self):
         stdout = io.StringIO()

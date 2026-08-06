@@ -691,31 +691,23 @@ CHECKS: dict[str, CheckExplanation] = {
     "profile.missing-label": CheckExplanation(
         trigger="A profile has no label, or its label is empty.",
         impact=(
-            "The label is the heading of the generated profile reference, so the "
-            "generated file would open unnamed."
+            "The label names the profile's subject in the SKILL.md list and heads "
+            "the generated reference, and no other field holds that name: it is "
+            "not derivable from a selector such as cpp or csharp. Without it the "
+            "profile is unnamed everywhere it appears."
         ),
         failing="name: detailed",
         passing="name: detailed\nlabel: Detailed review",
     ),
-    "profile.missing-description": CheckExplanation(
-        trigger="A profile has no description, or its description is empty.",
-        impact=(
-            "The description is the guidance SKILL.md shows for choosing between "
-            "profiles. Without it the profile ships and is never selected."
-        ),
-        failing="name: detailed",
-        passing=(
-            "name: detailed\n"
-            "description: Use for a full review that names every finding."
-        ),
-    ),
     "profile.description-length": CheckExplanation(
         trigger=(
-            "A profile description is empty or longer than 1024 characters."
+            "A profile supplies a description that is blank or longer than 1024 "
+            "characters. Leaving the field out entirely is allowed."
         ),
         impact=(
-            "Profile descriptions are read together when a profile is chosen, so "
-            "each one's length is a cost paid on every selection."
+            "A supplied description is appended to the profile's SKILL.md line, "
+            "so its length is a cost every session pays. Supply one only where "
+            "the label leaves the selection condition unsettled."
         ),
         failing="description: A very long paragraph of more than 1024 characters ...",
         passing="description: Use for a full review that names every finding.",

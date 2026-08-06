@@ -480,7 +480,10 @@ def _check_profile_metadata(
             "profile.invalid-name",
             profile.path,
         )
-        if not profile.description or len(profile.description) > 1024:
+        description = profile.description
+        if description is not None and (
+            not description.strip() or len(description) > 1024
+        ):
             diagnostics.error(
                 f"{profile.path}: description must be 1-1024 characters",
                 "profile.description-length",

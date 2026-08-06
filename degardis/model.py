@@ -5,8 +5,6 @@ from pathlib import Path
 from textwrap import TextWrapper
 from typing import Any, Iterable
 
-import yaml
-
 
 SUPPORTED_FORMAT_VERSIONS = frozenset({1})
 
@@ -224,8 +222,9 @@ class Profile:
         return str(self.data["name"])
 
     @property
-    def description(self) -> str:
-        return str(self.data["description"])
+    def description(self) -> str | None:
+        description = self.data.get("description")
+        return None if description is None else str(description)
 
     @property
     def title(self) -> str:
@@ -241,12 +240,7 @@ class Profile:
 
     @property
     def text(self) -> str:
-        frontmatter = yaml.safe_dump(
-            {"name": self.name, "description": self.description},
-            sort_keys=False,
-            width=1000,
-        ).strip()
-        lines = [f"---\n{frontmatter}\n---", "", f"# {self.title}", ""]
+        lines = [f"# {self.title}", ""]
         wrapper = TextWrapper(
             width=100,
             initial_indent="- ",

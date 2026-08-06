@@ -205,14 +205,16 @@ def skill_markdown(
             "",
             "## Profiles",
             "",
-            "Load a profile only when its own stated condition holds for this request:",
+            "Profiles adapt this skill to a particular audience, format, technology,"
+            " or environment. Load every profile whose label names something this"
+            " request involves, and no others:",
             "",
         ]
         for profile in content.profiles:
-            lines.append(
-                f"- [{profile.title}](references/profiles/{profile.filename})"
-                f" — {profile.description}"
-            )
+            line = f"- [{profile.title}](references/profiles/{profile.filename})"
+            if profile.description:
+                line += f" — {profile.description}"
+            lines.append(line)
 
     if content.scripts:
         lines += [

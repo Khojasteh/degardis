@@ -190,14 +190,11 @@ def load_profile(
             f"{path}: profile name must match filename", "profile.name-mismatch", path
         )
         usable = False
-    description = data.get("description")
-    if not isinstance(description, str) or not description.strip():
+    if "description" in data and not isinstance(data["description"], str):
         collector.error(
-            f"{path}: description must be a non-empty string",
-            "profile.missing-description",
-            path,
+            f"{path}: description must be a string", "profile.invalid-type", path
         )
-        usable = False
+        del data["description"]
     label = data.get("label")
     if not isinstance(label, str) or not label.strip():
         collector.error(

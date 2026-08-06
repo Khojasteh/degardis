@@ -603,16 +603,34 @@ includes only the profiles its `--profile` selectors name, and includes none
 when you name none. The manifest says which profiles exist; the build command
 says which of them ship.
 
-| Field           | Required | Type                      | Meaning                                       |
-| --------------- | -------- | ------------------------- | --------------------------------------------- |
-| `name`          | yes      | non-empty string          | Profile name; must match its `.yaml` filename |
-| `label`         | yes      | non-empty string          | Heading in the generated profile reference    |
-| `description`   | yes      | string, 1–1024 characters | Selection guidance shown from `SKILL.md`      |
-| `instructions`  | yes      | non-empty list of strings | Profile-specific instructions                 |
-| `details`       | no       | Markdown string           | Additional generated reference content        |
-| `details_files` | no       | non-empty list of strings | Markdown files relative to the profile source |
+| Field           | Required | Type                      | Meaning                                          |
+| --------------- | -------- | ------------------------- | ------------------------------------------------ |
+| `name`          | yes      | non-empty string          | Profile name; must match its `.yaml` filename    |
+| `label`         | yes      | non-empty string          | Subject name in `SKILL.md` and reference heading |
+| `description`   | no       | string, 1–1024 characters | Selection condition appended in `SKILL.md`       |
+| `instructions`  | yes      | non-empty list of strings | Profile-specific instructions                    |
+| `details`       | no       | Markdown string           | Additional generated reference content           |
+| `details_files` | no       | non-empty list of strings | Markdown files relative to the profile source    |
 
 Unlisted profile fields are ignored with a warning.
+
+`label` is the only place a profile's own name exists. It is not derived from
+`name`, because a selector such as `cpp` or `csharp` does not spell `C++` or
+`C#`, and it appears both as the `SKILL.md` link text and as the heading of the
+generated reference.
+
+`description` is the selection condition, and `SKILL.md` renders each profile in
+whichever of two shapes the source asks for:
+
+```markdown
+- [C++](references/profiles/cpp.md)
+- [Detailed](references/profiles/detailed.md) — Apply when the reader needs context.
+```
+
+A profile whose label already names its subject routes on the label alone, the
+same shape a supporting workflow uses. Supply a description only where the label
+leaves unsettled when the profile applies; a supplied one is loaded on every
+session, so a set of near-identical conditions is paid for every time.
 
 `details` and `details_files` are mutually exclusive. Detail files must stay
 inside the skill directory and must have a `.md` extension. Combined details

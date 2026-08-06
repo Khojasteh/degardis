@@ -278,10 +278,23 @@ details_files:
 - details/detailed.md
 ```
 
-The filename and `name` must match. A profile needs a label, a selection
-description, and at least one instruction. Use either inline `details` or
-`details_files`, not both. Detail files must stay inside the skill and must
-not contain a level-one heading.
+The filename and `name` must match. A profile needs a label and at least one
+instruction. Use either inline `details` or `details_files`, not both. Detail
+files must stay inside the skill and must not contain a level-one heading.
+
+`description` is optional, and leaving it out is often the better answer. A
+profile whose label names its subject — `C++`, `Rails`, `Azure DevOps` — already
+tells an agent when it applies, and `SKILL.md` then lists it the way it lists a
+supporting workflow:
+
+```markdown
+- [C++](references/profiles/cpp.md)
+```
+
+Supply a description where the label does not settle that question, as `Detailed`
+above does not, and it is appended to that line. Every description you supply is
+loaded on every session that selects the profile, so a set of forty labels each
+carrying one restated sentence buys nothing and costs kilobytes.
 
 Declare your profile sources like any other content, and keep the pattern to
 the profile files themselves so it does not also pick up their detail Markdown:

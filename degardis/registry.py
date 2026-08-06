@@ -73,12 +73,33 @@ def load_skill_path(root: Path) -> Skill:
     return Skill(name=name, root=root, manifest=manifest)
 
 
+def _reject_generated_bundle(path: Path) -> None:
+    """Stop a source command from reading what a build produced.
+
+    A bundle carries no skill.yaml, so discovery would descend past it and pick
+    up any template a skill ships as an asset, reporting a pass for a skill the
+    caller never named.
+    """
+    if (path / "skill.yaml").is_file() or not (path / "SKILL.md").is_file():
+        return
+    raise DegardisError(
+        f"{path} is a generated skill bundle, not Degardis source. Point this "
+        "command at the authored source directory containing skill.yaml."
+    )
+
+
 def discover_skill_paths(sources: list[Path] | tuple[Path, ...]) -> list[Path]:
     discovered: list[Path] = []
     for source in sources:
         path = source.resolve()
+        if path.is_file() and path.suffix.casefold() == ".zip":
+            raise DegardisError(
+                f"{path} is a skill archive, not Degardis source. Point this "
+                "command at the authored source directory containing skill.yaml."
+            )
         if not path.is_dir():
             raise DegardisError(f"Skill path is not a directory: {path}")
+        _reject_generated_bundle(path)
         if (path / "skill.yaml").is_file():
             candidates = [path]
         else:
@@ -91,7 +112,15 @@ def discover_skill_paths(sources: list[Path] | tuple[Path, ...]) -> list[Path]:
 
     names: dict[str, Path] = {}
     for path in discovered:
-        skill = load_skill_path(path)
+        try:
+            skill = load_skill_path(path)
+        except (DegardisError, OSError, UnicodeError):
+            # A manifest that cannot be read has no name to collide with, and
+            # discovery is not the place its failure belongs: a command that
+            # reports on skills has to reach this one to report it, inside its
+            # own report and against the check that found it. Commands that only
+            # build raise the same failure when they go on to load the skill.
+            continue
         previous = names.get(skill.name)
         if previous and previous != path:
             raise DegardisError(
@@ -124,6 +153,7 @@ def _discover_skill_directories(root: Path) -> list[Path]:
             if (child / "skill.yaml").is_file():
                 discovered.append(child)
             else:
+                _reject_generated_bundle(child)
                 pending.append(child)
     return sorted(discovered)
 

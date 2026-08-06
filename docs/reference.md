@@ -190,6 +190,16 @@ skills. Duplicate paths are ignored; duplicate names at different paths are
 rejected. A missing path, a non-directory path, or a directory with no
 descendant skills is an error.
 
+A generated bundle is not a source. A directory that holds a `SKILL.md` but no
+`skill.yaml` is refused, whether it is named directly or found while searching a
+collection, and so is a `.zip` archive. Without that check, discovery would
+descend past a bundle and pick up any Markdown template the skill ships as an
+asset, then report a pass for a skill nobody asked about.
+
+A skill whose manifest cannot be read is left for the command to report. It has
+no name to collide with, and a command that reports on skills has to reach it in
+order to report it, against the check that found the failure.
+
 ## `skill.yaml`
 
 | Field              | Required | Meaning                                                                                        |

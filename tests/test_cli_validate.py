@@ -83,7 +83,7 @@ class ValidateCommandTests(unittest.TestCase):
                 code = main(["validate", str(root / "alpha")])
 
         self.assertEqual(0, code)
-        report = stdout.getvalue()
+        report = " ".join(stdout.getvalue().split())
         for message in (
             "unrecognized manifest fields ignored: descriptino",
             "unrecognized interface fields ignored: display_nam",
@@ -130,7 +130,7 @@ class ValidateCommandTests(unittest.TestCase):
                 code = main(["validate", str(root / "alpha")])
 
         self.assertEqual(1, code)
-        report = stdout.getvalue()
+        report = " ".join(stdout.getvalue().split())
         for message in (
             "content.assets pattern assets/*.png matches nothing",
             "interface.default_prompt must mention $alpha",

@@ -169,7 +169,7 @@ class YamlReportingTests(unittest.TestCase):
             with contextlib.redirect_stdout(stdout):
                 main(["validate", str(root / "alpha")])
 
-        report = stdout.getvalue()
+        report = " ".join(stdout.getvalue().split())
         self.assertIn("key 'version' silently overrides the earlier value", report)
         self.assertIn("'1.10' parses as the number", report)
 
@@ -185,7 +185,7 @@ class YamlReportingTests(unittest.TestCase):
             with contextlib.redirect_stdout(stdout):
                 main(["validate", str(root / "alpha")])
 
-        report = stdout.getvalue()
+        report = " ".join(stdout.getvalue().split())
         self.assertIn("inline comment marker", report)
 
     def test_validate_warns_for_a_leading_anchor_or_alias_marker(self):
@@ -204,7 +204,7 @@ class YamlReportingTests(unittest.TestCase):
             with contextlib.redirect_stdout(stdout):
                 main(["validate", str(root / "alpha")])
 
-        report = stdout.getvalue()
+        report = " ".join(stdout.getvalue().split())
         self.assertIn("consumed as an anchor name", report)
         self.assertIn("resolved as an alias reference", report)
 

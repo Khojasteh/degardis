@@ -109,7 +109,12 @@ Examples:
     build = subcommands.add_parser(
         "build",
         help="build one or more self-contained skills",
-        description="Build selected skills into installable skill bundles.",
+        description=(
+            "Build selected skills into installable skill bundles. A build stops "
+            "on any error, so a bundle means the sources are well-formed, not "
+            "that the skill guides an agent well: no check judges what an "
+            "instruction says."
+        ),
         epilog="""\
 Examples:
   degardis build examples/structured-summary --output .artifacts
@@ -145,7 +150,12 @@ Examples:
     validate_command = subcommands.add_parser(
         "validate",
         help="validate one or more skill sources",
-        description="Validate explicit skills or recursively discovered skills.",
+        description=(
+            "Validate explicit skills or recursively discovered skills. A pass "
+            "means the sources are well-formed and the bundle they generate is "
+            "consistent, not that the skill guides an agent well: no check "
+            "judges what an instruction says."
+        ),
         epilog="""\
 Examples:
   degardis validate examples/structured-summary
@@ -207,7 +217,10 @@ separates sections and skills, and listed rows are indented and space-aligned.
                                   <line> appears where the check knows one
   <n> skill(s), <n> error(s), <n> warning(s)
                                   final line, and the only labels that inflect;
-                                  count 1 entries and 1 steps stay plural
+                                  count 1 entries and 1 steps stay plural.
+                                  0 errors means these sources are well-formed,
+                                  not that the skill guides an agent well: no
+                                  check judges what an instruction says
 
 Examples:
   degardis agent examples/structured-summary

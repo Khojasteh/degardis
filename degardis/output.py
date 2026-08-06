@@ -166,6 +166,14 @@ def write_validation_report(
             "codes above.",
             file=stream,
         )
+    elif not error_count and not warning_count:
+        # A run with nothing to report is where a reader decides they are done,
+        # and it is the one place the checks state what they did not cover.
+        print(
+            "A pass means these sources are well-formed, not that the skill "
+            "guides an agent well.",
+            file=stream,
+        )
 
 
 def write_check_explanations(

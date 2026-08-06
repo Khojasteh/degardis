@@ -50,6 +50,14 @@ Checks discovery, manifests, entries, workflows, profiles, generated
 artifact-path collisions, and generated links for the selected skills. It
 creates no artifact and does not run bundled scripts.
 
+A pass establishes that the sources are well-formed and that the bundle they
+generate is consistent, not that following the skill produces the outcome it
+claims. No check reads an instruction to judge whether it works, so a skill can
+pass with every check clean and still guide an agent badly, contradict itself, or
+describe an outcome it does not deliver. The
+[final checklist](authoring-guide.md#final-checklist) in the authoring guide
+lists the judgments that remain yours.
+
 One run reports every problem it can reach. Validation does not stop at the
 first problem, either inside a file or across files, so you can repair a whole
 skill from a single report.

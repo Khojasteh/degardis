@@ -49,6 +49,29 @@ class ValidateCommandTests(unittest.TestCase):
         self.assertIn("[PASS] Gamma (gamma)", report)
         self.assertIn("Summary: 3 passed, 0 failed, 0 errors, 0 warnings, 3 total.", report)
 
+    def test_a_clean_pass_states_what_the_checks_did_not_cover(self):
+        # A run with nothing to report is where a reader concludes the skill is
+        # good, so the scope of a pass is stated there rather than everywhere.
+        clean = io.StringIO()
+        with contextlib.redirect_stdout(clean):
+            main(["validate", str(FIXTURES)])
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_skills(Path(directory))
+            source = root / "alpha" / "skill.yaml"
+            data = yaml.safe_load(source.read_text(encoding="utf-8"))
+            data["descriptino"] = "typo field"
+            source.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+            warned = io.StringIO()
+            with contextlib.redirect_stdout(warned):
+                main(["validate", str(root / "alpha")])
+
+        scope = "not that the skill guides an agent well"
+        self.assertIn(scope, clean.getvalue())
+        self.assertNotIn(scope, warned.getvalue())
+        # A run with findings already ends with somewhere to go.
+        self.assertIn("degardis explain", warned.getvalue())
+
     def test_validate_warns_for_unrecognized_fields_at_every_level(self):
         with tempfile.TemporaryDirectory() as directory:
             root = copy_skills(Path(directory))

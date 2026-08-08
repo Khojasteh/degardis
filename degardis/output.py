@@ -48,15 +48,6 @@ def _counted(count: int, noun: str) -> str:
     return f"{count} {noun}" if count == 1 else f"{count} {noun}s"
 
 
-def _markdown_summary(metrics: dict) -> str:
-    return (
-        f"{metrics.get('bytes', 0)} bytes, {metrics.get('lines', 0)} lines; "
-        f"body {metrics.get('body_bytes', 0)} bytes, "
-        f"{metrics.get('body_lines', 0)} lines, "
-        f"{metrics.get('body_words', 0)} words"
-    )
-
-
 def write_skill_list(
     stream: TextIO,
     skills: list[tuple[Skill, list[Profile]]],
@@ -295,13 +286,12 @@ def _write_agent_skill(
     heading = f"skill {name} {version} \"{title}\"".replace('  "', ' "')
     if result.get("title_derived"):
         heading += " (derived title)"
-    section(heading, f"root  {root_path}", f"ids   {name}.*")
+    section(heading, f"root  {root_path}")
     if "identity" not in dimensions:
         section(f"desc  {len(str(result.get('description', '')))} chars")
     primary = str(result.get("primary_workflow", ""))
-    prefix = f"{name}."
     section(
-        f"main  {primary[len(prefix):] if primary.startswith(prefix) else primary or 'none'}",
+        f"main  {primary or 'none'}",
         "count "
         + ", ".join(
             f"{counts.get(label, 0)} {label}"
@@ -423,11 +413,27 @@ def _write_agent_skill(
             )
 
 
+def _write_agent_body(stream: TextIO, results: list[dict[str, Any]]) -> None:
+    """Dump each skill's generated SKILL.md text, named and divided by skill."""
+    for result in results:
+        print(file=stream)
+        name = result.get("name", "unknown")
+        skill_text = result.get("skill_text")
+        if skill_text is None:
+            print(f"=== {name} unavailable", file=stream)
+            continue
+        print(f"=== {name}", file=stream)
+        text = str(skill_text)
+        for line in text.splitlines():
+            print(f"  {line}", file=stream)
+
+
 def write_agent_report(
     stream: TextIO,
     results: list[dict],
     dimensions: tuple[str, ...],
     baselines: list[dict] | None = None,
+    body: bool = False,
 ) -> None:
     """Report source intelligence for an AI agent, in as few tokens as it takes."""
     measured = baselines or [None] * len(results)
@@ -443,6 +449,8 @@ def write_agent_report(
         f"{_counted(warnings, 'warning')}",
         file=stream,
     )
+    if body:
+        _write_agent_body(stream, results)
 
 
 def write_profile_matches(
@@ -465,16 +473,12 @@ def write_build_report(
     *,
     as_zip: bool,
     warnings: list[str] | None = None,
-    metrics: dict[str, dict[str, int]] | None = None,
 ) -> None:
     print("Build", file=stream)
     print(file=stream)
     for skill, path in zip(skills, paths):
         print(f"[BUILT] {skill.title} ({skill.name})", file=stream)
         _write_field(stream, "Artifact", str(path.resolve()))
-        measured = (metrics or {}).get(skill.name)
-        if measured:
-            _write_field(stream, "SKILL.md", _markdown_summary(measured))
     messages = warnings or []
     if messages:
         print(file=stream)

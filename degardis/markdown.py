@@ -124,14 +124,19 @@ def _frontmatter(
     return f"---\n{data}\n---"
 
 
-def markdown_metrics(rendered: str) -> dict[str, int]:
-    """Measure generated SKILL.md, separating the body from its frontmatter."""
+def skill_markdown_body(rendered: str) -> str:
+    """Return generated SKILL.md without its YAML frontmatter."""
     body = rendered
     if rendered.startswith("---\n"):
         _, separator, after = rendered[len("---\n") :].partition("\n---\n")
         if separator:
             body = after
-    body = body.strip("\n")
+    return body.strip("\n")
+
+
+def markdown_metrics(rendered: str) -> dict[str, int]:
+    """Measure generated SKILL.md, separating the body from its frontmatter."""
+    body = skill_markdown_body(rendered)
     return {
         "bytes": len(rendered.encode("utf-8")),
         "lines": len(rendered.splitlines()),

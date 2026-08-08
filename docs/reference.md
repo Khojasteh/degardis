@@ -109,16 +109,14 @@ output artifact and executes no bundled script.
 
 Its reader pays for every token, so the output is line-oriented and terse:
 
-- identifiers omit the skill-name prefix, which the header states once;
+- identifiers are reported exactly as declared in the source;
 - paths are relative to the root named in the header;
 - sizes are the bytes of the *generated* Markdown, which is what an agent
   loads;
 - nothing is wrapped into prose, and listed rows are aligned into columns.
 
-The layout is stable: a release may add a section, a check code, or an entry
-kind, but does not change the shape of a line an earlier release printed.
-`degardis agent -h` documents the shape of every line the report can print, for
-the agents that consume it.
+`degardis agent -h` documents the current shape of every line the report can
+print.
 
 The report is not written for a person. To read one yourself, `list` shows a
 skill's metadata in readable form and `validate` gives the pass or fail.
@@ -128,6 +126,8 @@ Options:
 - `--only DIMENSION[,DIMENSION...]`: report the named sections instead of the
   default set. Repeat the option or comma-separate names to combine them.
 - `--all`: report every section.
+- `--body-text`: also dump the generated `SKILL.md` text, without its YAML
+  frontmatter, after the report and its closing summary.
 - `--profile [SKILL:]PROFILE`: measure and inventory the bundle this profile
   selection would build, using the same selector grammar and the same errors as
   `build`. Without it, the report describes a bundle with no profile, exactly as
@@ -141,11 +141,11 @@ whatever the selection, so multi-skill output stays unambiguous:
 
 | Section | Default | Reports |
 | --- | --- | --- |
-| `skill` | yes | name, version, title, root, id namespace, description length, primary workflow, and content counts |
+| `skill` | yes | name, version, title, root, description length, primary workflow, and content counts |
 | `identity` | | the full description, license, and copyright |
 | `budget` | yes | the generated `SKILL.md` size for the selected profiles, and the on-demand weight of entries, supporting workflows, and selected profiles |
 | `workflows` | yes | each workflow, marked `primary` for the primary workflow, with the step that reaches a supporting one, or `unreached` |
-| `entries` | | each entry's local id, kind, priority, source path, and generated size |
+| `entries` | | each entry's declared id, kind, priority, source path, and generated size |
 | `profiles` | | each profile's name, whether the selection includes it, source path, and generated size |
 | `scripts`, `assets` | | selected source paths and sizes |
 | `outputs` | | every file a build would write, with its size and permission bits |
@@ -161,6 +161,15 @@ anything being written to disk.
 
 The `budget` section measures the whole generated `SKILL.md` and, separately, its
 body without the YAML frontmatter — the prompt itself.
+
+`--body-text` prints that same post-frontmatter text after the report, preserving
+its lines with two spaces of indentation, so you can read what a build would
+write to `SKILL.md` without running one. Each selected skill's text follows a
+divider naming it, `=== <name>`, so a multi-skill selection stays unambiguous.
+If an invalid source prevents generation, the divider says
+`=== <name> unavailable`. The content is free-form, not the fixed row shape the
+sections above use, which is why it is a flag of its own rather than a dimension
+`--all` would fold in.
 
 #### Comparing against a revision
 
@@ -314,11 +323,10 @@ contains, or is contained by a selected skill source directory. A relative
 output path is resolved from the current working directory.
 
 On success, the command reports each skill with the absolute path of its
-generated folder or archive and the measurements of its generated `SKILL.md`,
-then closes with a summary. The measurement gives total bytes and lines first,
-then the body bytes, lines, and words, which exclude the frontmatter. It
-reflects the profiles this build included, so it matches what `degardis agent`
-reports for the same `--profile` selection.
+generated folder or archive, then closes with a summary. For the generated
+`SKILL.md`'s size or body text, use `degardis agent --only budget` or
+`--body-text` with the same `--profile` selection; either matches what this
+build just produced.
 
 Generated text is written with `\n` line endings on every platform, so the same
 source produces the same bundle bytes wherever it is built.

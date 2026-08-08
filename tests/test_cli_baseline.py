@@ -219,7 +219,7 @@ class BaselineContractTests(unittest.TestCase):
             plain = budget_report(str(root / "alpha"))
             compared = budget_report(str(root / "alpha"), "--baseline", "HEAD")
 
-        for label in ("skill", "body", "refs", "count", "main", "ids", "desc"):
+        for label in ("skill", "body", "refs", "count", "main", "desc"):
             with self.subTest(line=label):
                 self.assertEqual(plain[label], compared[label])
         self.assertNotIn("base", plain)

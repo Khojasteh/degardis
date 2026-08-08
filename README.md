@@ -90,7 +90,7 @@ guides. It summarizes material on any subject. The synthetic skills under
 ## Commands
 
 ```console
-degardis agent PATH [PATH ...] [--only DIMENSION] [--all] [--profile PROFILE] [--baseline REF]
+degardis agent PATH [PATH ...]
 degardis validate PATH [PATH ...]
 degardis build PATH [PATH ...] --output PATH [--profile [SKILL:]PROFILE] [--zip]
 degardis list PATH [PATH ...]
@@ -99,9 +99,7 @@ degardis explain CODE [CODE ...]
 
 - `agent` reports full skill intelligence in a compact form meant for AI
   agents, not humans. It covers entries, workflows, profiles, generated files,
-  the workflow graph, loading cost, and diagnostics. `--baseline REF` also
-  reports what a skill cost at a git revision and how much your edits changed
-  it, without checking that revision out.
+  the workflow graph, loading cost, and diagnostics.
 - `validate` checks a skill source and reports every problem it finds. This is
   the one to gate on in CI, where a person reads the result.
 - `build` creates the installable folder or ZIP.

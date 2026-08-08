@@ -10,6 +10,7 @@ from .markdown import (
     entry_markdown,
     markdown_metrics,
     skill_markdown,
+    skill_markdown_body,
     workflow_filename,
     workflow_markdown,
 )
@@ -66,27 +67,37 @@ REQUIRED_INTERFACE_CODES = {
     "default_prompt": "interface.missing-default_prompt",
 }
 
-# Sections of the agent report. Ordered as they are rendered; the four marked
-# default answer "is it sound and what does it cost" without listing content the
-# caller has not asked to act on.
-AGENT_DIMENSIONS: tuple[str, ...] = (
-    "skill",
-    "identity",
-    "budget",
-    "workflows",
-    "entries",
-    "profiles",
-    "scripts",
-    "assets",
-    "outputs",
-    "diagnostics",
-)
+# Sections of the agent report, in render order, naming what each reports. The
+# four marked default answer "is it sound and what does it cost" without
+# listing content the caller has not asked to act on.
+AGENT_DIMENSIONS: dict[str, str] = {
+    "skill": (
+        "name, version, title, root, description length, primary workflow, "
+        "and content counts"
+    ),
+    "identity": "the full description, license, and copyright",
+    "budget": "generated SKILL.md size and the on-demand weight around it",
+    "workflows": "each workflow, and the step that reaches it",
+    "entries": "each entry's id, kind, priority, path, and size",
+    "profiles": "each profile's name, selection, path, and size",
+    "scripts": "selected script paths and sizes",
+    "assets": "selected asset paths and sizes",
+    "outputs": "every file a build would write, with size and mode",
+    "diagnostics": "aggregated errors and warnings",
+}
 DEFAULT_AGENT_DIMENSIONS: tuple[str, ...] = (
     "skill",
     "budget",
     "workflows",
     "diagnostics",
 )
+
+
+def describe_agent_dimensions(names: tuple[str, ...] | None = None) -> str:
+    """One aligned line per dimension, naming what it reports."""
+    chosen = names if names is not None else tuple(AGENT_DIMENSIONS)
+    width = max(len(name) for name in chosen)
+    return "\n".join(f"  {name:<{width}} {AGENT_DIMENSIONS[name]}" for name in chosen)
 
 
 def _validate_name(value: str, label: str) -> list[str]:
@@ -290,6 +301,7 @@ def _empty_result(source: Path) -> dict[str, Any]:
             "body_lines": 0,
             "body_words": 0,
         },
+        "skill_text": None,
         "reference_bytes": {"entries": 0, "workflows": 0, "profiles": 0},
         "outputs": [],
         "diagnostics": [],
@@ -323,14 +335,9 @@ def _workflow_reach(
             target = str(step["use"])
             if target in origin or target not in known:
                 continue
-            origin[target] = f"{_local(current, skill.name)}.{index}"
+            origin[target] = f"{current}.{index}"
             pending.append(target)
     return origin
-
-
-def _local(identifier: str, skill_name: str) -> str:
-    prefix = f"{skill_name}."
-    return identifier[len(prefix) :] if identifier.startswith(prefix) else identifier
 
 
 def _bundle_outputs(
@@ -564,7 +571,7 @@ def _content_inventory(
         counts[entry.kind] = counts.get(entry.kind, 0) + 1
     entries = [
         {
-            "id": _local(entry.id, skill.name),
+            "id": entry.id,
             "title": entry.title,
             "kind": entry.kind,
             "priority": entry.priority,
@@ -577,7 +584,7 @@ def _content_inventory(
     reach = _workflow_reach(skill, content)
     workflows = [
         {
-            "id": _local(str(workflow["id"]), skill.name),
+            "id": str(workflow["id"]),
             "title": str(workflow.get("title", workflow["id"])),
             "path": Path(workflow["_path"]).relative_to(skill.root).as_posix(),
             "steps": len(workflow.get("steps", [])),
@@ -630,7 +637,12 @@ def _content_inventory(
     }
 
 
-def _inspect_skill(path: Path, profiles: list[str] | None = None) -> dict[str, Any]:
+def _inspect_skill(
+    path: Path,
+    profiles: list[str] | None = None,
+    *,
+    include_body: bool = False,
+) -> dict[str, Any]:
     """Check one skill and inventory what a build would produce from it.
 
     Checking comes first and only reports; the inventory that follows measures
@@ -663,6 +675,8 @@ def _inspect_skill(path: Path, profiles: list[str] | None = None) -> dict[str, A
         rendered = _check_generated_references(skill, measured, diagnostics)
         if rendered:
             result["skill_markdown"] = markdown_metrics(rendered)
+            if include_body:
+                result["skill_text"] = skill_markdown_body(rendered)
     result["outputs"] = _bundle_outputs(skill, measured, rendered)
     result.update(_content_inventory(skill, content, selected))
     return _finish(result, diagnostics)
@@ -682,8 +696,12 @@ def validate_skill(path: Path) -> list[str]:
 def inspect_skills(
     paths: list[Path],
     profiles: list[str] | None = None,
+    *,
+    include_body: bool = False,
 ) -> list[dict[str, Any]]:
-    return [_inspect_skill(path, profiles) for path in paths]
+    return [
+        _inspect_skill(path, profiles, include_body=include_body) for path in paths
+    ]
 
 
 def select_agent_dimensions(dimensions: list[str] | None) -> tuple[str, ...]:
@@ -693,8 +711,8 @@ def select_agent_dimensions(dimensions: list[str] | None) -> tuple[str, ...]:
     unknown = sorted(set(dimensions) - set(AGENT_DIMENSIONS))
     if unknown:
         raise DegardisError(
-            f"Unknown dimensions: {', '.join(unknown)}; "
-            f"available: {', '.join(sorted(AGENT_DIMENSIONS))}"
+            f"Unknown dimensions: {', '.join(unknown)}; available:\n"
+            f"{describe_agent_dimensions()}"
         )
     selected = set(dimensions) | {"skill"}
     return tuple(name for name in AGENT_DIMENSIONS if name in selected)

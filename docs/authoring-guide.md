@@ -406,7 +406,8 @@ Inspect:
 
 If you are an AI agent rather than a person, `degardis agent my-skill --all`
 answers all of this in one command. It reports the file list a build would
-write without actually writing one. See
+write without actually writing one. Add `--body-text` when you also need to
+read the generated `SKILL.md` body. See
 [the reference](reference.md#degardis-agent-path-path-).
 
 Some items appear only when the source declares them. To inspect a profile and

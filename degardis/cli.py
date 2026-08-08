@@ -23,6 +23,7 @@ from .resolver import ALLOWED_ENTRY_KINDS, load_skill_profiles, profile_matches
 from .validate import (
     AGENT_DIMENSIONS,
     DEFAULT_AGENT_DIMENSIONS,
+    describe_agent_dimensions,
     inspect_skills,
     select_agent_dimensions,
 )
@@ -58,8 +59,8 @@ def _dimensions(value: str) -> list[str]:
     unknown = [name for name in names if name not in AGENT_DIMENSIONS]
     if not names or unknown:
         raise argparse.ArgumentTypeError(
-            f"invalid dimension: {value}; choose from "
-            f"{', '.join(sorted(AGENT_DIMENSIONS))}"
+            f"invalid dimension: {value}; choose from:\n"
+            f"{describe_agent_dimensions()}"
         )
     return names
 
@@ -171,25 +172,23 @@ Examples:
             "Report everything an AI agent needs to review, repair, and budget "
             "a skill, with all errors and warnings aggregated in one run. This "
             "command is for AI agents: its compact output is shaped for minimum "
-            "token cost, not for a person to read, and its line shapes are "
-            "stable and meant to be relied on. The legend below gives every one "
-            "of them. Use list for a readable summary and validate for a pass "
-            "or fail gate."
+            "token cost, not for a person to read. The help below describes the "
+            "current output. Use list for a readable summary and validate for a "
+            "pass or fail gate."
         ),
         epilog=f"""\
-Dimensions: {', '.join(AGENT_DIMENSIONS)}
+Dimensions:
+{describe_agent_dimensions()}
 Reported by default: {', '.join(DEFAULT_AGENT_DIMENSIONS)}
 Entry kinds known to this compiler: {', '.join(sorted(ALLOWED_ENTRY_KINDS))}
 (an unrecognized kind is a warning, not an error, and compiles as declared)
 
-Legend. A later release may add a section, a check code, or an entry kind, but
-not change a shape below. Sizes are bytes of the generated Markdown, paths are
-relative to the root in the header, ids drop the `<name>.` prefix, a blank line
-separates sections and skills, and listed rows are indented and space-aligned.
+Output legend. Paths are relative to the root, sizes measure generated Markdown,
+and ids appear exactly as declared. Blank lines separate sections and skills;
+listed rows are indented and space-aligned.
 
   skill <name> <version> "<title>" [(derived title)]
   root  <absolute source directory>
-  ids   <name>.*
   desc  <n> chars                 (identity reports the description itself instead)
   main  <primary workflow id>|none
   count <n> entries, <n> workflows, <n> profiles, <n> scripts, <n> assets
@@ -221,6 +220,12 @@ separates sections and skills, and listed rows are indented and space-aligned.
                                   0 errors means these sources are well-formed,
                                   not that the skill guides an agent well: no
                                   check judges what an instruction says
+  === <name>                      --body-text: appended after everything else
+                                  above, one per selected skill; the generated
+                                  SKILL.md text follows, without its
+                                  frontmatter, preserving its lines with two
+                                  spaces of indentation and no fixed row shape
+  === <name> unavailable          requested text could not be generated
 
 Examples:
   degardis agent examples/structured-summary
@@ -228,6 +233,7 @@ Examples:
   degardis agent examples/structured-summary --all
   degardis agent examples/structured-summary --profile detailed --only budget
   degardis agent examples/structured-summary --only budget --baseline HEAD
+  degardis agent examples/structured-summary --body-text
 """,
         formatter_class=HELP_FORMATTER,
     )
@@ -249,6 +255,14 @@ Examples:
         action="store_true",
         dest="all_dimensions",
         help="report every dimension",
+    )
+    agent_command.add_argument(
+        "--body-text",
+        action="store_true",
+        help=(
+            "append the generated SKILL.md body, preserving its lines with "
+            "two spaces of indentation"
+        ),
     )
     agent_command.add_argument(
         "--profile",
@@ -392,8 +406,14 @@ def _run(argv: list[str] | None = None) -> int:
                     "sections leave out; add budget to --only, or drop --only"
                 )
             baselines = measure_baselines(skill_paths, args.baseline, args.profiles)
-        results = inspect_skills(skill_paths, args.profiles)
-        write_agent_report(sys.stdout, results, dimensions, baselines)
+        results = inspect_skills(
+            skill_paths,
+            args.profiles,
+            include_body=args.body_text,
+        )
+        write_agent_report(
+            sys.stdout, results, dimensions, baselines, body=args.body_text
+        )
         return int(any(result["errors"] for result in results))
 
     compiler = SkillCompiler(skill_paths)
@@ -410,7 +430,6 @@ def _run(argv: list[str] | None = None) -> int:
         paths,
         as_zip=args.zip,
         warnings=compiler.warnings,
-        metrics=compiler.metrics,
     )
     return 0
 

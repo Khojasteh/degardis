@@ -128,8 +128,8 @@ CHECKS: dict[str, CheckExplanation] = {
             "hyphens, or it is the reserved name all."
         ),
         impact=(
-            "The name is the skill's directory, its id namespace, and its "
-            "selector, so nothing addresses the skill reliably until it is valid."
+            "The name is the skill's directory and its selector, so nothing "
+            "addresses the skill reliably until it is valid."
         ),
         failing="name: Structured_Summary",
         passing="name: structured-summary",

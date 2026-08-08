@@ -13,6 +13,7 @@ import yaml
 
 from degardis.build import build_skills
 from degardis.cli import main
+from degardis.validate import inspect_skills
 
 from tests.support import CANONICAL_EXAMPLE, FIXTURES, copy_skills
 
@@ -164,7 +165,7 @@ class AgentHelpTests(unittest.TestCase):
 
         reached_by = {row.split()[1] for row in sections["workflows"]}
         step_ids = {
-            value for value in reached_by if re.fullmatch(r"[\w-]+\.\d+", value)
+            value for value in reached_by if re.fullmatch(r"\S+\.\d+", value)
         }
         self.assertTrue(step_ids, reached_by)
         self.assertEqual(
@@ -192,12 +193,11 @@ class AgentCommandTests(unittest.TestCase):
         self.assertEqual(0, code)
         report = stdout.getvalue()
         self.assertIn('skill alpha 1.0.0 "Alpha"', report)
-        self.assertIn("ids   alpha.*", report)
-        self.assertIn("main  run", report)
+        self.assertIn("main  alpha.run", report)
         self.assertIn("1 entries, 1 workflows, 2 profiles", report)
         self.assertIn("body  SKILL.md ", report)
         self.assertIn("workflows 1", report)
-        self.assertIn("run primary", report)
+        self.assertIn("alpha.run primary", report)
         self.assertIn("1 skill, 0 errors, 0 warnings", report)
         # Listings and the full description stay behind an explicit request.
         self.assertNotIn("entries 1 ", report)
@@ -212,6 +212,7 @@ class AgentCommandTests(unittest.TestCase):
         self.assertEqual(0, code)
         report = stdout.getvalue()
         self.assertIn("entries 1  rule 1", report)
+        self.assertIn("alpha.rule-one rule/100", report)
         self.assertIn("entries/rule-one.yaml", report)
         self.assertIn("profiles 2  0 selected", report)
         self.assertIn("profiles/alpha-only.yaml", report)
@@ -219,6 +220,12 @@ class AgentCommandTests(unittest.TestCase):
         self.assertIn("references/entries/rule-one.md", report)
         self.assertIn("agents/openai.yaml", report)
         self.assertIn("lic   ", report)
+
+    def test_agent_help_promises_exact_ids(self):
+        help_text = agent_help()
+
+        self.assertIn("ids appear exactly as declared", help_text)
+        self.assertNotIn("ids drop", help_text)
 
     def test_agent_only_selects_sections_and_always_names_the_skill(self):
         stdout = io.StringIO()
@@ -231,6 +238,86 @@ class AgentCommandTests(unittest.TestCase):
         self.assertIn("entries 1  rule 1", report)
         self.assertNotIn("workflows 1", report)
         self.assertNotIn("body  SKILL.md", report)
+
+    def test_agent_body_text_dumps_after_the_summary_with_a_skill_divider(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_skills(Path(directory))
+            output = Path(directory) / "out"
+            build_skills(root / "alpha", output)
+            rendered = (output / "alpha" / "SKILL.md").read_text(encoding="utf-8")
+            _, _, after = rendered.partition("\n---\n")
+            expected_text = after.strip("\n")
+
+            stdout = io.StringIO()
+            with contextlib.redirect_stdout(stdout):
+                code = main(
+                    ["agent", str(root / "alpha"), "--only", "entries", "--body-text"]
+                )
+            report = stdout.getvalue()
+
+        self.assertEqual(0, code)
+        self.assertIn("entries 1  rule 1", report)
+        summary = "1 skill, 0 errors, 0 warnings"
+        divider = "=== alpha"
+        self.assertIn(summary, report)
+        self.assertIn(divider, report)
+        # The text dump is appended after the summary that closes the report.
+        self.assertGreater(report.index(divider), report.index(summary))
+        # Assert the whole indented block intact, in order, right after the
+        # divider, rather than each line's membership on its own: a per-line
+        # check alone would miss a dump that is reordered, duplicated, or
+        # trimmed.
+        indented_block = "\n".join(f"  {line}" for line in expected_text.splitlines())
+        self.assertEqual(
+            report[report.index(divider) + len(divider) :].strip("\n"),
+            indented_block,
+        )
+        self.assertNotIn("generated_by:", report)
+
+    def test_agent_all_without_body_text_omits_the_dump(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            code = main(["agent", str(FIXTURES / "alpha"), "--all"])
+        report = stdout.getvalue()
+
+        self.assertEqual(0, code)
+        self.assertNotIn("===", report)
+
+    def test_inspection_only_retains_body_text_when_requested(self):
+        ordinary = inspect_skills([FIXTURES / "alpha"])[0]
+        requested = inspect_skills(
+            [FIXTURES / "alpha"], include_body=True
+        )[0]
+
+        self.assertIsNone(ordinary["skill_text"])
+        self.assertTrue(requested["skill_text"].startswith("# Alpha"))
+
+    def test_agent_marks_a_requested_body_that_cannot_be_generated(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_skills(Path(directory))
+            manifest = root / "alpha" / "skill.yaml"
+            data = yaml.safe_load(manifest.read_text(encoding="utf-8"))
+            data["primary_workflow"] = "alpha.missing"
+            manifest.write_text(
+                yaml.safe_dump(data, sort_keys=False), encoding="utf-8"
+            )
+
+            stdout = io.StringIO()
+            with contextlib.redirect_stdout(stdout):
+                code = main(["agent", str(root / "alpha"), "--body-text"])
+
+        self.assertEqual(1, code)
+        self.assertIn("=== alpha unavailable", stdout.getvalue())
+
+    def test_agent_rejects_an_unknown_dimension_naming_what_valid_ones_report(self):
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            with self.assertRaises(SystemExit):
+                main(["agent", str(FIXTURES / "alpha"), "--only", "bogus"])
+
+        message = stderr.getvalue()
+        self.assertIn("budget", message)
+        self.assertIn("generated SKILL.md size", message)
 
     def test_agent_measures_the_profiles_a_build_would_include(self):
         with tempfile.TemporaryDirectory() as directory:

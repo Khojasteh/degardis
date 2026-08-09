@@ -10,9 +10,14 @@ from pathlib import Path
 import yaml
 
 from degardis.icons import MAX_SOURCE_BYTES
-from degardis.validate import inspect_skills, validate
+from degardis.validate import inspect_skills
 
-from tests.support import copy_skills, set_interface_fields, write_raster_icon
+from tests.support import (
+    copy_skills,
+    diagnostic_codes,
+    set_interface_fields,
+    write_raster_icon,
+)
 
 
 class IconValidationTests(unittest.TestCase):
@@ -22,10 +27,10 @@ class IconValidationTests(unittest.TestCase):
             absolute = (root / "icon.png").resolve()
             write_raster_icon(absolute, (255, 0, 0, 255))
 
-            for field, value, message in (
-                ("icon", "", "must be a non-empty relative path"),
-                ("icon_small", str(absolute), "must be relative"),
-                ("icon_large", "missing.png", "icon not found"),
+            for field, value, expected_code in (
+                ("icon", "", "icon.invalid-path"),
+                ("icon_small", str(absolute), "icon.invalid-path"),
+                ("icon_large", "missing.png", "icon.not-found"),
             ):
                 with self.subTest(field=field):
                     copied = Path(directory) / f"{field}-skill"
@@ -42,9 +47,9 @@ class IconValidationTests(unittest.TestCase):
                         encoding="utf-8",
                     )
 
-                    errors = validate(copied)
+                    result = inspect_skills([copied])[0]
 
-                    self.assertTrue(any(message in error for error in errors))
+                    self.assertIn(expected_code, diagnostic_codes(result, "error"))
 
     def test_each_icon_failure_reports_the_check_that_applies(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -87,11 +92,11 @@ class IconValidationTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            for source, message in (
-                ("../invalid.png", "Cannot convert icon source"),
-                ("../unsafe.svg", "script is not allowed"),
+            for source, expected_code in (
+                ("../invalid.png", "icon.unsupported"),
+                ("../unsafe.svg", "icon.unsafe"),
             ):
                 with self.subTest(source=source):
                     set_interface_fields(root, "alpha", icon=source)
-                    errors = validate(root / "alpha")
-                    self.assertTrue(any(message in error for error in errors))
+                    result = inspect_skills([root / "alpha"])[0]
+                    self.assertIn(expected_code, diagnostic_codes(result, "error"))

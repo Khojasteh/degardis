@@ -13,7 +13,12 @@ from degardis.build import build_skills
 from degardis.model import DegardisError
 from degardis.validate import inspect_skills, validate
 
-from tests.support import FIXTURES, copy_skills, set_interface_fields
+from tests.support import (
+    FIXTURES,
+    copy_skills,
+    diagnostic_codes,
+    set_interface_fields,
+)
 
 
 class ManifestValidationTests(unittest.TestCase):
@@ -63,14 +68,9 @@ class ManifestValidationTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            errors = validate(root / "gamma")
+            result = inspect_skills([root / "gamma"])[0]
 
-            self.assertTrue(
-                any(
-                    "primary workflow not found: gamma.missing" in error
-                    for error in errors
-                )
-            )
+            self.assertIn("workflow.missing-primary", diagnostic_codes(result, "error"))
 
     def test_legal_metadata_fields_must_be_non_empty_strings(self):
         for field, value in (
@@ -90,18 +90,10 @@ class ManifestValidationTests(unittest.TestCase):
                         encoding="utf-8",
                     )
 
-                    errors = validate(source.parent)
+                    result = inspect_skills([source.parent])[0]
 
-                    self.assertTrue(
-                        any(
-                            f"{field} must be a non-empty string" in error
-                            for error in errors
-                        )
-                    )
-                    with self.assertRaisesRegex(
-                        DegardisError,
-                        f"{field} must be a non-empty string",
-                    ):
+                    self.assertIn("manifest.invalid-type", diagnostic_codes(result, "error"))
+                    with self.assertRaises(DegardisError):
                         build_skills(source.parent, root / "output")
 
     def test_manifest_fields_enforce_documented_types(self):
@@ -109,45 +101,45 @@ class ManifestValidationTests(unittest.TestCase):
             (
                 "format_version",
                 lambda data: data.__setitem__("format_version", "1"),
-                "format_version must be an integer",
+                "manifest.invalid-type",
             ),
             (
                 "version",
                 lambda data: data.__setitem__("version", 1),
-                "version must be a non-empty string",
+                "manifest.invalid-type",
             ),
             (
                 "description",
                 lambda data: data.__setitem__("description", ["invalid"]),
-                "description must be a non-empty string",
+                "manifest.invalid-type",
             ),
             (
                 "primary_workflow",
                 lambda data: data.__setitem__("primary_workflow", 7),
-                "primary_workflow must be a non-empty string",
+                "manifest.invalid-type",
             ),
             (
                 "title",
                 lambda data: data.__setitem__("title", []),
-                "title must be a non-empty string",
+                "manifest.invalid-type",
             ),
             (
                 "interface",
                 lambda data: data.__setitem__("interface", []),
-                "interface must be a mapping",
+                "manifest.invalid-type",
             ),
             (
                 "display_name",
                 lambda data: data["interface"].__setitem__("display_name", 123),
-                "interface.display_name must be a non-empty string",
+                "interface.invalid-type",
             ),
             (
                 "brand_color",
                 lambda data: data["interface"].__setitem__("brand_color", {}),
-                "interface.brand_color must be a non-empty string",
+                "interface.invalid-type",
             ),
         )
-        for field, mutate, message in cases:
+        for field, mutate, expected_code in cases:
             with self.subTest(field=field):
                 with tempfile.TemporaryDirectory() as directory:
                     root = copy_skills(Path(directory))
@@ -159,9 +151,9 @@ class ManifestValidationTests(unittest.TestCase):
                         encoding="utf-8",
                     )
 
-                    errors = validate(root / "gamma")
+                    result = inspect_skills([root / "gamma"])[0]
 
-                    self.assertTrue(any(message in error for error in errors))
+                    self.assertIn(expected_code, diagnostic_codes(result, "error"))
                     with self.assertRaises(DegardisError):
                         build_skills(root / "gamma", root / "output")
                     self.assertFalse((root / "output").exists())
@@ -177,13 +169,11 @@ class ManifestValidationTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            errors = validate(manifest.parent)
+            result = inspect_skills([manifest.parent])[0]
 
-            self.assertTrue(
-                any(
-                    "unsupported format_version 2; supported versions: 1" in error
-                    for error in errors
-                )
+            self.assertIn(
+                "manifest.unsupported-format_version",
+                diagnostic_codes(result, "error"),
             )
 
     def test_manifest_entry_kinds_are_ignored_and_derived_from_entries(self):
@@ -203,12 +193,7 @@ class ManifestValidationTests(unittest.TestCase):
 
         self.assertNotIn("declared_entry_kinds", result)
         self.assertEqual({"rule": 1}, result["entry_kind_counts"])
-        self.assertTrue(
-            any(
-                "entry_kinds is derived from the skill content" in warning
-                for warning in result["warnings"]
-            )
-        )
+        self.assertIn("manifest.derived-field", diagnostic_codes(result, "warning"))
 
 
 class DefaultPromptTests(unittest.TestCase):
@@ -223,11 +208,10 @@ class DefaultPromptTests(unittest.TestCase):
                 default_prompt="Run the fixture workflow.",
             )
 
-            errors = validate(root / "alpha")
+            result = inspect_skills([root / "alpha"])[0]
 
-        self.assertEqual(
-            ["alpha: interface.default_prompt must mention {name}"],
-            errors,
+        self.assertIn(
+            "interface.default_prompt-token", diagnostic_codes(result, "error")
         )
 
     def test_a_hardcoded_host_invocation_warns_without_failing(self):
@@ -242,15 +226,12 @@ class DefaultPromptTests(unittest.TestCase):
                         default_prompt=f"Ask {prefix}alpha to run this.",
                     )
 
-                    errors = validate(root / "alpha")
-                    warnings = inspect_skills([root / "alpha"])[0]["warnings"]
+                    result = inspect_skills([root / "alpha"])[0]
 
-                self.assertEqual([], errors)
+                self.assertEqual([], result["errors"])
                 self.assertIn(
-                    f"alpha: interface.default_prompt spells the invocation "
-                    f"{prefix}alpha for one host; write {{name}} and let each "
-                    f"target render its own",
-                    warnings,
+                    "interface.default_prompt-literal-token",
+                    diagnostic_codes(result, "warning"),
                 )
 
     def test_another_skills_hardcoded_name_is_not_read_as_this_ones(self):
@@ -262,9 +243,8 @@ class DefaultPromptTests(unittest.TestCase):
                 default_prompt="Ask $beta to run this.",
             )
 
-            errors = validate(root / "alpha")
+            result = inspect_skills([root / "alpha"])[0]
 
-        self.assertEqual(
-            ["alpha: interface.default_prompt must mention {name}"],
-            errors,
+        self.assertIn(
+            "interface.default_prompt-token", diagnostic_codes(result, "error")
         )

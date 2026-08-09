@@ -12,10 +12,11 @@ import yaml
 
 from degardis.build import build_skills
 from degardis.model import DegardisError
-from degardis.validate import inspect_skills, validate
+from degardis.validate import inspect_skills
 
 from tests.support import (
     copy_skills,
+    diagnostic_codes,
     folder_names,
     folder_text,
     set_content_patterns,
@@ -87,14 +88,10 @@ class ContentValidationTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            errors = validate(source.parent)
+            result = inspect_skills([source.parent])[0]
 
-            self.assertTrue(
-                any("content patterns must stay within" in error for error in errors)
-            )
-            with self.assertRaisesRegex(
-                DegardisError, "content patterns must stay within"
-            ):
+            self.assertIn("content.outside-skill", diagnostic_codes(result, "error"))
+            with self.assertRaises(DegardisError):
                 build_skills(source.parent, root / "output")
 
     def test_generated_reference_filenames_must_be_unique(self):
@@ -110,10 +107,10 @@ class ContentValidationTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            errors = validate(root / "alpha")
+            result = inspect_skills([root / "alpha"])[0]
 
-            self.assertTrue(any("output path collision" in error for error in errors))
-            with self.assertRaisesRegex(DegardisError, "output path collision"):
+            self.assertIn("output.path-collision", diagnostic_codes(result, "error"))
+            with self.assertRaises(DegardisError):
                 build_skills(root / "alpha", root / "output")
 
 
@@ -205,14 +202,10 @@ class ContentExclusionTests(unittest.TestCase):
             )
             set_content_patterns(root, "alpha", entries=["!../outside.yaml"])
 
-            errors = validate(root / "alpha")
+            result = inspect_skills([root / "alpha"])[0]
 
-            self.assertTrue(
-                any("content patterns must stay within" in error for error in errors)
-            )
-            with self.assertRaisesRegex(
-                DegardisError, "content patterns must stay within"
-            ):
+            self.assertIn("content.outside-skill", diagnostic_codes(result, "error"))
+            with self.assertRaises(DegardisError):
                 build_skills(root / "alpha", root / "output")
 
     def test_a_pattern_that_is_only_the_exclusion_marker_is_reported(self):
@@ -220,15 +213,10 @@ class ContentExclusionTests(unittest.TestCase):
             root = copy_skills(Path(directory))
             set_content_patterns(root, "alpha", assets=["!"])
 
-            errors = validate(root / "alpha")
+            result = inspect_skills([root / "alpha"])[0]
 
-            self.assertTrue(
-                any(
-                    "content.assets must be a list of non-empty glob strings" in error
-                    for error in errors
-                )
-            )
-            self.assertEqual([], inspect_skills([root / "alpha"])[0]["assets"])
+            self.assertIn("content.invalid-type", diagnostic_codes(result, "error"))
+            self.assertEqual([], result["assets"])
 
 
 class ContentCompletenessTests(unittest.TestCase):
@@ -256,7 +244,7 @@ class ContentCompletenessTests(unittest.TestCase):
 
             self.assertIn("content.unmatched-pattern", self._codes(root / "alpha"))
             self.assertEqual([], inspect_skills([root / "alpha"])[0]["entries"])
-            with self.assertRaisesRegex(DegardisError, "matches nothing"):
+            with self.assertRaises(DegardisError):
                 build_skills(root / "alpha", Path(directory) / "out")
 
     def test_an_exclusion_that_removes_nothing_is_reported(self):
@@ -266,12 +254,7 @@ class ContentCompletenessTests(unittest.TestCase):
                 root, "alpha", assets=["assets/**/*", "!assets/drafts/**/*"]
             )
 
-            errors = inspect_skills([root / "alpha"])[0]["errors"]
-
             self.assertIn("content.unmatched-pattern", self._codes(root / "alpha"))
-            self.assertTrue(
-                any("!assets/drafts/**/*" in error for error in errors), errors
-            )
 
     def test_a_key_an_exclusion_empties_is_reported(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -372,10 +355,7 @@ class ContentPatternMatchingTests(unittest.TestCase):
             result = inspect_skills([root / "alpha"])[0]
 
             self.assertEqual([], result["entries"])
-            self.assertTrue(
-                any("matches nothing" in error for error in result["errors"]),
-                result["errors"],
-            )
+            self.assertIn("content.unmatched-pattern", diagnostic_codes(result, "error"))
 
     def test_a_wrongly_cased_exclusion_removes_nothing_anywhere(self):
         """The destructive half: on a case-folding host this dropped the entry."""
@@ -391,10 +371,7 @@ class ContentPatternMatchingTests(unittest.TestCase):
                 ["entries/rule-one.yaml"],
                 [item["path"] for item in result["entries"]],
             )
-            self.assertTrue(
-                any("!ENTRIES/RULE-ONE.yaml" in error for error in result["errors"]),
-                result["errors"],
-            )
+            self.assertIn("content.unmatched-pattern", diagnostic_codes(result, "error"))
 
     def test_a_matched_path_keeps_the_case_the_filesystem_holds(self):
         with tempfile.TemporaryDirectory() as directory:

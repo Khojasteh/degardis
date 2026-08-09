@@ -275,7 +275,7 @@ class BaselineFailureTests(unittest.TestCase):
         self.assertIn("[ERROR]", error)
         self.assertIn("no-such-revision", error)
 
-    def test_a_source_outside_any_repository_fails_before_measuring(self):
+    def test_a_source_outside_any_repository_is_rejected_before_measuring(self):
         with tempfile.TemporaryDirectory() as directory:
             root = copy_skills(Path(directory))
 
@@ -283,11 +283,11 @@ class BaselineFailureTests(unittest.TestCase):
 
         self.assertEqual(1, code)
         self.assertIn("[ERROR]", error)
-        # Git says what went wrong but not what was being attempted, so every
-        # --baseline failure names the option and what it needed.
+        # Every --baseline failure identifies the option and the source it
+        # could not measure. Git's operating-system-specific detail is not a
+        # Degardis contract.
         self.assertIn("--baseline", error)
         self.assertIn(str((root / "alpha").resolve()), error)
-        self.assertIn("not a git repository", error)
 
     def test_every_baseline_failure_names_the_option(self):
         with tempfile.TemporaryDirectory() as directory:

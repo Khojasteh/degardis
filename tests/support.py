@@ -85,3 +85,12 @@ def set_interface_fields(root: Path, skill_name: str, **fields: str) -> None:
     data["interface"].update(fields)
     source.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
 
+
+def diagnostic_codes(result: dict, severity: str) -> set[str]:
+    """Return the public diagnostic codes emitted at one severity."""
+    return {
+        record.code
+        for record in result["diagnostics"]
+        if record.severity == severity
+    }
+

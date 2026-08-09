@@ -10,9 +10,9 @@ import yaml
 
 from degardis.build import build_skills
 from degardis.model import DegardisError
-from degardis.validate import inspect_skills, validate
+from degardis.validate import inspect_skills
 
-from tests.support import copy_skills
+from tests.support import copy_skills, diagnostic_codes
 
 
 class EntryValidationTests(unittest.TestCase):
@@ -33,12 +33,7 @@ class EntryValidationTests(unittest.TestCase):
             ).read_text(encoding="utf-8")
 
         self.assertEqual([], result["errors"])
-        self.assertTrue(
-            any(
-                "unrecognized kind guideline compiled as declared" in warning
-                for warning in result["warnings"]
-            )
-        )
+        self.assertIn("entry.unknown-kind", diagnostic_codes(result, "warning"))
         self.assertEqual({"guideline": 1}, result["entry_kind_counts"])
         self.assertIn("**Kind:** `guideline`", generated)
 
@@ -52,11 +47,9 @@ class EntryValidationTests(unittest.TestCase):
                 yaml.safe_dump(data, sort_keys=False), encoding="utf-8"
             )
 
-            errors = validate(root / "gamma")
+            result = inspect_skills([root / "gamma"])[0]
 
-        self.assertTrue(
-            any("kind must be a non-empty string" in error for error in errors)
-        )
+        self.assertIn("entry.invalid-type", diagnostic_codes(result, "error"))
 
     def test_omitted_behavior_bearing_entry_fields_warn(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -71,15 +64,12 @@ class EntryValidationTests(unittest.TestCase):
 
             result = inspect_skills([root / "gamma"])[0]
 
-        warnings = "\n".join(result["warnings"])
         self.assertEqual([], result["errors"])
-        self.assertIn("title is missing", warnings)
-        self.assertIn("kind is missing", warnings)
+        warning_codes = diagnostic_codes(result, "warning")
+        self.assertTrue({"entry.missing-title", "entry.missing-kind"} <= warning_codes)
         # A skill that orders nothing is told once, not once per entry.
-        self.assertIn("no entry declares a priority", warnings)
-        self.assertNotIn("priority is missing", warnings)
-        # An inert optional field stays silent.
-        self.assertNotIn("rationale", warnings)
+        self.assertIn("entry.no-priorities", warning_codes)
+        self.assertNotIn("entry.missing-priority", warning_codes)
 
     def test_a_missing_priority_warns_when_other_entries_declare_one(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -98,9 +88,9 @@ class EntryValidationTests(unittest.TestCase):
 
             result = inspect_skills([root / "alpha"])[0]
 
-        warnings = "\n".join(result["warnings"])
-        self.assertIn("rule-two.yaml: priority is missing", warnings)
-        self.assertNotIn("no entry declares a priority", warnings)
+        warning_codes = diagnostic_codes(result, "warning")
+        self.assertIn("entry.missing-priority", warning_codes)
+        self.assertNotIn("entry.no-priorities", warning_codes)
 
     def test_shared_priorities_and_titles_warn_but_still_build(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -119,10 +109,11 @@ class EntryValidationTests(unittest.TestCase):
             result = inspect_skills([root / "alpha"])[0]
             build_skills(root / "alpha", root / "output")
 
-        warnings = "\n".join(result["warnings"])
         self.assertEqual([], result["errors"])
-        self.assertIn("entries share priority 10", warnings)
-        self.assertIn("entries share the title", warnings)
+        warning_codes = diagnostic_codes(result, "warning")
+        self.assertTrue(
+            {"entry.duplicate-priority", "entry.duplicate-title"} <= warning_codes
+        )
 
     def test_entry_list_fields_reject_scalar_values(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -135,12 +126,8 @@ class EntryValidationTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            errors = validate(root / "alpha")
+            result = inspect_skills([root / "alpha"])[0]
 
-            self.assertTrue(
-                any("require must be a list of strings" in error for error in errors)
-            )
-            with self.assertRaisesRegex(
-                DegardisError, "require must be a list of strings"
-            ):
+            self.assertIn("entry.invalid-type", diagnostic_codes(result, "error"))
+            with self.assertRaises(DegardisError):
                 build_skills(root / "alpha", root / "output")

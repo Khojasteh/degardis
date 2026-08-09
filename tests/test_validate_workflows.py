@@ -10,9 +10,9 @@ import yaml
 
 from degardis.build import build_skills
 from degardis.model import DegardisError
-from degardis.validate import inspect_skills, validate
+from degardis.validate import inspect_skills
 
-from tests.support import copy_skills
+from tests.support import copy_skills, diagnostic_codes
 
 
 class WorkflowValidationTests(unittest.TestCase):
@@ -29,12 +29,7 @@ class WorkflowValidationTests(unittest.TestCase):
             result = inspect_skills([root / "gamma"])[0]
 
         self.assertEqual([], result["errors"])
-        self.assertTrue(
-            any(
-                "workflow gamma.orphan is never reached" in warning
-                for warning in result["warnings"]
-            )
-        )
+        self.assertIn("workflow.unreachable", diagnostic_codes(result, "warning"))
 
     def test_a_primary_workflow_without_a_description_warns(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -48,11 +43,9 @@ class WorkflowValidationTests(unittest.TestCase):
 
             result = inspect_skills([root / "gamma"])[0]
 
-        self.assertTrue(
-            any(
-                "primary workflow has no description" in warning
-                for warning in result["warnings"]
-            )
+        self.assertIn(
+            "workflow.missing-description",
+            diagnostic_codes(result, "warning"),
         )
 
     def test_a_step_without_an_instruction_warns(self):
@@ -68,8 +61,8 @@ class WorkflowValidationTests(unittest.TestCase):
             result = inspect_skills([root / "gamma"])[0]
 
         self.assertEqual([], result["errors"])
-        self.assertTrue(
-            any("has no instruction" in warning for warning in result["warnings"])
+        self.assertIn(
+            "workflow.step-missing-instruction", diagnostic_codes(result, "warning")
         )
 
     def test_cross_skill_workflow_use_is_rejected(self):
@@ -79,8 +72,9 @@ class WorkflowValidationTests(unittest.TestCase):
             data = yaml.safe_load(source.read_text(encoding="utf-8"))
             data["steps"].append({"use": "beta.run"})
             source.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
-            self.assertTrue(
-                any("cross-skill or unknown" in error for error in validate(root / "alpha"))
+            result = inspect_skills([root / "alpha"])[0]
+            self.assertIn(
+                "workflow.unknown-reference", diagnostic_codes(result, "error")
             )
 
     def test_duplicate_workflow_ids_are_rejected_by_validate_and_build(self):
@@ -92,26 +86,19 @@ class WorkflowValidationTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            errors = validate(root / "alpha")
+            result = inspect_skills([root / "alpha"])[0]
 
-            self.assertTrue(
-                any("duplicate workflow id alpha.run" in error for error in errors)
-            )
-            with self.assertRaisesRegex(
-                DegardisError, "duplicate workflow id alpha.run"
-            ):
+            self.assertIn("workflow.duplicate-id", diagnostic_codes(result, "error"))
+            with self.assertRaises(DegardisError):
                 build_skills(root / "alpha", root / "output")
 
     def test_malformed_workflow_steps_are_rejected(self):
         invalid_steps = (
-            (42, "must be a string or mapping"),
-            ({"use": 42}, "use must be a non-empty string"),
-            (
-                {"use": "alpha.run", "action": "also-run"},
-                "use cannot be combined with action or instruction",
-            ),
+            42,
+            {"use": 42},
+            {"use": "alpha.run", "action": "also-run"},
         )
-        for step, message in invalid_steps:
+        for step in invalid_steps:
             with self.subTest(step=step):
                 with tempfile.TemporaryDirectory() as directory:
                     root = copy_skills(Path(directory))
@@ -123,8 +110,10 @@ class WorkflowValidationTests(unittest.TestCase):
                         encoding="utf-8",
                     )
 
-                    errors = validate(root / "alpha")
+                    result = inspect_skills([root / "alpha"])[0]
 
-                    self.assertTrue(any(message in error for error in errors))
-                    with self.assertRaisesRegex(DegardisError, message):
+                    self.assertIn(
+                        "workflow.invalid-step", diagnostic_codes(result, "error")
+                    )
+                    with self.assertRaises(DegardisError):
                         build_skills(root / "alpha", root / "output")

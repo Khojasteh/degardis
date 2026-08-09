@@ -12,7 +12,7 @@ import yaml
 from degardis.icons import MAX_SOURCE_BYTES
 from degardis.validate import inspect_skills, validate
 
-from tests.support import copy_skills, set_interface_icons, write_raster_icon
+from tests.support import copy_skills, set_interface_fields, write_raster_icon
 
 
 class IconValidationTests(unittest.TestCase):
@@ -64,7 +64,7 @@ class IconValidationTests(unittest.TestCase):
                 ("../oversized.png", "icon.too-large"),
             ):
                 with self.subTest(icon=value):
-                    set_interface_icons(root, "alpha", icon=value)
+                    set_interface_fields(root, "alpha", icon=value)
 
                     result = inspect_skills([root / "alpha"])[0]
 
@@ -92,6 +92,6 @@ class IconValidationTests(unittest.TestCase):
                 ("../unsafe.svg", "script is not allowed"),
             ):
                 with self.subTest(source=source):
-                    set_interface_icons(root, "alpha", icon=source)
+                    set_interface_fields(root, "alpha", icon=source)
                     errors = validate(root / "alpha")
                     self.assertTrue(any(message in error for error in errors))

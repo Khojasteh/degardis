@@ -10,7 +10,13 @@ import yaml
 
 from degardis.build import build_skills
 
-from tests.support import FIXTURES, copy_skills, folder_names, folder_text
+from tests.support import (
+    FIXTURES,
+    copy_skills,
+    folder_names,
+    folder_text,
+    set_interface_fields,
+)
 
 
 class FolderOutputTests(unittest.TestCase):
@@ -59,6 +65,42 @@ class FolderOutputTests(unittest.TestCase):
             )
             self.assertNotIn("format_version", frontmatter["metadata"])
             self.assertNotIn("copyright", frontmatter)
+
+    def test_the_name_placeholder_renders_the_targets_invocation_syntax(self):
+        """One authored prompt, spelled the way the file's own host types it."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_skills(Path(directory))
+            set_interface_fields(
+                root,
+                "alpha",
+                default_prompt="Ask {name} to run the fixture workflow.",
+            )
+
+            path = build_skills(root / "alpha", root / "output")[0]
+
+            metadata = yaml.safe_load(folder_text(path, "agents/openai.yaml"))
+            self.assertEqual(
+                "Ask $alpha to run the fixture workflow.",
+                metadata["interface"]["default_prompt"],
+            )
+
+    def test_a_hardcoded_host_invocation_is_emitted_as_authored(self):
+        """The warned-about source still builds, carrying the syntax it chose."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_skills(Path(directory))
+            set_interface_fields(
+                root,
+                "alpha",
+                default_prompt="Ask /alpha to run the fixture workflow.",
+            )
+
+            path = build_skills(root / "alpha", root / "output")[0]
+
+            metadata = yaml.safe_load(folder_text(path, "agents/openai.yaml"))
+            self.assertEqual(
+                "Ask /alpha to run the fixture workflow.",
+                metadata["interface"]["default_prompt"],
+            )
 
     def test_scripts_and_assets_are_copied(self):
         with tempfile.TemporaryDirectory() as directory:

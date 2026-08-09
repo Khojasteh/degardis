@@ -22,7 +22,12 @@ from .model import (
     SkillBundle,
     SkillContent,
 )
-from .package import artifact_mode, openai_metadata
+from .package import (
+    HOST_INVOCATION_PREFIXES,
+    NAME_PLACEHOLDER,
+    artifact_mode,
+    openai_metadata,
+)
 from .registry import discover_skill_paths, load_skill_path
 from .resolver import load_content, select_profiles
 
@@ -379,7 +384,11 @@ def _bundle_outputs(
     add(
         "agents/openai.yaml",
         len(
-            openai_metadata(skill.interface, set(content.icon_sources)).encode("utf-8")
+            openai_metadata(
+                skill.interface,
+                set(content.icon_sources),
+                skill.name,
+            ).encode("utf-8")
         ),
     )
     return sorted(outputs, key=lambda item: item["path"])
@@ -466,13 +475,33 @@ def _check_interface(skill: Skill, diagnostics: Diagnostics) -> None:
     if (
         isinstance(default_prompt, str)
         and default_prompt
-        and f"${skill.name}" not in default_prompt
+        and NAME_PLACEHOLDER not in default_prompt
     ):
-        diagnostics.error(
-            f"{skill.name}: interface.default_prompt must mention ${skill.name}",
-            "interface.default_prompt-token",
-            _manifest_path(skill),
+        # A source that spelled one host's invocation still names the skill, so
+        # it builds; the warning says which host it silently committed to.
+        hardcoded = next(
+            (
+                prefix
+                for prefix in HOST_INVOCATION_PREFIXES
+                if f"{prefix}{skill.name}" in default_prompt
+            ),
+            None,
         )
+        if hardcoded:
+            diagnostics.warning(
+                f"{skill.name}: interface.default_prompt spells the invocation "
+                f"{hardcoded}{skill.name} for one host; write "
+                f"{NAME_PLACEHOLDER} and let each target render its own",
+                "interface.default_prompt-literal-token",
+                _manifest_path(skill),
+            )
+        else:
+            diagnostics.error(
+                f"{skill.name}: interface.default_prompt must mention "
+                f"{NAME_PLACEHOLDER}",
+                "interface.default_prompt-token",
+                _manifest_path(skill),
+            )
 
 
 def _check_profile_metadata(

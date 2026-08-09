@@ -79,9 +79,9 @@ def set_content_patterns(root: Path, skill_name: str, **patterns: list[str]) -> 
     source.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
 
 
-def set_interface_icons(root: Path, skill_name: str, **icons: str) -> None:
+def set_interface_fields(root: Path, skill_name: str, **fields: str) -> None:
     source = root / skill_name / "skill.yaml"
     data = yaml.safe_load(source.read_text(encoding="utf-8"))
-    data["interface"].update(icons)
+    data["interface"].update(fields)
     source.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
 

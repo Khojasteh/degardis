@@ -26,13 +26,34 @@ OPENAI_INTERFACE_FIELDS = (
     "default_prompt",
 )
 
+# The placeholder a source writes where the invoked skill belongs, so one
+# authored prompt renders for whatever host the target file is read by.
+NAME_PLACEHOLDER = "{name}"
 
-def openai_metadata(interface: dict, icon_roles: set[str]) -> str:
+# The character each host puts before a skill name in a typed invocation. Every
+# shape is listed, not only the one a target here renders, because validation
+# reads this to recognize a source that hardcoded some host's syntax.
+HOST_INVOCATION_PREFIXES = ("$", "/", "@", "#")
+OPENAI_INVOCATION_PREFIX = "$"
+
+
+def render_invocations(text: str, name: str, prefix: str) -> str:
+    """Resolve the name placeholder into one host's invocation syntax."""
+    return text.replace(NAME_PLACEHOLDER, f"{prefix}{name}")
+
+
+def openai_metadata(interface: dict, icon_roles: set[str], name: str) -> str:
     """Render agents/openai.yaml so callers can write it or measure it alike."""
     emitted = dict(interface)
     emitted.pop("icon", None)
     for role in icon_roles:
         emitted[f"icon_{role}"] = f"./{ICON_OUTPUTS[role]}"
+    if "default_prompt" in emitted:
+        emitted["default_prompt"] = render_invocations(
+            str(emitted["default_prompt"]),
+            name,
+            OPENAI_INVOCATION_PREFIX,
+        )
     lines = ["interface:"]
     for key in OPENAI_INTERFACE_FIELDS:
         if key in emitted:
@@ -186,6 +207,7 @@ class ArtifactWriter:
             content.skill.interface,
             destination,
             set(content.icon_sources),
+            content.skill.name,
         )
 
     def _write_openai_metadata(
@@ -193,10 +215,11 @@ class ArtifactWriter:
         interface: dict,
         destination: Path,
         icon_roles: set[str],
+        name: str,
     ) -> None:
         write_generated(
             destination / "agents" / "openai.yaml",
-            openai_metadata(interface, icon_roles),
+            openai_metadata(interface, icon_roles, name),
         )
 
 

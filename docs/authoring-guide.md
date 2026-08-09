@@ -51,7 +51,7 @@ content:
 interface:
   display_name: My Skill
   short_description: Turn notes into a concise action list
-  default_prompt: Use $my-skill to turn these notes into an action list.
+  default_prompt: Use {name} to turn these notes into an action list.
 ```
 
 Create `my-skill/workflows/run.yaml`:
@@ -145,7 +145,7 @@ interface:
   short_description: Turn supplied material into a clear summary
   icon: assets/icon.svg
   brand_color: "#5B4B8A"
-  default_prompt: Use $structured-summary to summarize this material.
+  default_prompt: Use {name} to summarize this material.
 ```
 
 The version fields have separate meanings:
@@ -169,8 +169,9 @@ The three interface fields serve different readers:
 
 - `display_name` labels the skill in an agent interface.
 - `short_description` is a 25–64 character interface summary.
-- `default_prompt` is a suggested invocation and must contain the exact
-  `$structured-summary` skill token.
+- `default_prompt` is a suggested invocation and must contain the skill name.
+  Because different agents have different conventions for how a skill name
+  is typed, use `{name}` placeholder instead of the literal name.
 
 The top-level `description` is different: agents use it to decide when the
 skill applies. Keep it specific even when the interface summary is shorter.

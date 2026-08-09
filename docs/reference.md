@@ -487,13 +487,16 @@ The required manifest `interface` mapping accepts:
 | ------------------- | -------- | --------------------------------------------------------------- |
 | `display_name`      | yes      | Non-empty name displayed by the agent host                      |
 | `short_description` | yes      | Interface summary, 25–64 characters                             |
-| `default_prompt`    | yes      | Suggested invocation containing the exact `$<skill-name>` token |
+| `default_prompt`    | yes      | Suggested invocation containing the exact `{name}` placeholder  |
 | `brand_color`       | no       | Non-empty agent-interface color value                           |
 | `icon`              | no       | Fallback source image for both icon roles                       |
 | `icon_small`        | no       | Source image for the small role; overrides `icon`               |
 | `icon_large`        | no       | Source image for the large role; overrides `icon`               |
 
 Unlisted `interface` fields are ignored with a warning.
+
+The `default_prompt` is the only place a skill's own name appears in the source. Because different agent hosts use
+different syntax to name a skill, Degardis warns when the prompt does not contain the exact `{name}` placeholder.
 
 Icon paths must be relative to the skill directory, but may resolve outside it
 so several skills can reuse one source image. Builds convert populated roles

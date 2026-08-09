@@ -13,7 +13,7 @@ from degardis.build import build_skills
 from degardis.model import DegardisError
 from degardis.validate import inspect_skills, validate
 
-from tests.support import FIXTURES, copy_skills
+from tests.support import FIXTURES, copy_skills, set_interface_fields
 
 
 class ManifestValidationTests(unittest.TestCase):
@@ -208,4 +208,63 @@ class ManifestValidationTests(unittest.TestCase):
                 "entry_kinds is derived from the skill content" in warning
                 for warning in result["warnings"]
             )
+        )
+
+
+class DefaultPromptTests(unittest.TestCase):
+    """The suggested invocation, authored once for hosts that differ."""
+
+    def test_a_prompt_naming_no_skill_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_skills(Path(directory))
+            set_interface_fields(
+                root,
+                "alpha",
+                default_prompt="Run the fixture workflow.",
+            )
+
+            errors = validate(root / "alpha")
+
+        self.assertEqual(
+            ["alpha: interface.default_prompt must mention {name}"],
+            errors,
+        )
+
+    def test_a_hardcoded_host_invocation_warns_without_failing(self):
+        """Every host shape is recognized, not only the one a target renders."""
+        for prefix in ("$", "/", "@", "#"):
+            with self.subTest(prefix=prefix):
+                with tempfile.TemporaryDirectory() as directory:
+                    root = copy_skills(Path(directory))
+                    set_interface_fields(
+                        root,
+                        "alpha",
+                        default_prompt=f"Ask {prefix}alpha to run this.",
+                    )
+
+                    errors = validate(root / "alpha")
+                    warnings = inspect_skills([root / "alpha"])[0]["warnings"]
+
+                self.assertEqual([], errors)
+                self.assertIn(
+                    f"alpha: interface.default_prompt spells the invocation "
+                    f"{prefix}alpha for one host; write {{name}} and let each "
+                    f"target render its own",
+                    warnings,
+                )
+
+    def test_another_skills_hardcoded_name_is_not_read_as_this_ones(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_skills(Path(directory))
+            set_interface_fields(
+                root,
+                "alpha",
+                default_prompt="Ask $beta to run this.",
+            )
+
+            errors = validate(root / "alpha")
+
+        self.assertEqual(
+            ["alpha: interface.default_prompt must mention {name}"],
+            errors,
         )

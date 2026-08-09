@@ -13,4 +13,4 @@ content:
 interface:
   display_name: Gamma
   short_description: Minimal fixture skill depending on beta and alpha
-  default_prompt: Use $gamma to run the fixture workflow.
+  default_prompt: Use {name} to run the fixture workflow.

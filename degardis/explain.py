@@ -293,15 +293,31 @@ CHECKS: dict[str, CheckExplanation] = {
     ),
     "interface.default_prompt-token": CheckExplanation(
         trigger=(
-            "The interface default_prompt does not contain the exact "
-            "$<skill-name> token."
+            "The interface default_prompt does not contain the exact {name} "
+            "placeholder, which each target replaces with the skill name in its "
+            "own invocation syntax."
         ),
         impact=(
             "The suggested invocation does not name the skill it invokes, so "
             "following it starts something else."
         ),
         failing="interface:\n  default_prompt: Summarize this report",
-        passing="interface:\n  default_prompt: $structured-summary this report",
+        passing="interface:\n  default_prompt: Use {name} to summarize this report",
+    ),
+    "interface.default_prompt-literal-token": CheckExplanation(
+        trigger=(
+            "The interface default_prompt spells one host's invocation syntax, "
+            "such as $<skill-name> or /<skill-name>, where the {name} "
+            "placeholder belongs."
+        ),
+        impact=(
+            "The spelled syntax is emitted verbatim to every target, so the "
+            "suggested invocation is wrong on each host that types a skill name "
+            "differently, and the source cannot follow a host that changes its "
+            "own."
+        ),
+        failing="interface:\n  default_prompt: Ask $structured-summary to summarize this",
+        passing="interface:\n  default_prompt: Ask {name} to summarize this",
     ),
     "interface.unknown-field": CheckExplanation(
         trigger="The interface mapping holds a field this compiler does not define.",

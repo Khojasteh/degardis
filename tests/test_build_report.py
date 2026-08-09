@@ -80,7 +80,7 @@ class BuildReportTests(unittest.TestCase):
 
         message = str(raised.exception)
         self.assertIn("2 errors:", message)
-        self.assertIn("interface.default_prompt must mention $alpha", message)
+        self.assertIn("interface.default_prompt must mention {name}", message)
         self.assertIn("content.assets pattern assets/*.png matches nothing", message)
 
     def test_build_rejects_invalid_interface_before_replacing_artifacts(self):

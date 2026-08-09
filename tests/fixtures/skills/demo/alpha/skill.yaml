@@ -19,4 +19,4 @@ content:
 interface:
   display_name: Alpha
   short_description: Minimal fixture skill for compiler behavior tests
-  default_prompt: Use $alpha to run the fixture workflow.
+  default_prompt: Use {name} to run the fixture workflow.

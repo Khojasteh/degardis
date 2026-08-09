@@ -15,7 +15,7 @@ from degardis.model import DegardisError
 from tests.support import (
     copy_skills,
     folder_text,
-    set_interface_icons,
+    set_interface_fields,
     write_raster_icon,
     zip_names,
     zip_text,
@@ -28,8 +28,8 @@ class BuildIconTests(unittest.TestCase):
             root = copy_skills(Path(directory))
             shared = root / "shared.ico"
             write_raster_icon(shared, (30, 120, 220, 255), format_name="ICO")
-            set_interface_icons(root, "alpha", icon="../shared.ico")
-            set_interface_icons(root, "beta", icon="../shared.ico")
+            set_interface_fields(root, "alpha", icon="../shared.ico")
+            set_interface_fields(root, "beta", icon="../shared.ico")
 
             paths = build_skills(root, Path(directory) / "output")
 
@@ -56,7 +56,7 @@ class BuildIconTests(unittest.TestCase):
             small = root / "alpha" / "small.png"
             write_raster_icon(fallback, (220, 20, 20, 255))
             write_raster_icon(small, (20, 40, 220, 255))
-            set_interface_icons(
+            set_interface_fields(
                 root,
                 "alpha",
                 icon="../fallback.png",
@@ -75,7 +75,7 @@ class BuildIconTests(unittest.TestCase):
             root = copy_skills(Path(directory))
             small = root / "small.png"
             write_raster_icon(small, (10, 180, 80, 255))
-            set_interface_icons(root, "alpha", icon_small="../small.png")
+            set_interface_fields(root, "alpha", icon_small="../small.png")
 
             path = build_skills(root / "alpha", root / "output")[0]
 
@@ -100,7 +100,7 @@ class BuildIconTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            set_interface_icons(root, "alpha", icon="../icon.svg")
+            set_interface_fields(root, "alpha", icon="../icon.svg")
 
             path = build_skills(root / "alpha", root / "output")[0]
 
@@ -115,7 +115,7 @@ class BuildIconTests(unittest.TestCase):
             generated_path = root / "alpha" / "assets" / "icon-small.png"
             write_raster_icon(shared, (255, 0, 0, 255))
             write_raster_icon(generated_path, (0, 0, 255, 255))
-            set_interface_icons(root, "alpha", icon="../shared.png")
+            set_interface_fields(root, "alpha", icon="../shared.png")
 
             with self.assertRaisesRegex(DegardisError, "output path collision"):
                 build_skills(root / "alpha", root / "output")
@@ -125,7 +125,7 @@ class BuildIconTests(unittest.TestCase):
             root = copy_skills(Path(directory))
             shared = root / "shared.webp"
             write_raster_icon(shared, (90, 40, 180, 255), format_name="WEBP")
-            set_interface_icons(root, "alpha", icon="../shared.webp")
+            set_interface_fields(root, "alpha", icon="../shared.webp")
 
             path = build_skills(
                 root / "alpha",

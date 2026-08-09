@@ -156,7 +156,7 @@ class ValidateCommandTests(unittest.TestCase):
         report = " ".join(stdout.getvalue().split())
         for message in (
             "content.assets pattern assets/*.png matches nothing",
-            "interface.default_prompt must mention $alpha",
+            "interface.default_prompt must mention {name}",
             "cross-skill",
             "workflow reference beta.run",
             "unrecognized kind guideline compiled as declared",

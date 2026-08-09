@@ -22,4 +22,4 @@ interface:
   short_description: Turn supplied material into a clear summary
   icon: assets/icon.svg
   brand_color: "#5B4B8A"
-  default_prompt: Use $structured-summary to summarize this material.
+  default_prompt: Use {name} to summarize this material.

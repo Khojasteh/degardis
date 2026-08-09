@@ -15,4 +15,4 @@ content:
 interface:
   display_name: Beta
   short_description: Minimal fixture skill depending on alpha
-  default_prompt: Use $beta to run the fixture workflow.
+  default_prompt: Use {name} to run the fixture workflow.

@@ -1,0 +1,10 @@
+title: Prefer the smallest sufficient change
+question: Which valid option should be preferred?
+advice:
+  reversible:
+    when: exists(result.finding)
+    prefer: Prefer the smallest reversible option that satisfies the request.
+    because: Smaller reversible changes usually reduce unintended impact.
+  explicit-boundary:
+    prefer: Prefer an option whose affected boundary can be stated explicitly.
+    caution: An explicit boundary is not always the smallest one.

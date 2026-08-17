@@ -1,8 +1,9 @@
-name: detailed
-label: Detailed
-description: Apply when the reader needs context, relationships, and supporting detail.
-instructions:
-- Explain how the main ideas relate to one another instead of presenting an isolated list.
-- Include representative supporting detail while preserving the source's qualifications.
-details_files:
-- details/detailed.md
+title: Detailed result
+description: Apply where the reader needs how the main ideas relate, not only what
+  they are.
+points:
+- Explain how the main ideas relate rather than listing them in isolation.
+- Include representative supporting detail while keeping the source's
+  qualifications.
+guides:
+- guides/detailed.md

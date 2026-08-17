@@ -1,0 +1,6 @@
+title: Name what was not covered
+summary: A report names the part of the surface it did not reach.
+phase: before-return
+match:
+  outcomes: [reported]
+require: Name the part of the surface this run did not reach.

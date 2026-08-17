@@ -1,3 +1,4 @@
-# Alpha report template
+# Report template
 
-Fixture asset used to exercise assets/ packaging in tests.
+- Result:
+- Boundary:

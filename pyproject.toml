@@ -35,6 +35,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+lint = [
+    "ruff>=0.14,<0.15",
+]
 release = [
     "build>=1.2",
     "twine>=6",
@@ -47,6 +50,33 @@ Repository = "https://github.com/Khojasteh/degardis"
 
 [project.scripts]
 degardis = "degardis.cli:main"
+
+[tool.ruff]
+# The language floor the package supports, not the interpreter that happens to
+# run the check.
+target-version = "py310"
+
+[tool.ruff.lint]
+# Errors and bug patterns only. Formatting stays unenforced, as AGENTS.md says:
+# match the surrounding file's wrapping and layout.
+select = [
+    "E4",   # imports
+    "E7",   # statement-level mistakes
+    "E9",   # syntax and IO errors
+    "F",    # pyflakes: undefined names, unused imports and variables
+    "B",    # bugbear: mutable defaults, shadowed loop variables, silent bugs
+    "C4",   # needless comprehensions
+    "PIE",  # unnecessary code
+    "RSE",  # raise statements
+    "RUF",  # ruff's own checks
+    "UP",   # constructs superseded on the supported Python versions
+]
+ignore = [
+    # zip() without strict= is not a style problem: choosing True changes what
+    # happens on unequal lengths, and choosing False only restates today's
+    # behavior. Decide it per call site, not by lint.
+    "B905",
+]
 
 [tool.setuptools]
 packages = ["degardis"]

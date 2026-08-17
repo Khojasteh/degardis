@@ -1,0 +1,6 @@
+title: Outcome report
+fields:
+  summary:
+    type: string
+  count:
+    type: integer

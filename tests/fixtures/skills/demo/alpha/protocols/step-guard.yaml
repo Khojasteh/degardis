@@ -1,0 +1,15 @@
+title: Step guard
+purpose: Bound one step with its own lifecycle.
+states: [open, closed]
+initial: open
+accepting: [closed]
+hooks:
+  enter-guard:
+    phase: enter
+    from: [open]
+    command: Note the guard this step opens.
+  close-guard:
+    phase: exit
+    from: [open]
+    command: Close the guard this step opened.
+    to: closed

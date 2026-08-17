@@ -1,106 +1,106 @@
 # Degardis
 
-Degardis is a command-line compiler for authors of portable Agent Skills. It
-turns structured YAML sources into self-contained bundles for Claude, Codex,
-Copilot, Cursor, Roo, and ChatGPT. Before writing an artifact, it validates the
-source, selected profiles, generated paths, and generated links.
+Degardis is a command-line compiler for portable Agent Skills.
 
-Authoring stays separate from generated output: edit the source files, validate
-them, and rebuild either an installable folder or a distributable ZIP.
+You write a skill once as structured YAML: the workflows it runs, the policies
+and rules that bind them, the protocols that carry state across steps, and the
+reusable patterns, advisory heuristics, and supplementary guidance around them.
+Degardis checks that source, lowers every binding requirement into the workflow
+step where it is enforced, and renders an installable bundle for Claude, Codex,
+Copilot, Cursor, Roo, or ChatGPT. Your source stays authoritative; the bundle is
+generated output you can replace at any time.
+
+Compiling buys you what writing Markdown by hand cannot: every requirement you
+declare is checked to have reached a step. A policy that matched no reachable
+node, a rule that was never lowered, or a link where required behavior belongs is
+a reported finding rather than a silent gap in the bundle. One run reports every
+error and warning it found, and every finding carries a check code you can look
+up.
+
+## Author with an agent
+
+[Degardis Authoring](https://github.com/Khojasteh/degardis-skills/tree/main/skills/degardis-authoring)
+is a skill for building skills. Hand it to your agent and it guides the whole
+loop: it draws a skill's boundary so the right requests select it and the wrong
+ones do not, holds down what the skill costs to load and to run, keeps
+credentials and private material out of both sources and bundles, establishes how
+the skill really behaves by trialling it blind, then validates, packages, and
+installs it with this compiler.
+
+The compiler accepts one source format and converts none, so use the authoring
+skill version published for the compiler version you have installed.
 
 ## Quick start
 
-Degardis requires Python 3.10 or later. Install it from PyPI:
+You need Python 3.10 or newer.
 
 ```console
 python -m pip install degardis
 degardis --version
 ```
 
-For an isolated command-line installation, use `pipx install degardis`.
+For an isolated command-line install, use `pipx install degardis`. To work from
+a clone of this repository instead, install it in place with
+`python -m pip install -e .`.
 
-To work on Degardis from this repository instead:
+The example below ships in this repository, so run these commands from a clone
+of it:
 
 ```console
-python -m pip install -e .
-degardis validate examples/structured-summary
 degardis list examples/structured-summary
+degardis validate examples/structured-summary
 degardis build examples/structured-summary --output .artifacts
 ```
 
-The successful build ends with `Summary: 1 skill built as folder.` and reports
-the artifact path. The generated folder is ready to inspect or install:
+The build writes one ready-to-install folder per skill; add `--zip` for a single
+archive instead.
 
-```text
-.artifacts/structured-summary/
-  SKILL.md
-  agents/openai.yaml
-  references/
-  scripts/
-  assets/
-```
-
-Degardis writes only beneath the requested output root. Rebuilding a skill
-replaces that skill's existing folder and ZIP there, while preserving unrelated
-entries. See [Artifact format](https://github.com/Khojasteh/degardis/blob/main/docs/artifact-format.md#replace-an-artifact)
-before building directly into an agent's skill directory.
-
-Add the example's optional profile or produce a ZIP:
-
-```console
-degardis build examples/structured-summary --profile detailed --output .artifacts
-degardis build examples/structured-summary --zip --output .artifacts
-```
-
-`examples/structured-summary` is the canonical public example used throughout
-the guides and CLI help. It summarizes supplied material from any subject;
-synthetic skills under `tests/fixtures` are compiler test data.
-
-## Companion skills
-
-The [Degardis skills catalog](https://github.com/Khojasteh/degardis-skills)
-contains reusable skills authored with Degardis.
-
-For the smoothest authoring experience, use
-[Degardis Authoring](https://github.com/Khojasteh/degardis-skills/tree/main/skills/degardis-authoring).
-It guides a skill from initial design through review, validation, packaging,
-and installation while applying Degardis conventions across manifests,
-workflows, entries, profiles, scripts, and assets.
+Degardis only writes inside the output directory you choose, and rebuilding a
+skill replaces that skill's artifacts there. Before you build directly into an
+agent's skill directory, read
+[how Degardis replaces artifacts](https://github.com/Khojasteh/degardis/blob/main/docs/artifact-format.md#replace-an-artifact).
 
 ## Commands
 
 ```console
 degardis list PATH [PATH ...]
 degardis validate PATH [PATH ...]
-degardis build PATH [PATH ...] --output PATH [--profile [SKILL:]PROFILE] [--zip]
+degardis build PATH [PATH ...] --output PATH [--zip]
+degardis inspect PATH [PATH ...]
+degardis explain CODE [CODE ...]
 ```
 
-Run `degardis COMMAND --help` for exact options and examples. All commands
-accept individual skill directories, directories containing skills at any
-depth, or a mixture of both. This lets a source tree group skills into
-subdirectories while building all of them with one command.
+- `list` shows metadata and available profiles as a readable summary.
+- `validate` checks a skill source and reports every problem it finds. This is
+  the one to gate on in CI.
+- `build` creates the installable folder or ZIP.
+- `inspect` reports what a skill compiles to and where each requirement was
+  enforced, in a compact form meant for AI agents rather than for people.
+- `explain` describes the checks behind reported diagnostic codes.
 
-An unqualified profile name applies to every selected skill that defines it.
-`SKILL:PROFILE` selects one owner, and `all` selects all available profiles.
-Supplying explicit selectors replaces manifest defaults for that build.
+Run `degardis COMMAND --help` for exact options and examples. Only `build`
+writes files.
 
-For exact command behavior, profile selectors, source schemas, and the Python
-API, see the [reference](https://github.com/Khojasteh/degardis/blob/main/docs/reference.md).
+For exact command behavior, source schemas, and the Python API, see the
+[reference](https://github.com/Khojasteh/degardis/blob/main/docs/reference.md).
+
+## Source format
+
+A source declares `format_version: 2`, and each selected YAML file defines one
+construct. Degardis 2.0 redefines that format: a skill written for Degardis 1.x
+is rewritten against the current schemas rather than upgraded. The
+[authoring guide](https://github.com/Khojasteh/degardis/blob/main/docs/authoring-guide.md)
+covers every construct, and `degardis validate` reports what a partial rewrite
+still needs. To keep building an existing 1.x source unchanged, stay on the
+Degardis 1.x release that reads it.
 
 ## Documentation
 
-| Reader goal                                  | Document                                   |
-| -------------------------------------------- | ------------------------------------------ |
-| Build and install the example                | [Getting started](https://github.com/Khojasteh/degardis/blob/main/docs/getting-started.md) |
-| Understand the source and artifact models    | [Concepts](https://github.com/Khojasteh/degardis/blob/main/docs/concepts.md) |
-| Create or modify a skill                     | [Authoring guide](https://github.com/Khojasteh/degardis/blob/main/docs/authoring-guide.md) |
+| Reader goal | Document |
+| --- | --- |
+| Build and install the example | [Getting started](https://github.com/Khojasteh/degardis/blob/main/docs/getting-started.md) |
+| Understand the source and artifact models | [Concepts](https://github.com/Khojasteh/degardis/blob/main/docs/concepts.md) |
+| Create or modify a skill with an agent | [Degardis Authoring](https://github.com/Khojasteh/degardis-skills/tree/main/skills/degardis-authoring) |
+| Create or modify a skill by hand | [Authoring guide](https://github.com/Khojasteh/degardis/blob/main/docs/authoring-guide.md) |
 | Look up commands, schemas, or the Python API | [Reference](https://github.com/Khojasteh/degardis/blob/main/docs/reference.md) |
-| Inspect and install generated output         | [Artifact format](https://github.com/Khojasteh/degardis/blob/main/docs/artifact-format.md) |
-
-## Development
-
-```console
-python -m unittest discover -s tests -v
-python -m degardis validate examples/structured-summary
-python -m degardis build examples/structured-summary --profile all --output .artifacts
-```
+| Inspect and install generated output | [Artifact format](https://github.com/Khojasteh/degardis/blob/main/docs/artifact-format.md) |

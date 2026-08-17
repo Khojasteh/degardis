@@ -1,6 +1,87 @@
-id: alpha.run
-title: Run alpha
-description: Run the alpha fixture workflow.
+title: Run the bounded task
+description: Inspect the source, choose a route, act, and report the boundary.
+policies:
+- workflow-scope
+rules:
+- name-the-gap
+inputs:
+  request:
+    type: string
+  wide:
+    type: boolean
+outcomes:
+  reported:
+    record: outcome-report
+  declined: {}
+entry: inspect
 steps:
-- action: do-alpha
-  instruction: Perform the alpha fixture action.
+  inspect:
+    action: Inspect the source that owns the requested behavior.
+    uses: [input.request]
+    subjects: [source.inspect]
+    guidance: [step-context]
+    protocols: [step-guard]
+    resource:
+      run: scripts/greet.py
+    produces:
+      finding:
+        record: finding
+    next: authorization
+
+  authorization:
+    gate: Decide whether the requested change is authorized.
+    heuristics: [smallest-change]
+    states:
+      passed:
+        command: Continue with the authorized change.
+        next: route
+      refused:
+        command: Decline the change and say why.
+        next: decline
+
+  route:
+    branch:
+    - when: input.wide == true
+      next: apply-wide
+    - otherwise: apply-narrow
+
+  apply-narrow:
+    pattern: inspect-plan-act
+    with:
+      target: {from: result.finding}
+    rules:
+    - scoped-change
+    next: check-work
+
+  apply-wide:
+    pattern: inspect-plan-act
+    with:
+      target: {from: result.finding}
+    next: check-work
+
+  check-work:
+    use: verify
+    with:
+      finding: {from: result.finding}
+    on:
+      confirmed: report
+      rejected: decline
+
+  report:
+    action: Write the report and name what it does not cover.
+    subjects: [report.write]
+    produces:
+      report:
+        type: string
+    next: finish
+
+  finish:
+    return:
+      outcome: reported
+      with:
+        summary: {from: result.report}
+        count: {literal: 1}
+
+  decline:
+    return:
+      outcome: declined

@@ -1,4 +1,4 @@
 #!/usr/bin/env python3
-"""Fixture script used to exercise scripts/ packaging in tests."""
+"""Print a greeting, so the fixture ships one runnable script."""
 
 print("hello from alpha")

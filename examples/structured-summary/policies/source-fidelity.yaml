@@ -1,0 +1,32 @@
+title: Faithfulness to the supplied material
+summary: Keep every claim the summary makes inside what the material supports.
+provisions:
+  establish-support:
+    phase: before
+    match:
+      subjects: [summary.write]
+    require: Establish, for each claim you are about to write, the part of the
+      material that supports it.
+    verify:
+      gate: check-readiness
+  record-what-is-absent:
+    phase: during
+    match:
+      subjects: [material.inspect]
+    require: Record what the material does not say, beside what it does.
+  no-invented-claim:
+    phase: during
+    match:
+      subjects: [summary.write]
+    prohibit: State a claim the supplied material does not support.
+  keep-qualifications:
+    phase: after
+    match:
+      subjects: [summary.write]
+    require: Confirm that every qualification the material attaches to a claim
+      survived into the draft.
+  report-limitations:
+    phase: before-return
+    match:
+      forms: [return]
+    require: Report the limitations that affect how this result may be used.

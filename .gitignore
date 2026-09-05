@@ -13,3 +13,5 @@ dist/
 .junie/
 
 .artifacts/
+
+release-notes.md

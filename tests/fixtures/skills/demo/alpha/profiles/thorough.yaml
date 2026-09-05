@@ -1,0 +1,6 @@
+title: Thorough
+points:
+- Inspect every source the request reaches before choosing a route.
+- State what remains uninspected.
+guides:
+- guides/thorough.md

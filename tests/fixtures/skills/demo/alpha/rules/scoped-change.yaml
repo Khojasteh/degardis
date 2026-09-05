@@ -1,0 +1,10 @@
+title: Stay inside the requested change
+summary: A change stays inside the surface the request named.
+phase: before
+match:
+  subjects: [change.apply]
+when: length(result.finding.tags) > 0
+unless: input.wide == true
+require: Keep the change inside the surface the request named.
+verify:
+  confirm: Every edit lies inside the named surface.

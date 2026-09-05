@@ -1,0 +1,39 @@
+title: Evidence trail
+purpose: Keep the inspected evidence available until the result has used it.
+states: [empty, held, spent]
+initial: empty
+accepting: [empty, spent]
+data:
+  evidence:
+    type: {optional: {record: material-inspection}}
+    initial: {literal: null}
+hooks:
+  hold-evidence:
+    phase: after
+    match:
+      subjects: [material.inspect]
+    from: [empty]
+    command: Keep the inspected subjects, claims, and gaps available for whatever
+      uses them next.
+    set:
+      evidence: {from: result.inspection}
+    to: held
+  spend-on-review:
+    phase: before
+    match:
+      subjects: [summary.review]
+    from: [held]
+    command: Check the draft against the evidence you kept.
+    verify:
+      confirm: Every claim in the draft traces to a claim or a subject in the
+        kept evidence.
+    clear: [evidence]
+    to: spent
+  spend-on-gap:
+    phase: before
+    match:
+      subjects: [gap.report]
+    from: [held]
+    command: Report the gaps from the evidence you kept, rather than from memory.
+    clear: [evidence]
+    to: spent

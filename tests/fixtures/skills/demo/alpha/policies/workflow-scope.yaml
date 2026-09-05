@@ -1,0 +1,8 @@
+title: Workflow scope
+summary: Keep the run inside the workflow's own subject matter.
+provisions:
+  stay-on-subject:
+    phase: before
+    match:
+      subjects: [report.write]
+    require: Keep the report to the subject this workflow named.

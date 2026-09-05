@@ -1,0 +1,21 @@
+title: Inspect, plan, and act
+summary: Inspect the owner, choose a bounded plan, then perform the change.
+inputs:
+  target:
+    type:
+      record: finding
+procedure:
+  inspect-owner:
+    command: Inspect the source that owns the target behavior.
+    uses:
+    - input.target
+  choose-plan:
+    command: Choose the smallest plan that satisfies the requested outcome.
+  perform-change:
+    command: Perform only the chosen bounded change.
+    subjects:
+    - change.apply
+    effects:
+    - external.write
+references:
+- references/patterns/inspect-plan-act-notes.md

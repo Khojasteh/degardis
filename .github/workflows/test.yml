@@ -8,6 +8,20 @@ permissions:
   contents: read
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+          cache: pip
+      - name: Install linter
+        run: python -m pip install ".[lint]"
+      - name: Lint
+        run: python -m ruff check .
+
   test:
     runs-on: ubuntu-latest
     strategy:
@@ -30,7 +44,7 @@ jobs:
       - name: Validate canonical example
         run: python -m degardis validate examples/structured-summary
       - name: Build canonical example
-        run: python -m degardis build examples/structured-summary --profile all --output .artifacts
+        run: python -m degardis build examples/structured-summary --output .artifacts
 
   package:
     needs: test

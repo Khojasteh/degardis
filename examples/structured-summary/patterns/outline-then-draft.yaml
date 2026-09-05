@@ -1,0 +1,21 @@
+title: Outline, then draft
+summary: Order the selected content before writing it, so the draft follows a
+  shape the reader can scan.
+inputs:
+  inspection:
+    type: {record: material-inspection}
+  depth:
+    type: {enum: [brief, detailed]}
+procedure:
+  select-content:
+    command: Choose the claims and qualifications the reader's purpose needs.
+    uses: [input.inspection]
+  order-content:
+    command: Order the selected content so context precedes the conclusions drawn
+      from it.
+  draft:
+    command: Write the ordered content plainly, in the terms the intended reader
+      already uses.
+    subjects: [summary.write]
+references:
+- references/patterns/outline-then-draft-examples.md

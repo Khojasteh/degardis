@@ -1,0 +1,11 @@
+title: Give a multi-subject summary a navigable structure
+summary: Material covering more than one subject needs headings a reader can scan.
+phase: before
+match:
+  subjects: [summary.write]
+when: length(result.inspection.subjects) > 1
+require: Group the summary under one heading per subject, and name each heading
+  after the subject it covers.
+verify:
+  confirm: Each heading names one subject the material covers, and no heading
+    covers two.

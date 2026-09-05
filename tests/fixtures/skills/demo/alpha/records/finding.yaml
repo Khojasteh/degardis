@@ -1,0 +1,8 @@
+title: Finding
+fields:
+  summary:
+    type: string
+    description: What was found.
+  tags:
+    type: {list: string}
+    description: Opaque labels the finding carries.

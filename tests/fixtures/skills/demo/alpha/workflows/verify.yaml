@@ -1,0 +1,38 @@
+title: Verify the finding
+description: Establish whether the finding still holds after the change.
+protocols:
+- step-guard
+inputs:
+  finding:
+    type: {record: finding}
+outcomes:
+  confirmed: {}
+  rejected: {}
+entry: recheck
+steps:
+  recheck:
+    action: Re-read the source and compare it against the finding.
+    uses: [input.finding]
+    next: decide-verdict
+
+  decide-verdict:
+    decide: Choose the verdict the re-read supports.
+    heuristics: [prefer-evidence]
+    choices:
+      holds:
+        command: Confirm that the finding still holds.
+        next: confirm
+      broken:
+        command: Reject the finding and say what changed.
+        next: reject
+    guidance:
+    - guidance: step-context
+      detail: inline
+
+  confirm:
+    return:
+      outcome: confirmed
+
+  reject:
+    return:
+      outcome: rejected

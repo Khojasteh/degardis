@@ -1,15 +1,100 @@
-id: structured-summary.compose
 title: Compose a structured summary
-description: Turn supplied material from any subject into a summary suited to its reader and purpose.
+description: Turn supplied material from any subject into a summary suited to its
+  reader and purpose.
+policies:
+- source-fidelity
+protocols:
+- evidence-trail
+inputs:
+  material:
+    type: string
+  reader:
+    type: string
+outcomes:
+  delivered:
+    record: summary-result
+  no-summary: {}
+entry: establish-purpose
 steps:
-- action: establish-purpose
-  instruction: Identify the intended reader, purpose, desired length, and supplied material.
-- use: structured-summary.inspect
-- action: select-content
-  instruction: Choose the central ideas, supporting details, relationships, and qualifications needed for the purpose.
-- action: organize
-  instruction: Use the bundled template as a starting point and arrange the selected content in a logical order.
-- action: draft
-  instruction: Write plainly, preserve the source's meaning, and adapt terminology to the intended reader.
-- action: review
-  instruction: Remove repetition and unsupported inference, then confirm that the summary is useful without the reader reconstructing the source.
+  establish-purpose:
+    action: Identify the intended reader, the purpose the summary serves, and the
+      length that purpose needs.
+    uses: [input.reader]
+    produces:
+      purpose:
+        type: string
+    next: inspect-material
+
+  inspect-material:
+    action: Inspect the supplied material for its subjects, its main claims, and
+      the gaps that limit a faithful summary.
+    resource:
+      run: scripts/list_headings.py
+    uses: [input.material]
+    subjects: [material.inspect]
+    produces:
+      inspection:
+        record: material-inspection
+    next: check-readiness
+
+  check-readiness:
+    gate: Decide whether the inspected material supports a faithful summary.
+    heuristics: [smallest-sufficient-detail]
+    states:
+      ready:
+        command: Compose the summary from the inspected material.
+        next: choose-depth
+      insufficient:
+        command: Report what is missing instead of summarizing.
+        next: describe-gaps
+
+  choose-depth:
+    decide: Choose the depth this reader's purpose needs.
+    heuristics: [smallest-sufficient-detail]
+    guidance:
+    - guidance: clear-reporting
+      detail: inline
+    choices:
+      brief:
+        command: Write the shortest summary that answers the reader's purpose.
+        next: write-summary
+      detailed:
+        command: Write a summary that carries the context and the supporting
+          detail the purpose needs.
+        next: write-summary
+
+  write-summary:
+    pattern: outline-then-draft
+    with:
+      inspection: {from: result.inspection}
+      depth: {from: decision.choose-depth}
+    rules:
+    - structure-subjects
+    next: review-summary
+
+  review-summary:
+    action: Remove repetition and unsupported inference from the draft.
+    subjects: [summary.review]
+    produces:
+      reviewed:
+        type: string
+    next: deliver
+
+  deliver:
+    return:
+      outcome: delivered
+      with:
+        summary: {from: result.reviewed}
+        limitations: {from: result.inspection.gaps}
+
+  describe-gaps:
+    use: report-gaps
+    with:
+      gaps: {from: result.inspection.gaps}
+    subjects: [gap.report]
+    on:
+      reported: no-summary
+
+  no-summary:
+    return:
+      outcome: no-summary

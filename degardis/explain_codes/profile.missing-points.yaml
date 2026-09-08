@@ -1,0 +1,11 @@
+trigger: >-
+  A profile file declares no points.
+impact: >-
+  A profile exists only to contribute auxiliary guidance, so a profile with
+  no points contributes nothing useful to load.
+failing: |-
+  title: Concise result
+passing: |-
+  title: Concise result
+  points:
+  - Keep only decision-relevant detail.

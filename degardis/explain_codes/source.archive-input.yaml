@@ -1,0 +1,10 @@
+trigger: >-
+  A command was pointed at a .zip file rather than a directory.
+impact: >-
+  Degardis reads authored sources from a directory and writes archives; it
+  never reads one back. The command stops rather than reporting an empty
+  skill.
+failing: |-
+  degardis validate .artifacts/structured-summary.zip
+passing: |-
+  degardis validate examples/structured-summary

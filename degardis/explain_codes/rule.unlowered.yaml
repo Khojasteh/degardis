@@ -1,0 +1,17 @@
+trigger: >-
+  An active rule matched a reached node and reached no generated node. A
+  `during` rule selecting only a decision, a gate, or a branch is the usual
+  cause.
+impact: >-
+  The requirement is in no installed page. The message names the phase and
+  the node form that refused it: a `during` rule renders beside a command,
+  so select an action, a call, a pattern, or a return, or move it to
+  `before` to check ahead of the choice.
+failing: |-
+  phase: during
+  match:
+    forms: [decision]
+passing: |-
+  phase: before
+  match:
+    forms: [decision]

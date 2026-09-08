@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: interface
+field: default_prompt
+expected: a non-empty string
+failing: |-
+  default_prompt: ''
+passing: |-
+  default_prompt: Use {name} to perform the task.

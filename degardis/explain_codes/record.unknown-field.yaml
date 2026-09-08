@@ -1,0 +1,14 @@
+trigger: >-
+  A record file declares a field the record schema does not have.
+impact: >-
+  The field is read by nothing, so it cannot affect the record type. Correct
+  or remove the named field.
+failing: |-
+  title: Inspection result
+  summary:
+    type: string
+passing: |-
+  title: Inspection result
+  fields:
+    summary:
+      type: string

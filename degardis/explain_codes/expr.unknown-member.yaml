@@ -1,0 +1,10 @@
+trigger: >-
+  contains, in, or not in tests a string literal outside a list's enum item
+  type.
+impact: >-
+  The tested member cannot occur in that list. Correct the token or the
+  declared enum members.
+failing: |-
+  contains(result.corpus, 'profile')  # corpus has type {list: {enum: [policy, rule]}}
+passing: |-
+  contains(result.corpus, 'policy')  # corpus has type {list: {enum: [policy, rule]}}

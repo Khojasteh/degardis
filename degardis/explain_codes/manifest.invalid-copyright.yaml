@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: manifest
+field: copyright
+expected: a non-empty string
+failing: |-
+  copyright: ''
+passing: |-
+  copyright: Copyright 2026 Example

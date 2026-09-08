@@ -1,0 +1,43 @@
+title: Run trail
+purpose: Keep the execution's observation available until something consumes it.
+rationale: Later decisions need the observation that justified them.
+states: [empty, held, spent]
+initial: empty
+accepting: [empty, spent]
+data:
+  finding:
+    type: {optional: {record: finding}}
+hooks:
+  open-trail:
+    phase: enter
+    from: [empty]
+    command: Note that nothing has been found yet.
+  hold-finding:
+    phase: after
+    match:
+      subjects: [source.inspect]
+    from: [empty]
+    command: Keep the observation available for whatever consumes it.
+    set:
+      finding: {from: result.finding}
+    to: held
+  spend-finding:
+    phase: before
+    match:
+      subjects: [report.write]
+    from: [held]
+    command: Consume the kept observation in the report you write.
+    clear: [finding]
+    to: spent
+  spend-on-decline:
+    phase: before
+    match:
+      outcomes: [declined]
+    from: [held]
+    command: State the observation you are declining to act on.
+    clear: [finding]
+    to: spent
+  close-trail:
+    phase: exit
+    from: [empty, held, spent]
+    command: State what the trail held when the execution closed.

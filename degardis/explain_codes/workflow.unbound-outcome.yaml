@@ -1,0 +1,9 @@
+trigger: >-
+  A reachable use step maps an outcome with record fields without as.
+impact: >-
+  The caller discards the payload. This is a warning because discarding can
+  be deliberate.
+failing: |-
+  on: {done: finish}  # done returns a record with fields
+passing: |-
+  on: {done: {next: finish, as: response}}

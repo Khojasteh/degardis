@@ -1,0 +1,17 @@
+trigger: >-
+  A Boolean condition is made entirely from true, false, grouping, not, and,
+  or, so its outcome is fixed without reading a runtime value.
+impact: >-
+  A false condition makes its case or command dead. A true branch case makes
+  every later case dead. Remove the dead source or make the condition depend on
+  a declared runtime value.
+failing: |-
+  branch:
+    - when: "false"
+      next: impossible
+    - next: continue
+passing: |-
+  branch:
+    - when: 'input.mode == "careful"'
+      next: inspect
+    - next: continue

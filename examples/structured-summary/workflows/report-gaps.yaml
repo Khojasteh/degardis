@@ -1,0 +1,19 @@
+title: Report what prevents a summary
+description: State what stops a faithful summary, without offering one anyway.
+inputs:
+  gaps:
+    type: {list: string}
+outcomes:
+  reported: {}
+entry: state-gaps
+steps:
+  state-gaps:
+    action: State each gap and what it prevents, and offer no summary of the
+      material it affects.
+    uses: [input.gaps]
+    subjects: [gap.state]
+    next: finish
+
+  finish:
+    return:
+      outcome: reported

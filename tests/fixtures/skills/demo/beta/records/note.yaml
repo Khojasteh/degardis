@@ -1,0 +1,4 @@
+title: Note
+fields:
+  text:
+    type: string

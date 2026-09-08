@@ -1,5 +1,0 @@
-id: alpha.rule-one
-kind: rule
-title: Rule One
-priority: 100
-rule: This is a fixture rule used only to exercise generic entry rendering.

@@ -1,0 +1,9 @@
+wording: invalid-field
+owner: workflow
+field: steps
+expected: a non-empty mapping
+failing: |-
+  steps: {}
+passing: |-
+  steps:
+    finish: {return: {outcome: completed}}

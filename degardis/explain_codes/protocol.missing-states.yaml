@@ -1,0 +1,13 @@
+trigger: >-
+  A protocol file declares no states.
+impact: >-
+  The declared states are what a frame can hold, and every hook moves
+  between them, so without them there is no lifecycle to check. Declare
+  every state a frame can be in.
+failing: |-
+  purpose: Keep a decision available.
+  initial: clear
+passing: |-
+  purpose: Keep a decision available.
+  states: [clear, open]
+  initial: clear

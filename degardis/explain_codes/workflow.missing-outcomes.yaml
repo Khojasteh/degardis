@@ -1,0 +1,16 @@
+trigger: >-
+  A workflow file declares no outcomes.
+impact: >-
+  Every reachable path ends at a return, and every return names a declared
+  outcome, so a workflow with no outcomes has no way to terminate and no
+  result a caller can map. Declare each outcome a return may name.
+failing: |-
+  description: Deliver the bounded result.
+  entry: inspect
+passing: |-
+  description: Deliver the bounded result.
+  outcomes:
+    completed:
+      record: delivery-result
+    no-change: {}
+  entry: inspect

@@ -1,0 +1,9 @@
+wording: invalid-field
+owner: pattern
+field: procedure
+expected: a non-empty mapping
+failing: |-
+  procedure: {}
+passing: |-
+  procedure:
+    inspect: {command: Inspect.}

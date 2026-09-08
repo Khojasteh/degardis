@@ -1,0 +1,9 @@
+wording: invalid-field
+owner: workflow
+field: outcomes
+expected: a non-empty mapping
+failing: |-
+  outcomes: {}
+passing: |-
+  outcomes:
+    completed: {}

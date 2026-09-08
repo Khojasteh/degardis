@@ -1,0 +1,10 @@
+trigger: >-
+  A file selected by content.assets or content.scripts is named by no
+  resource declaration in the selected workflows.
+impact: >-
+  The bundle ships a file with no declared operation. Declare its use or
+  remove its selection; prose mentions do not satisfy this warning.
+failing: |-
+  content: {assets: [assets/template.md]}  # no resource declaration
+passing: |-
+  resource: {fill: assets/template.md}  # on an action; retain content.assets selection

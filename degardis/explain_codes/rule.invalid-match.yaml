@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: rule
+field: match
+expected: a node selector
+failing: |-
+  match: {}
+passing: |-
+  match: {all: true}

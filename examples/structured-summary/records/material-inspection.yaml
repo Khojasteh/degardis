@@ -1,0 +1,11 @@
+title: Material inspection
+fields:
+  subjects:
+    type: {list: string}
+    description: The distinct subjects the material covers.
+  claims:
+    type: {list: string}
+    description: The main claims the material makes.
+  gaps:
+    type: {list: string}
+    description: Missing context or contradictions that limit a faithful summary.

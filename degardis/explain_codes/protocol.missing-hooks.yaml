@@ -1,0 +1,23 @@
+trigger: >-
+  A protocol file declares no hooks.
+impact: >-
+  The hooks are what the compiler lowers into execution nodes, so a protocol
+  with none constrains nothing anywhere. Declare at least one hook.
+failing: |-
+  purpose: Keep a decision available.
+  states: [clear, open]
+  initial: clear
+  accepting: [clear]
+passing: |-
+  purpose: Keep a decision available.
+  states: [clear, open]
+  initial: clear
+  accepting: [clear]
+  hooks:
+    retain-decision:
+      phase: after
+      match:
+        subjects: [decision.open]
+      from: [clear]
+      command: Retain the decision basis.
+      to: open

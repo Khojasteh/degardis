@@ -1,0 +1,22 @@
+trigger: >-
+  A hook declares a field the hook schema does not have, an invalid phase, a
+  `match` on an `enter` or `exit` hook, no `from` states, or neither a
+  command nor a verification.
+impact: >-
+  The hook is not read, so nothing carries its command or its state change.
+  An `enter` or `exit` hook runs at the frame boundary and selects no node,
+  which is why it takes no `match`.
+failing: |-
+  hooks:
+    open:
+      phase: enter
+      match:
+        all: true
+      from: [clear]
+      command: Open.
+passing: |-
+  hooks:
+    open:
+      phase: enter
+      from: [clear]
+      command: Open.

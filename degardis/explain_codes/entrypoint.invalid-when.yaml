@@ -1,0 +1,16 @@
+trigger: >-
+  An entrypoint condition is empty, or is not a sentence.
+impact: >-
+  An agent selects a route by matching its sentence against the request, so
+  there is nothing here for it to match. State the condition as a sentence
+  about the request.
+failing: |-
+  entrypoints:
+    audit:
+      when: ''
+      target: audit-material
+passing: |-
+  entrypoints:
+    audit:
+      when: The request asks whether the material is accurate.
+      target: audit-material

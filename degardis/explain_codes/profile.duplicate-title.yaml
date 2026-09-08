@@ -1,0 +1,13 @@
+trigger: >-
+  Two profiles have the same title, compared without regard to case.
+impact: >-
+  The profile index uses titles to distinguish its choices. Rename one
+  profile so a reader can select one unambiguously.
+failing: |-
+  title: Concise
+  points:
+  - Keep it short.
+passing: |-
+  title: Detailed
+  points:
+  - Keep it short.

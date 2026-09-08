@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: workflow
+field: rules
+expected: a non-empty list of rule ids
+failing: |-
+  rules: ['']
+passing: |-
+  rules: [stay-in-scope]

@@ -1,0 +1,12 @@
+trigger: >-
+  The manifest interface has no default_prompt.
+impact: >-
+  The interface can offer no suggested invocation, so a reader has to guess
+  how to start the skill.
+failing: |-
+  interface:
+    display_name: Structured Summary
+passing: |-
+  interface:
+    display_name: Structured Summary
+    default_prompt: $structured-summary this report

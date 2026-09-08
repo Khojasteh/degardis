@@ -1,0 +1,13 @@
+trigger: >-
+  An expression reads a value that some path reaching this point has not
+  produced.
+impact: >-
+  The value exists on one route and not another, so the condition would read
+  nothing on that route. Produce it on every incoming path, or move the read
+  to a point every path has passed the producing step.
+failing: |-
+  # read after a branch where only one arm produces `plan`
+  when: result.plan == "small"
+passing: |-
+  # read after the step that produces it on every path
+  when: result.plan == "small"

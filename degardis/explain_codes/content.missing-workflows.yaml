@@ -1,0 +1,15 @@
+trigger: >-
+  The manifest's content selects no workflows.
+impact: >-
+  A skill with no workflow has no execution to render, so SKILL.md would
+  have nothing to contain. Select at least one workflow pattern.
+failing: |-
+  content:
+    rules:
+    - rules/**/*.yaml
+passing: |-
+  content:
+    rules:
+    - rules/**/*.yaml
+    workflows:
+    - workflows/**/*.yaml

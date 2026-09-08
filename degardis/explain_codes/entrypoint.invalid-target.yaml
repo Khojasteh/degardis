@@ -1,0 +1,17 @@
+trigger: >-
+  An entrypoint target is not a workflow file stem, or the entrypoint is not a
+  mapping at all.
+impact: >-
+  The target cannot be resolved to a workflow, so the route is bound nowhere.
+  Write the workflow's file stem, in lowercase letters, digits, and single
+  hyphens.
+failing: |-
+  entrypoints:
+    audit:
+      when: The request asks whether the material is accurate.
+      target: Audit Material
+passing: |-
+  entrypoints:
+    audit:
+      when: The request asks whether the material is accurate.
+      target: audit-material

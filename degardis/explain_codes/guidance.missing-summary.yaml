@@ -1,0 +1,13 @@
+trigger: >-
+  A guidance file declares no summary.
+impact: >-
+  The summary is the synopsis rendered inline at every application, and it
+  is the whole of what a run sees without opening a page. State the advice
+  in one sentence.
+failing: |-
+  points:
+  - Distinguish observed facts from inferred conclusions.
+passing: |-
+  summary: Lead with the result and state the limitations that affect its use.
+  points:
+  - Distinguish observed facts from inferred conclusions.

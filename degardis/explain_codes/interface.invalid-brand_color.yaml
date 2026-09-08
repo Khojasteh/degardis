@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: interface
+field: brand_color
+expected: a six-digit hexadecimal colour
+failing: |-
+  brand_color: purple
+passing: |-
+  brand_color: '#5B4B8A'

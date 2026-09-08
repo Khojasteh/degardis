@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: protocol
+field: purpose
+expected: a non-empty string
+failing: |-
+  purpose: ''
+passing: |-
+  purpose: Preserve decision state.

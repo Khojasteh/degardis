@@ -1,0 +1,16 @@
+trigger: >-
+  A step is not usable: it is an empty string, neither a string nor a
+  mapping, holds an empty or non-string field, declares rules that are not a
+  list, defines none of use, action, id, or instruction, or combines use
+  with action or instruction.
+impact: >-
+  The step cannot be rendered as an instruction, so the workflow would ship
+  with a gap where an action belongs.
+failing: |-
+  steps:
+    - use: review
+      instruction: Also check the tone
+passing: |-
+  steps:
+    - use: review
+    - instruction: Check the tone

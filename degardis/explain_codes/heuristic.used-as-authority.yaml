@@ -1,0 +1,12 @@
+trigger: >-
+  A verification names a heuristic, or `verify` is written as advice.
+impact: >-
+  A heuristic can improve a choice and can never satisfy a binding check, so
+  treating one as authority would make advice into a gate. `verify` takes an
+  expression, a gate, or an agent confirmation.
+failing: |-
+  verify:
+    gate: smallest-change   # a heuristic id
+passing: |-
+  verify:
+    gate: authorization

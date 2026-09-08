@@ -1,0 +1,16 @@
+trigger: >-
+  A heuristic file declares a field the heuristic schema does not have.
+impact: >-
+  The field is read by nothing, so it cannot affect the advice. Correct or
+  remove the named field.
+failing: |-
+  question: Which option is preferred?
+  advice:
+    small:
+      prefer: Prefer the smaller option.
+  require: Take the smaller option.
+passing: |-
+  question: Which option is preferred?
+  advice:
+    small:
+      prefer: Prefer the smaller option.

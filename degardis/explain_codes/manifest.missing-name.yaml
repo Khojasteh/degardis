@@ -1,0 +1,13 @@
+trigger: >-
+  The manifest declares no name.
+impact: >-
+  Discovery identifies a skill by its manifest name before any other check
+  runs, so without one nothing can be reported against it. Declare the name,
+  matching the skill directory.
+failing: |-
+  format_version: 2
+  version: 1.0.0
+passing: |-
+  name: example-skill
+  format_version: 2
+  version: 1.0.0

@@ -1,0 +1,11 @@
+trigger: >-
+  One generated node is larger than the budget for a single loaded module.
+impact: >-
+  Execution is partitioned so that every module fits one load, and one node
+  is the case no partition can divide, so the module holding it is over the
+  budget however the workflow is split.
+failing: |-
+  A step whose command, invariants, and advice render to more than 16 KiB at one node,
+  or one construct whose obligations at a single boundary do.
+passing: |-
+  A step whose command states one action, with the material behind it carried by the constructs bound to it.

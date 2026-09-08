@@ -1,0 +1,9 @@
+trigger: >-
+  A pattern procedure item reads a value that is not one of the pattern
+  inputs.
+impact: >-
+  Procedure reads must be typed and substitutable at every application site.
+failing: |-
+  uses: [input.missing]
+passing: |-
+  uses: [input.target]

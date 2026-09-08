@@ -1,0 +1,9 @@
+wording: invalid-field
+owner: manifest
+field: interface
+expected: a mapping
+failing: |-
+  interface: []
+passing: |-
+  interface:
+    display_name: Example

@@ -1,0 +1,11 @@
+trigger: >-
+  An expression compares or combines values whose types cannot be: a string
+  against an integer, a list literal of mixed types, `length` of something
+  with no length, or a non-boolean where a condition belongs.
+impact: >-
+  The comparison has no defined answer. Compare a value with a literal of
+  its own type, and use `contains` for membership rather than equality.
+failing: |-
+  when: length(input.request) == "two"
+passing: |-
+  when: length(input.request) > 2

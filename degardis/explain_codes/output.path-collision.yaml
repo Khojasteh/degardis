@@ -1,0 +1,13 @@
+trigger: >-
+  Two sources would be written to the same path in the bundle, compared
+  without regard to letter case.
+impact: >-
+  One file would overwrite the other, and which one survives depends on the
+  filesystem. Rule, workflow, and profile names, scripts, assets, and
+  generated icons all claim paths in one namespace.
+failing: |-
+  rules/Report.yaml
+  rules/report.yaml
+passing: |-
+  rules/outcome.yaml
+  rules/format.yaml

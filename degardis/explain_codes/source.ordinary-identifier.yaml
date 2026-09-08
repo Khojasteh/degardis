@@ -1,0 +1,11 @@
+trigger: >-
+  Authored prose in a reached construct contains a selected construct id as
+  a bare token outside backticks.
+impact: >-
+  An ordinary word can look like a construct reference. Use backticks for an
+  id, or reword ordinary prose. This lexical warning does not establish a
+  binding.
+failing: |-
+  action: Apply scope-check before continuing.  # scope-check is a selected rule
+passing: |-
+  action: Apply `scope-check` before continuing.  # bind the rule separately

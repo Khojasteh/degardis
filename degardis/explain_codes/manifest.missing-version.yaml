@@ -1,0 +1,12 @@
+trigger: >-
+  The manifest declares no version.
+impact: >-
+  The bundle carries no release identity, so an installed skill cannot be
+  told from the one it replaced. Declare the skill's own release version.
+failing: |-
+  name: example-skill
+  description: Perform one bounded task.
+passing: |-
+  name: example-skill
+  description: Perform one bounded task.
+  version: 1.0.0

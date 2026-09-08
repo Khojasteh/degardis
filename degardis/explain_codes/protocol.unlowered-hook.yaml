@@ -1,0 +1,16 @@
+trigger: >-
+  An active hook reached no generated node.
+impact: >-
+  Nothing carries its command or its state change. An `enter` or `exit` hook
+  failing this is an error, because a frame that cannot open or close leaves
+  the lifecycle broken; a `before` or `after` hook whose selector matched
+  nothing warns.
+failing: |-
+  hooks:
+    retain:
+      phase: after
+      match:
+        subjects: [decision.open]   # no step declares it
+passing: |-
+  # on the step
+  subjects: [decision.open]

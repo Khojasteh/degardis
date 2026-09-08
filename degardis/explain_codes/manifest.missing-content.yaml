@@ -1,0 +1,14 @@
+trigger: >-
+  The manifest declares no content.
+impact: >-
+  Nothing selects the source files, so no construct is read and there is
+  nothing to compile. Declare content, selecting at least the workflows.
+failing: |-
+  name: example-skill
+  version: 1.0.0
+passing: |-
+  name: example-skill
+  version: 1.0.0
+  content:
+    workflows:
+    - workflows/**/*.yaml

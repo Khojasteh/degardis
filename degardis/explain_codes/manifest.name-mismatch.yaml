@@ -1,0 +1,12 @@
+trigger: >-
+  The manifest name and the skill directory name differ.
+impact: >-
+  A bundle is written to a directory named by the manifest, so the two
+  disagreeing means the source directory and the artifact would not
+  correspond. Rename one to match the other.
+failing: |-
+  # skills/example/skill.yaml
+  name: sample-skill
+passing: |-
+  # skills/example/skill.yaml
+  name: example

@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: rule
+field: when
+expected: a valid expression
+failing: |-
+  when: maybe later
+passing: |-
+  when: input.request == 'ready'

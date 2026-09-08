@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: content mapping
+field: profiles
+expected: a list of usable glob strings
+failing: |-
+  profiles: ['']
+passing: |-
+  profiles: [profiles/**/*]

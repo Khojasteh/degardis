@@ -1,0 +1,11 @@
+trigger: >-
+  An expression reads a value the workflow does not declare, or a record
+  field the record does not declare.
+impact: >-
+  There is nothing to evaluate against. Check the namespace and the name:
+  `input` for a declared input, `result` for a produced value, `decision`
+  and `gate` for a step's own id, `call` for a receipt.
+failing: |-
+  when: result.inspection == true   # no step produces inspection
+passing: |-
+  when: exists(result.inspection)

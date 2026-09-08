@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: manifest
+field: version
+expected: a non-empty string
+failing: |-
+  version: ''
+passing: |-
+  version: 1.0.0

@@ -1,0 +1,15 @@
+trigger: >-
+  A call leaves a callee outcome unmapped or maps one the callee does not
+  declare, a return names an undeclared outcome, or an outcome is declared
+  and never returned.
+impact: >-
+  A caller would have to handle a transition that cannot happen, or would
+  meet one it has no route for. Map exactly the outcomes the callee
+  declares, and return every outcome the workflow declares.
+failing: |-
+  outcomes:
+    completed: {}
+    no-change: {}   # no return names it
+passing: |-
+  outcomes:
+    completed: {}

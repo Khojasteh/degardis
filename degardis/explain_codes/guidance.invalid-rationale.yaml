@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: guidance
+field: rationale
+expected: a non-empty string
+failing: |-
+  rationale: ''
+passing: |-
+  rationale: The reader needs the outcome before the method.

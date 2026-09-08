@@ -1,0 +1,10 @@
+trigger: >-
+  No chain of use steps reaches this workflow from the primary workflow.
+impact: >-
+  The workflow still ships, but no use step invokes it and no route from
+  SKILL.md reaches its generated page.
+failing: |-
+  # workflows/review.yaml is never named by a use step
+passing: |-
+  steps:
+    - use: review

@@ -1,0 +1,12 @@
+trigger: >-
+  A manifest, rule, workflow, or profile file does not parse as YAML, parses
+  as something other than a mapping of fields, or uses a non-string mapping
+  field name.
+impact: >-
+  Nothing in the file reaches the bundle. The message names the line and
+  what YAML did with the text, which is usually an unquoted value holding a
+  character YAML reserves.
+failing: |-
+  rule: Report the outcome: pass or fail
+passing: |-
+  rule: "Report the outcome: pass or fail"

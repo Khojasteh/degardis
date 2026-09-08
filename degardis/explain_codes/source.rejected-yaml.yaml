@@ -1,0 +1,16 @@
+trigger: >-
+  A source uses YAML beyond the profile Format 2 accepts: an anchor, an
+  alias, a merge key, a type tag, a bare date read as a timestamp, a
+  non-finite number, a repeated field, or a non- string field name.
+impact: >-
+  Each of these makes the value the compiler reads differ from the text on
+  the page, and the difference is invisible in review. Write the fields out,
+  and quote a value YAML would read as another type.
+failing: |-
+  defaults: &base
+    phase: before
+  provision:
+    <<: *base
+passing: |-
+  provision:
+    phase: before

@@ -1,0 +1,10 @@
+trigger: >-
+  A workflow requires a resource that the manifest does not copy into the
+  built skill.
+impact: >-
+  The generated instruction would otherwise require a file that cannot exist
+  at runtime.
+failing: |-
+  The workflow runs scripts/tool.py but the manifest does not select it.
+passing: |-
+  The workflow runs scripts/tool.py and the manifest selects scripts/tool.py.

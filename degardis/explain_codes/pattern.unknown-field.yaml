@@ -1,0 +1,15 @@
+trigger: >-
+  A pattern file declares a field the pattern schema does not have.
+impact: >-
+  The field is read by nothing, so it cannot affect the reusable procedure.
+  Correct or remove the named field.
+failing: |-
+  summary: Inspect, plan, and act.
+  procedure:
+    inspect: ...
+  outcomes:
+    done: {}
+passing: |-
+  summary: Inspect, plan, and act.
+  procedure:
+    inspect: ...

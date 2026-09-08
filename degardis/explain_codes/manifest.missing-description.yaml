@@ -1,0 +1,13 @@
+trigger: >-
+  The manifest declares no description.
+impact: >-
+  The description is what a host reads to decide whether to select the
+  skill, and it opens the generated document. State what the skill does in
+  one sentence.
+failing: |-
+  name: example-skill
+  version: 1.0.0
+passing: |-
+  name: example-skill
+  version: 1.0.0
+  description: Perform one bounded task through a validated workflow.

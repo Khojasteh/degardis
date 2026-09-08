@@ -1,0 +1,9 @@
+wording: invalid-field
+owner: policy
+field: provisions
+expected: a non-empty mapping
+failing: |-
+  provisions: {}
+passing: |-
+  provisions:
+    establish: {phase: before, match: {all: true}, require: Act.}

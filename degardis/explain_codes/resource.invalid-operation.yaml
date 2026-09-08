@@ -1,0 +1,10 @@
+trigger: >-
+  A typed resource action names zero, multiple, or unsupported resource
+  operations.
+impact: >-
+  A required resource use must have one deterministic operation the runtime
+  can execute or fail closed on.
+failing: |-
+  resource: {run: scripts/a.py, read: references/a.md}
+passing: |-
+  resource: {run: scripts/a.py}

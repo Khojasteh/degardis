@@ -1,0 +1,9 @@
+trigger: >-
+  The manifest holds a field this compiler does not define.
+impact: >-
+  The field is ignored, so anything it was meant to configure has no effect.
+  A typo in a field name reads exactly like this.
+failing: |-
+  descripton: Summarize a document.
+passing: |-
+  description: Summarize a document.

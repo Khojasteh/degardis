@@ -1,0 +1,15 @@
+trigger: >-
+  An entrypoint declares a field the schema does not define.
+impact: >-
+  The field is not read, so whatever it was meant to say about the route has
+  no effect. An entrypoint declares when, target, and with. The route taken
+  when no other matched is the last one, and states no when; nothing marks it.
+failing: |-
+  entrypoints:
+    summarize:
+      default: true
+      target: compose
+passing: |-
+  entrypoints:
+    summarize:
+      target: compose

@@ -1,0 +1,10 @@
+trigger: >-
+  A path selected as a skill holds no `skill.yaml`.
+impact: >-
+  There is no manifest to read, so nothing identifies the skill or selects
+  its sources. Point the path at the skill directory, or at a collection
+  directory that contains one.
+failing: |-
+  degardis validate ./skills/without-a-manifest
+passing: |-
+  degardis validate ./skills/perform-task   # holds skill.yaml

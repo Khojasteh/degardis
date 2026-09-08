@@ -1,0 +1,8 @@
+title: Summary result
+fields:
+  summary:
+    type: string
+    description: The delivered summary text.
+  limitations:
+    type: {list: string}
+    description: What the summary does not cover, and why.

@@ -1,0 +1,14 @@
+trigger: >-
+  A profile file declares a field the profile schema does not have.
+impact: >-
+  The field is read by nothing, so it cannot affect profile retrieval
+  material. Correct or remove the named field.
+failing: |-
+  applies:
+    terms: [concise]
+  points:
+  - Keep it short.
+passing: |-
+  description: Apply for short answers.
+  points:
+  - Keep it short.

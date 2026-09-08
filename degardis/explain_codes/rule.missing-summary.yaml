@@ -1,0 +1,13 @@
+trigger: >-
+  A rule file declares no summary.
+impact: >-
+  Nothing states the relation the rule holds, so a reader of the source has
+  only the command. State the condition and what it requires, in one
+  sentence.
+failing: |-
+  phase: before
+  require: Preserve the existing public contract.
+passing: |-
+  summary: A public contract stays stable unless the request authorizes a change.
+  phase: before
+  require: Preserve the existing public contract.

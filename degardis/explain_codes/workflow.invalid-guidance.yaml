@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: workflow
+field: guidance
+expected: a non-empty list of guidance uses
+failing: |-
+  guidance: ['']
+passing: |-
+  guidance: [clear-reporting]

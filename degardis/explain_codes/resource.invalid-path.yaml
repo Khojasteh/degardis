@@ -1,0 +1,10 @@
+trigger: >-
+  A typed resource action uses an absolute path, a path that escapes the
+  skill, or a path outside the operation's allowed area.
+impact: >-
+  Required resources must resolve deterministically inside the built skill
+  bundle.
+failing: |-
+  resource: {run: ../tool.py}
+passing: |-
+  resource: {run: scripts/tool.py}

@@ -1,5 +1,0 @@
-name: shared
-label: Shared
-description: Shared fixture profile present on both alpha and beta skills.
-instructions:
-- Fixture profile content shared by alpha and beta.

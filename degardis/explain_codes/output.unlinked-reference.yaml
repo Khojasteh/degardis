@@ -1,0 +1,19 @@
+trigger: >-
+  The bundle would ship a reference page, script, or asset that no route
+  from the generated SKILL.md reaches.
+impact: >-
+  An installed skill is read from SKILL.md outwards, so a page no route
+  reaches is a page the agent cannot open and the bundle carries for
+  nothing. A route may cross a page on its way: a rule a supporting workflow
+  declares is linked from that workflow's own page, and reaching that page
+  is enough. The generated body links each page from the scope that requires
+  it, so two sources strand one: a rule no step, workflow, or the skill
+  declares, and a supporting workflow no use step reaches, which takes its
+  own page and every rule only it declares off every route. It warns rather
+  than stops, because shipping a page before anything declares it is what
+  mid-design work looks like; pass --fail-on-warning where that is not
+  acceptable.
+failing: |-
+  workflows/audit.yaml  # reached by no use step
+passing: |-
+  - use: audit  # in a workflow a run reaches

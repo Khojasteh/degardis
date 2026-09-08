@@ -1,0 +1,38 @@
+title: Verify the observation
+description: Establish whether the observation still holds after the change.
+protocols:
+- step-guard
+inputs:
+  finding:
+    type: {record: finding}
+outcomes:
+  confirmed: {}
+  rejected: {}
+entry: recheck
+steps:
+  recheck:
+    action: Re-read the source and compare it against the observation.
+    uses: [input.finding]
+    next: decide-verdict
+
+  decide-verdict:
+    decide: Choose the verdict the re-read supports.
+    heuristics: [prefer-evidence]
+    choices:
+      holds:
+        command: Confirm that the observation still holds.
+        next: confirm
+      broken:
+        command: Reject the observation and say what changed.
+        next: reject
+    guidance:
+    - guidance: step-context
+      detail: inline
+
+  confirm:
+    return:
+      outcome: confirmed
+
+  reject:
+    return:
+      outcome: rejected

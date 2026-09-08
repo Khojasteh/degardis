@@ -1,0 +1,13 @@
+trigger: >-
+  An interface icon path names a file that does not exist.
+impact: >-
+  The build converts each declared icon into the bundle, so there is nothing
+  to convert. A path may resolve outside the skill directory, which lets
+  several skills share one source image, so check the path as well as the
+  file.
+failing: |-
+  interface:
+    icon: assets/logo.png
+passing: |-
+  interface:
+    icon: assets/icon.png

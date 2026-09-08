@@ -1,0 +1,15 @@
+trigger: >-
+  A pattern step names a pattern the skill does not select, or the pattern
+  expanded into no node.
+impact: >-
+  The step performs nothing: a pattern application is expanded inline, so a
+  pattern that is not there leaves a gap in the graph rather than a link to
+  follow. Check the file stem and the `content.patterns` pattern that should
+  select it.
+failing: |-
+  change:
+    pattern: inspect-plan-act   # not selected
+passing: |-
+  content:
+    patterns:
+    - patterns/**/*.yaml

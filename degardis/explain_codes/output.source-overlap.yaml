@@ -1,0 +1,11 @@
+trigger: >-
+  The build output directory is a skill source directory, contains one, or
+  sits inside one.
+impact: >-
+  A build replaces the whole folder it writes for each skill, so an output
+  path overlapping a source would delete the authored files it was told to
+  compile. The build stops before writing anything.
+failing: |-
+  degardis build examples/structured-summary --output examples
+passing: |-
+  degardis build examples/structured-summary --output .artifacts

@@ -1,0 +1,11 @@
+trigger: >-
+  An expression reads a possibly absent value without an `exists` guard in
+  the same short-circuit expression.
+impact: >-
+  An optional value may not be there when the condition runs, so the read
+  has no defined result. Guard it in the same expression, so the guard and
+  the read cannot be separated later.
+failing: |-
+  when: result.inspection.summary != ""
+passing: |-
+  when: exists(result.inspection) and result.inspection.summary != ""

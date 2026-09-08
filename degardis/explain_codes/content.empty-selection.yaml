@@ -1,0 +1,18 @@
+trigger: >-
+  A content key the manifest declares resolves to no file, because its
+  patterns select none or an exclusion removes them all.
+impact: >-
+  Declaring the key states that the skill ships that content, and the bundle
+  would ship none of it. Nothing else reports this: no rule, profile,
+  script, or asset has to be referenced from anywhere, so one that never
+  arrives simply disappears from the built skill. Leave the key out to ship
+  none of that content on purpose.
+failing: |-
+  content:
+    assets:
+      - assets/**/*
+      - "!assets/**/*"
+passing: |-
+  content:
+    assets:
+      - assets/**/*

@@ -1,0 +1,19 @@
+trigger: >-
+  A call, a pattern application, or a return leaves a declared value
+  unsupplied, or a protocol hook reads non-optional state data no declared
+  default or earlier hook has assigned on every path.
+impact: >-
+  The destination declares the value, so the generated instruction would name
+  something no execution path reliably provides. Supply each boundary value,
+  or give protocol data a default or set it before its first read.
+failing: |-
+  return:
+    outcome: completed
+    with:
+      summary: {from: result.text}
+passing: |-
+  return:
+    outcome: completed
+    with:
+      summary: {from: result.text}
+      limitations: {from: result.gaps}

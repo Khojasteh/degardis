@@ -1,0 +1,12 @@
+trigger: >-
+  A workflow or pattern declares an input, a protocol declares state data, or
+  a reachable action produces or captures a result, and no applicable
+  operation or lowered check reads it.
+impact: >-
+  The value may be unnecessary, or a read may be missing. Add the declared
+  use, binding, expression, or protocol update that consumes it, or remove the
+  unused declaration. Prose alone does not declare a read.
+failing: |-
+  inspect: {action: Inspect the material., produces: {note: {type: string}}, next: finish}
+passing: |-
+  review: {gate: Judge the material., uses: [result.note], states: {ready: {command: Continue with the material., next: finish}, refused: {command: Decline the material., next: decline}}}

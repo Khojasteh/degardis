@@ -1,0 +1,15 @@
+trigger: >-
+  A declared value names no type the format has, or writes one in a shape it
+  does not accept.
+impact: >-
+  The value is untyped, so nothing can be checked against it. A type is
+  string, integer, number, or boolean, or a mapping naming exactly one of
+  enum, list, record, or optional.
+failing: |-
+  produces:
+    summary:
+      type: text
+passing: |-
+  produces:
+    summary:
+      type: string

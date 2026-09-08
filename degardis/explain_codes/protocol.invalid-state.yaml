@@ -1,0 +1,22 @@
+trigger: >-
+  A protocol names a state that is not declared, declares a state nothing
+  can reach, sets or clears a data field it does not declare, or clears one
+  that must always hold a value.
+impact: >-
+  The lifecycle cannot be checked: a state no hook moves to is a state the
+  frame can never be in, and an undeclared field is one the compiler cannot
+  carry. Declare every state and every data field the hooks use.
+failing: |-
+  states: [clear, open, spent]
+  initial: clear
+  accepting: [clear]
+  hooks:
+    retain:
+      to: open
+passing: |-
+  states: [clear, open]
+  initial: clear
+  accepting: [clear]
+  hooks:
+    retain:
+      to: open

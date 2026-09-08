@@ -1,0 +1,14 @@
+trigger: >-
+  A workflow produces or captures a result name on a path where an earlier
+  definition of that result has not been read.
+impact: >-
+  The later definition replaces the earlier value before anything consumes
+  it. Read the first result before redefining the name, or give the two values
+  distinct names.
+failing: |-
+  inspect: {action: Inspect once., produces: {note: {type: string}}, next: replace}
+  replace: {action: Inspect again., produces: {note: {type: string}}, next: finish}
+passing: |-
+  inspect: {action: Inspect once., produces: {note: {type: string}}, next: use-note}
+  use-note: {action: Use the first note., uses: [result.note], next: replace}
+  replace: {action: Inspect again., produces: {note: {type: string}}, next: finish}

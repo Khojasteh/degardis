@@ -1,0 +1,19 @@
+trigger: >-
+  A workflow file declares no entry.
+impact: >-
+  Nothing names the step execution starts at, so the graph has no root,
+  nothing is reachable, and no node can be rendered. Name one of the
+  declared steps.
+failing: |-
+  description: Deliver the bounded result.
+  steps:
+    inspect:
+      action: Inspect the material.
+      next: done
+passing: |-
+  description: Deliver the bounded result.
+  entry: inspect
+  steps:
+    inspect:
+      action: Inspect the material.
+      next: done

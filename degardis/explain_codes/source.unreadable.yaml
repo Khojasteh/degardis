@@ -1,0 +1,13 @@
+trigger: >-
+  A skill manifest cannot be loaded at all, or a profile source cannot be
+  decoded: skill.yaml is missing, declares no name, names a directory other
+  than its own, or the file cannot be read as UTF-8.
+impact: >-
+  The skill is reported without inspecting any of its content, so no other
+  check runs and every count reads as empty.
+failing: |-
+  # summary/skill.yaml
+  name: structured-summary
+passing: |-
+  # structured-summary/skill.yaml
+  name: structured-summary

@@ -1,0 +1,14 @@
+trigger: >-
+  A source declares, returns, or maps `blocked`.
+impact: >-
+  `blocked` is the compiler's own outcome: every workflow returns it when a
+  binding check cannot be satisfied. A source declaring the same name would
+  give one outcome two meanings, and a call mapping it would claim to handle
+  a transition the compiler owns.
+failing: |-
+  outcomes:
+    completed: {}
+    blocked: {}
+passing: |-
+  outcomes:
+    completed: {}

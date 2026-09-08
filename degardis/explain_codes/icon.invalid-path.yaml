@@ -1,0 +1,12 @@
+trigger: >-
+  An interface icon, icon_small, or icon_large is empty, is not a string, or
+  is an absolute path.
+impact: >-
+  Icon paths are read relative to the skill directory so one build behaves
+  like the next. An absolute path names a file that exists on one machine.
+failing: |-
+  interface:
+    icon: /home/author/logo.png
+passing: |-
+  interface:
+    icon: assets/logo.png

@@ -1,0 +1,11 @@
+trigger: >-
+  The manifest interface has no short_description.
+impact: >-
+  The interface has no one-line summary to present beside the skill's name.
+failing: |-
+  interface:
+    display_name: Structured Summary
+passing: |-
+  interface:
+    display_name: Structured Summary
+    short_description: Summarize a document for review

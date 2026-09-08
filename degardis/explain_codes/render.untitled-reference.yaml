@@ -1,0 +1,18 @@
+trigger: >-
+  A pattern, heuristic, guidance unit, or profile names a reference whose
+  file states no heading.
+impact: >-
+  The generated page links the file, and the link is titled by the heading
+  the file states, so an agent reads what the document is before deciding to
+  open it. A file that states none is linked by its path instead, which names
+  where the file sits and nothing about what it holds. The compiler will not
+  build a title out of the filename, because that title is words no author
+  wrote. It warns rather than stops, since the link still resolves and the
+  rest of the bundle is unaffected; pass --fail-on-warning where a nameless
+  link is not acceptable.
+failing: |-
+  references/patterns/notes.md, first line:
+  Worked examples of the pattern follow.
+passing: |-
+  references/patterns/notes.md, first line:
+  # Outline, then draft: worked examples

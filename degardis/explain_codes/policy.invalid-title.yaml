@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: policy
+field: title
+expected: a non-empty string
+failing: |-
+  title: ''
+passing: |-
+  title: Request Authority

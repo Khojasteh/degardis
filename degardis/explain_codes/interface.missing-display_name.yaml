@@ -1,0 +1,12 @@
+trigger: >-
+  The manifest interface has no display_name.
+impact: >-
+  The agent host has no name to show for the skill, so the bundle is
+  incomplete for the interfaces that require one.
+failing: |-
+  interface:
+    short_description: Summarize a document for review
+passing: |-
+  interface:
+    display_name: Structured Summary
+    short_description: Summarize a document for review

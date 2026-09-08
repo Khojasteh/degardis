@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: rule
+field: verify
+expected: one supported verification mapping
+failing: |-
+  verify: {}
+passing: |-
+  verify: {confirm: Confirm the boundary.}

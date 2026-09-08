@@ -1,0 +1,15 @@
+trigger: >-
+  A pattern application declares effects instead of the procedure item that
+  takes them.
+impact: >-
+  Effects must attach to the exact operation that causes them so policy
+  binding is neither duplicated nor skipped.
+failing: |-
+  apply:
+    pattern: inspect-plan-act
+    effects: [external.write]
+passing: |-
+  procedure:
+    perform-change:
+      command: Perform the change.
+      effects: [external.write]

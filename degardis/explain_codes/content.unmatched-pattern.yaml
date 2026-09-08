@@ -1,0 +1,16 @@
+trigger: >-
+  A content pattern names nothing that exists in the skill directory.
+impact: >-
+  The pattern does nothing, and only this check says so: a selection that
+  matches nothing leaves files out of the bundle, and an exclusion that
+  matches nothing leaves files in it. Patterns are matched case-sensitively
+  and separated by / on every platform, so check the spelling of each
+  segment before the path itself.
+failing: |-
+  content:
+    rules:
+      - rules/*.yml
+passing: |-
+  content:
+    rules:
+      - rules/*.yaml

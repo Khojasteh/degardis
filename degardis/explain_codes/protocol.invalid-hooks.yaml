@@ -1,0 +1,9 @@
+wording: invalid-field
+owner: protocol
+field: hooks
+expected: a non-empty mapping
+failing: |-
+  hooks: {}
+passing: |-
+  hooks:
+    enter-frame: {phase: enter, from: [open], command: Begin.}

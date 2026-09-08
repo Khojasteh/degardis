@@ -1,0 +1,15 @@
+trigger: >-
+  The manifest declares no entrypoints.
+impact: >-
+  Nothing names a workflow a run can enter, so the skill has no route in and
+  no call order to render. Declare at least one entrypoint, naming the
+  workflow it targets.
+failing: |-
+  name: example-skill
+  version: 1.0.0
+passing: |-
+  name: example-skill
+  version: 1.0.0
+  entrypoints:
+    perform:
+      target: perform-task

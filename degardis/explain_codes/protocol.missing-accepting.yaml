@@ -1,0 +1,15 @@
+trigger: >-
+  A protocol file declares no accepting states.
+impact: >-
+  The accepting states are the ones a frame may close in, and the generated
+  gate before frame close reads them. Without them no close is ever
+  permitted. Name at least one declared state.
+failing: |-
+  purpose: Keep a decision available.
+  states: [clear, open]
+  initial: clear
+passing: |-
+  purpose: Keep a decision available.
+  states: [clear, open]
+  initial: clear
+  accepting: [clear]

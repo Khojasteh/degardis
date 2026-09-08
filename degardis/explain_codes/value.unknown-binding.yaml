@@ -1,0 +1,14 @@
+trigger: >-
+  A call, a pattern application, or a return supplies a value the
+  destination does not declare.
+impact: >-
+  Nothing reads it, so the binding is either a typo or a leftover from a
+  contract that changed. Supply exactly the values the callee, pattern, or
+  record declares.
+failing: |-
+  with:
+    target: {from: result.inspection}
+    depth: {literal: brief}
+passing: |-
+  with:
+    target: {from: result.inspection}

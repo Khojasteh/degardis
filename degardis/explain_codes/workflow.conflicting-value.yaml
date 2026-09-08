@@ -1,0 +1,9 @@
+trigger: >-
+  Two steps declare one value name with different types.
+impact: >-
+  A later read cannot know which type it holds. Rename one of them, or
+  declare both with the same type where they mean the same thing.
+failing: |-
+  # one step produces `plan: string`, another `plan: {list: string}`
+passing: |-
+  # one step produces `plan: string`, another `plans: {list: string}`

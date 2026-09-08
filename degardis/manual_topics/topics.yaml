@@ -1,0 +1,130 @@
+# The manual's topic catalog. A topic's name is the file beside this one, the
+# name `degardis manual` takes, and the name another topic cross-references.
+# Every entry here is therefore a topic the installed CLI can print, and prose
+# that no such name reaches belongs in the document template instead.
+# The order is the document's reading order: each topic whose file opens with a
+# level-two heading starts a section, and the topics after it belong to it.
+# `{{format_version}}` in any manual file resolves to the format version the
+# compiler accepts.
+
+topics:
+  - name: modeling
+    summary: Choose the parts a skill needs.
+    related: [layout, workflow, entrypoints, requirements, optional]
+  - name: layout
+    summary: Lay out the source folder.
+    related: [identifiers, content, checking]
+  - name: identifiers
+    summary: Name a construct and refer to it.
+    related: [layout, content]
+  - name: yaml
+    summary: Write YAML the compiler accepts.
+    related: [layout, values, identifiers]
+  - name: commands
+    summary: Write a command an agent can perform.
+    related: [action, files, attention]
+  - name: manifest
+    summary: Declare the skill and bind run-wide requirements.
+    related: [entrypoints, content, interface, workflow, requirements]
+  - name: entrypoints
+    summary: Route a request to the workflow that serves it.
+    related: [manifest, workflow, bindings, values]
+  - name: content
+    summary: Select the files the skill ships.
+    related: [manifest, identifiers, files, resource]
+  - name: interface
+    summary: Supply host display metadata.
+    related: [manifest, icon]
+  - name: icon
+    summary: Supply the image a host displays.
+    related: [interface, content]
+  - name: values
+    summary: Declare a typed value.
+    related: [record, bindings, expressions]
+  - name: record
+    summary: Give one value named fields.
+    related: [values, bindings]
+  - name: bindings
+    summary: Supply a value where one is expected.
+    related: [values, use, pattern-step, return]
+  - name: expressions
+    summary: Read declared values with DExpr.
+    related: [values, branch, verify]
+  - name: workflow
+    summary: Declare inputs, steps, and outcomes.
+    related: [entrypoints, steps, action, branch, decide, gate, use, pattern-step, return]
+  - name: steps
+    summary: Apply the fields every step shares.
+    related: [workflow, tags, requirements, guidance]
+  - name: tags
+    summary: Label work with subjects and effects.
+    related: [steps, selectors, pattern]
+  - name: action
+    summary: Perform work and produce values.
+    related: [steps, values, resource, commands]
+  - name: resource
+    summary: Reach a script, reference, or asset from an action.
+    related: [action, content, files]
+  - name: branch
+    summary: Choose a route from declared values.
+    related: [steps, expressions, decide, gate]
+  - name: decide
+    summary: Choose between valid approaches.
+    related: [steps, gate, heuristic, branch]
+  - name: gate
+    summary: Record which stated condition holds.
+    related: [steps, decide, verify]
+  - name: use
+    summary: Call another workflow and handle its outcomes.
+    related: [steps, workflow, bindings]
+  - name: pattern-step
+    summary: Apply a reusable procedure in a workflow.
+    related: [steps, pattern, bindings]
+  - name: return
+    summary: Finish a workflow with an outcome.
+    related: [steps, workflow, bindings]
+  - name: requirements
+    summary: Choose between policies, rules, and protocols.
+    related: [selectors, phases, verify, policy, rule, protocol]
+  - name: selectors
+    summary: Select the work a requirement applies to.
+    related: [requirements, phases, tags]
+  - name: phases
+    summary: Place a requirement before, during, or after the work.
+    related: [requirements, selectors, protocol]
+  - name: verify
+    summary: Prove a requirement was met.
+    related: [requirements, gate, expressions, heuristic]
+  - name: policy
+    summary: Group standing requirements under one boundary.
+    related: [requirements, rule, selectors, phases, verify]
+  - name: rule
+    summary: State one conditional requirement or prohibition.
+    related: [requirements, policy, selectors, phases, verify]
+  - name: protocol
+    summary: Track state across steps and close it correctly.
+    related: [requirements, phases, values, selectors]
+  - name: optional
+    summary: Choose reusable procedures and optional advice.
+    related: [pattern, heuristic, guidance, profile, files]
+  - name: pattern
+    summary: Define a reusable procedure.
+    related: [pattern-step, optional, values]
+  - name: heuristic
+    summary: Advise a decision without authorizing it.
+    related: [decide, gate, optional, verify]
+  - name: guidance
+    summary: Provide optional context at a binding scope.
+    related: [optional, steps, files]
+  - name: profile
+    summary: Offer auxiliary material for a recurring situation.
+    related: [optional, guidance]
+  - name: files
+    summary: Ship references, scripts, and assets.
+    related: [content, resource, commands]
+  - name: checking
+    summary: Know what validation establishes.
+    related: [attention, commands, identifiers]
+  - name: attention
+    summary: Keep the generated skill inside its load budgets.
+    related: [checking, commands, workflow]

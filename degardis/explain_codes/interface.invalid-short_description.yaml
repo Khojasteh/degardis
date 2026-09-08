@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: interface
+field: short_description
+expected: a non-empty string
+failing: |-
+  short_description: ''
+passing: |-
+  short_description: Perform one task

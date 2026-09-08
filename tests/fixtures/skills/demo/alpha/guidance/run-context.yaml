@@ -1,0 +1,7 @@
+title: Run context
+summary: Lead with the result and name what the execution did not reach.
+rationale: Readers need the outcome and its limits before supporting detail.
+points:
+- Distinguish what you observed from what you inferred.
+references:
+- references/guidance/run-context-notes.md

@@ -1,0 +1,15 @@
+trigger: >-
+  The interface default_prompt does not contain the exact {name}
+  placeholder, which each target replaces with the skill name in its own
+  invocation syntax.
+impact: >-
+  The suggested invocation does not name the skill it invokes, so following
+  it starts something else. This is a warning: the bundle still builds,
+  because a source written before the placeholder convention has to keep
+  converting.
+failing: |-
+  interface:
+    default_prompt: Summarize this report
+passing: |-
+  interface:
+    default_prompt: Use {name} to summarize this report

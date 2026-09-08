@@ -1,0 +1,13 @@
+trigger: >-
+  A protocol file declares no initial state.
+impact: >-
+  Nothing says which state a frame opens in, so the compiler cannot
+  establish what state is possible at any hook. Name one of the declared
+  states.
+failing: |-
+  purpose: Keep a decision available.
+  states: [clear, open]
+passing: |-
+  purpose: Keep a decision available.
+  states: [clear, open]
+  initial: clear

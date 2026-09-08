@@ -1,0 +1,16 @@
+trigger: >-
+  A workflow or a step names a profile.
+impact: >-
+  Core execution must be authored without profiles in mind. A reader chooses
+  a profile for itself from the generated index, and every profile can be
+  deleted without changing any valid execution.
+failing: |-
+  inspect:
+    action: Inspect the material.
+    policies:
+    - concise
+passing: |-
+  inspect:
+    action: Inspect the material.
+    guidance:
+    - clear-reporting

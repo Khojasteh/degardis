@@ -1,0 +1,18 @@
+trigger: >-
+  A declared value — a workflow input, a produced value, a pattern input, a
+  record field, or a protocol state field — carries a `description` that is
+  present and is not a non-empty string.
+impact: >-
+  A description says what the value holds, so an empty one reads as a
+  declaration that was described when nothing was written. Omit the field
+  rather than writing an empty string.
+failing: |-
+  produces:
+    finding:
+      record: finding
+      description: ""
+passing: |-
+  produces:
+    finding:
+      record: finding
+      description: What the material was found to contain.

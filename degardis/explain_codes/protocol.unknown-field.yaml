@@ -1,0 +1,11 @@
+trigger: >-
+  A protocol file declares a field the protocol schema does not have.
+impact: >-
+  The field is read by nothing, so it cannot affect protocol state or
+  execution. Correct or remove the named field.
+failing: |-
+  purpose: Keep a decision available.
+  ledger:
+  - Remember what is still open.
+passing: |-
+  purpose: Keep a decision available.

@@ -1,0 +1,14 @@
+trigger: >-
+  A record file declares no fields.
+impact: >-
+  A record is its typed fields: with none, every value the record types is
+  untyped and no contract renders where those values are produced or
+  consumed. Declare at least one field.
+failing: |-
+  title: Inspection result
+passing: |-
+  title: Inspection result
+  fields:
+    summary:
+      type: string
+      description: Concise result.

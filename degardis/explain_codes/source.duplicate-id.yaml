@@ -1,0 +1,10 @@
+trigger: >-
+  Two selected files of one construct kind have the same file stem.
+impact: >-
+  The stem is the construct's identity, so two files claiming one id leave
+  every reference to it ambiguous. Rename one; moving a file keeps its id,
+  and renaming it changes it.
+failing: |-
+  # rules/scope.yaml and rules/nested/scope.yaml
+passing: |-
+  # rules/scope.yaml and rules/nested/call-scope.yaml

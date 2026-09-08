@@ -1,0 +1,9 @@
+wording: invalid-field
+owner: workflow
+field: inputs
+expected: a non-empty mapping
+failing: |-
+  inputs: []
+passing: |-
+  inputs:
+    request: {type: string}

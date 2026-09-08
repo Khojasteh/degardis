@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: workflow
+field: description
+expected: a non-empty string
+failing: |-
+  description: ''
+passing: |-
+  description: Perform the task.

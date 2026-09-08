@@ -1,0 +1,13 @@
+trigger: >-
+  An interface icon source is over 10 MiB, or its image is over 67,108,864
+  pixels.
+impact: >-
+  Both limits bound what one build has to decode and what an installed
+  bundle carries. Resize the source rather than relying on the conversion to
+  shrink it.
+failing: |-
+  interface:
+    icon: assets/photo-12000x9000.png
+passing: |-
+  interface:
+    icon: assets/icon-512x512.png

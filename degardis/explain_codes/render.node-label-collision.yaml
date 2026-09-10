@@ -1,0 +1,20 @@
+trigger: >-
+  Two generated nodes answer to one node label.
+impact: >-
+  A transition names its destination by label, so a collision leaves one
+  node unreachable and the other ambiguous. Nothing appends a numeric suffix
+  to break the tie, because a label built from source ids is stable across
+  rebuilds and a generated one would not be. Rename one of the source or
+  local ids that build the label.
+failing: |-
+  provisions:
+    report:
+      ...
+    report:
+      ...   # one id twice
+passing: |-
+  provisions:
+    report-effect:
+      ...
+    report-boundary:
+      ...

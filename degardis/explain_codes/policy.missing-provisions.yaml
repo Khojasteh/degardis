@@ -1,0 +1,15 @@
+trigger: >-
+  A policy file declares no provisions.
+impact: >-
+  A policy is its provisions: with none, nothing is bound at any node and
+  the file constrains nothing. Declare at least one provision.
+failing: |-
+  summary: Keep external effects within established authority.
+passing: |-
+  summary: Keep external effects within established authority.
+  provisions:
+    establish-authority:
+      phase: before
+      match:
+        effects: [external.*]
+      require: Establish the authority for the external effect.

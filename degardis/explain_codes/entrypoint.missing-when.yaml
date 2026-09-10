@@ -1,0 +1,20 @@
+trigger: >-
+  An entrypoint states no when and is not the last route declared.
+impact: >-
+  A route with no condition is taken whatever the request says, so every route
+  written after it is unreachable. State when this route applies, or move it
+  last to make it the route taken when no other matched.
+failing: |-
+  entrypoints:
+    summarize:
+      target: compose
+    audit:
+      when: The request asks whether the material is accurate.
+      target: audit-material
+passing: |-
+  entrypoints:
+    audit:
+      when: The request asks whether the material is accurate.
+      target: audit-material
+    summarize:
+      target: compose

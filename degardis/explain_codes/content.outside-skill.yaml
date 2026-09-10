@@ -1,0 +1,14 @@
+trigger: >-
+  A content glob, or a file it matches, resolves outside the skill
+  directory.
+impact: >-
+  A skill must be self-contained to be installable. A source outside the
+  directory would be missing from the bundle wherever it is built.
+failing: |-
+  content:
+    assets:
+      - ../shared/logo.png
+passing: |-
+  content:
+    assets:
+      - assets/logo.png

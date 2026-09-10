@@ -1,0 +1,13 @@
+trigger: >-
+  The manifest declares no format_version.
+impact: >-
+  Nothing establishes which source format the files are written in, so the
+  compiler cannot choose the schemas to read them against. Declare
+  format_version: {{format_version}}.
+failing: |-
+  name: example-skill
+  version: 1.0.0
+passing: |-
+  name: example-skill
+  format_version: {{format_version}}
+  version: 1.0.0

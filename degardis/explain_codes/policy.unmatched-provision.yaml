@@ -1,0 +1,14 @@
+trigger: >-
+  A bound provision's selector matches no reachable node at its phase.
+impact: >-
+  Nothing enforces it: the policy is bound and the provision reaches no
+  step. Usually the step is missing the subject or effect tag the selector
+  names. This warns rather than fails, because shipping a provision before
+  the step it will constrain is what mid-design work looks like;
+  `--fail-on-warning` refuses it.
+failing: |-
+  match:
+    subjects: [checklist.write]   # no step declares it
+passing: |-
+  # on the step
+  subjects: [checklist.write]

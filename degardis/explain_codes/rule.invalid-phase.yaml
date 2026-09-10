@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: rule
+field: phase
+expected: a supported binding phase
+failing: |-
+  phase: sometime
+passing: |-
+  phase: before

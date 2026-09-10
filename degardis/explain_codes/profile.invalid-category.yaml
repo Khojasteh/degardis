@@ -1,0 +1,13 @@
+trigger: >-
+  A profile's category is present but is not a non-empty string.
+impact: >-
+  The profile cannot be indexed. Supply a category containing non-whitespace
+  text, or omit category to leave the profile uncategorized.
+failing: |-
+  category: ''
+  points:
+  - Prefer project tooling.
+passing: |-
+  category: Tooling
+  points:
+  - Prefer project tooling.

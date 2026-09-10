@@ -1,0 +1,15 @@
+trigger: >-
+  A content pattern selected a file the construct reader cannot read, such
+  as a Markdown guide swept in by a pattern meant for YAML.
+impact: >-
+  The file is not a construct source, so nothing in it is read. Narrow the
+  pattern: `profiles/*.yaml` selects the profiles without their guide files,
+  where `profiles/**/*` sweeps both in.
+failing: |-
+  content:
+    profiles:
+    - profiles/**/*
+passing: |-
+  content:
+    profiles:
+    - profiles/*.yaml

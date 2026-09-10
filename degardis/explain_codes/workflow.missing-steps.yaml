@@ -1,0 +1,15 @@
+trigger: >-
+  A workflow file declares no steps.
+impact: >-
+  The steps are the workflow: with none there is no control flow to validate
+  and no node to render. Declare at least the entry step.
+failing: |-
+  description: Deliver the bounded result.
+  entry: inspect
+passing: |-
+  description: Deliver the bounded result.
+  entry: inspect
+  steps:
+    inspect:
+      action: Inspect the material.
+      next: done

@@ -1,0 +1,10 @@
+trigger: >-
+  A profile declares no title.
+impact: >-
+  The compiler derives a display title from the filename, so the profile
+  still appears in the index, but an explicit title makes a candidate easier
+  to recognize.
+failing: |-
+  # profiles/detailed-review.yaml
+passing: |-
+  title: Detailed review

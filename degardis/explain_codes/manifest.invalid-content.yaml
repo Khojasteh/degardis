@@ -1,0 +1,9 @@
+wording: invalid-field
+owner: manifest
+field: content
+expected: a mapping
+failing: |-
+  content: []
+passing: |-
+  content:
+    workflows: [workflows/*.yaml]

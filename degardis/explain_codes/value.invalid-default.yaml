@@ -1,0 +1,21 @@
+trigger: >-
+  A `default`—on a value an action produces, or on a protocol state field—names
+  nothing, or writes a literal that cannot stand for the type declared beside
+  it. An optional value and a record take no default at all.
+impact: >-
+  The value would hold something its readers cannot use before anything wrote
+  it. Write a literal of the declared type; a list takes a list, an enum takes
+  one of its own members, and an empty list stands for any list. A default is
+  the written value rather than a binding, so it never reads another value. An
+  optional value is already absent where nothing produced it, and a record has
+  no literal form, so produce or set one before its first read instead.
+failing: |-
+  produces:
+    findings:
+      type: {list: string}
+      default: none
+passing: |-
+  produces:
+    findings:
+      type: {list: string}
+      default: []

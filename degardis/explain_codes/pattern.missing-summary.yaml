@@ -1,0 +1,14 @@
+trigger: >-
+  A pattern file declares no summary.
+impact: >-
+  Nothing states the method the procedure carries out, so a step selecting
+  the pattern cannot be read against what it was for. State the method in
+  one sentence.
+failing: |-
+  title: Inspect, plan, and act
+  procedure:
+    inspect: ...
+passing: |-
+  summary: Inspect the owner, choose a bounded plan, then act.
+  procedure:
+    inspect: ...

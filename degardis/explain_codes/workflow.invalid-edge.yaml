@@ -1,0 +1,14 @@
+trigger: >-
+  A workflow names an entry, a transition target, or a called workflow that
+  does not exist, or leaves a non-return step with no successor.
+impact: >-
+  The graph cannot execute: a step with nowhere to go ends a run somewhere
+  that is not a declared outcome. Only a return ends a workflow, so every
+  other form declares where it continues.
+failing: |-
+  act:
+    action: Do the one thing.
+passing: |-
+  act:
+    action: Do the one thing.
+    next: finish

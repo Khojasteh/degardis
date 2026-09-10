@@ -1,0 +1,11 @@
+trigger: >-
+  An unquoted value is one of YAML's boolean or null spellings: true, false,
+  yes, no, on, off, null, ~, .nan, .inf, or -.inf.
+impact: >-
+  The value loads as a boolean or null instead of text, so a field that
+  should read as a word is reported as the wrong type, or is treated as
+  absent.
+failing: |-
+  confirm: no
+passing: |-
+  confirm: "no"

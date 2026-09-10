@@ -1,0 +1,18 @@
+trigger: >-
+  A rule file declares a field the rule schema does not have.
+impact: >-
+  The field is read by nothing, so whatever it was meant to enforce has no
+  effect. Correct or remove the named field.
+failing: |-
+  summary: Keep the contract stable.
+  phase: before
+  match:
+    subjects: [change.public-contract]
+  require: Preserve the existing public contract.
+  prefer: The smaller change.
+passing: |-
+  summary: Keep the contract stable.
+  phase: before
+  match:
+    subjects: [change.public-contract]
+  require: Preserve the existing public contract.

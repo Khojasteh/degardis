@@ -1,0 +1,9 @@
+wording: invalid-field
+owner: heuristic
+field: advice
+expected: a non-empty mapping
+failing: |-
+  advice: {}
+passing: |-
+  advice:
+    small: {prefer: Prefer the smaller option.}

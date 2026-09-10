@@ -1,0 +1,13 @@
+trigger: >-
+  A workflow file declares a field the workflow schema does not have.
+impact: >-
+  The field is read by nothing, so it cannot affect execution. Correct or
+  remove the named field.
+failing: |-
+  description: Deliver the bounded result.
+  entry: inspect
+  profiles:
+  - concise
+passing: |-
+  description: Deliver the bounded result.
+  entry: inspect

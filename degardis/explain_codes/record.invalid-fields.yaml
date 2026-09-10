@@ -1,0 +1,9 @@
+wording: invalid-field
+owner: record
+field: fields
+expected: a non-empty mapping
+failing: |-
+  fields: {}
+passing: |-
+  fields:
+    result: {type: string}

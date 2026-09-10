@@ -1,0 +1,14 @@
+trigger: >-
+  An entrypoint declares no target.
+impact: >-
+  The route names when it applies but not where it goes, so an agent that
+  selects it has nowhere to start. Name the workflow the route enters.
+failing: |-
+  entrypoints:
+    audit:
+      when: The request asks whether the material is accurate.
+passing: |-
+  entrypoints:
+    audit:
+      when: The request asks whether the material is accurate.
+      target: audit-material

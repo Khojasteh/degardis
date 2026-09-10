@@ -1,0 +1,13 @@
+trigger: >-
+  A heuristic file declares no advice.
+impact: >-
+  The advice items are what render under Consider on a decision or gate, so
+  a heuristic with none shows nothing. Declare at least one advice item with
+  a prefer.
+failing: |-
+  question: Which valid option should be preferred?
+passing: |-
+  question: Which valid option should be preferred?
+  advice:
+    reversible:
+      prefer: Prefer the smallest reversible option.

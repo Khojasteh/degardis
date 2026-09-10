@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: protocol
+field: title
+expected: a non-empty string
+failing: |-
+  title: ''
+passing: |-
+  title: Decision State

@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: protocol
+field: accepting
+expected: a non-empty list of state ids
+failing: |-
+  accepting: ['']
+passing: |-
+  accepting: [closed]

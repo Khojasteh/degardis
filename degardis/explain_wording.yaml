@@ -1,0 +1,10 @@
+# Sentences shared by a family of check codes, so one wording covers every
+# member of it and a reword reaches all of them. A code file names the
+# wording it takes and supplies the values its placeholders read.
+
+invalid-field:
+  trigger: >-
+    The {{owner}} field `{{field}}` is present but is not {{expected}}.
+  impact: >-
+    The compiler cannot read `{{field}}` as declared, so the {{owner}} is not
+    compiled. Repair the value named by the diagnostic.

@@ -1,0 +1,9 @@
+trigger: >-
+  The manifest description is longer than 1024 characters.
+impact: >-
+  The description is loaded on every routing decision, so its length is a
+  cost every session pays. The limit keeps that cost bounded.
+failing: |-
+  description: A very long paragraph of more than 1024 characters ...
+passing: |-
+  description: Summarize a long document into a fixed structure, for review or handoff.

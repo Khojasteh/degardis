@@ -1,0 +1,21 @@
+trigger: >-
+  An entrypoint supplies a value with `from`, or its `with` is not a mapping of
+  the target's inputs to the values the route supplies.
+impact: >-
+  A route is chosen before any step has run, so there is no earlier value for
+  `from` to read. Supply a literal, or leave the input out and let the agent
+  establish it from the request.
+failing: |-
+  entrypoints:
+    audit:
+      when: The request asks whether the material is accurate.
+      target: review
+      with:
+        mode: {from: result.mode}
+passing: |-
+  entrypoints:
+    audit:
+      when: The request asks whether the material is accurate.
+      target: review
+      with:
+        mode: {literal: audit}

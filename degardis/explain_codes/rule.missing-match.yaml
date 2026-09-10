@@ -1,0 +1,16 @@
+trigger: >-
+  A rule file declares no match.
+impact: >-
+  The selector is what says which nodes the rule applies to, so without it
+  nothing selects the rule and it is enforced nowhere. Declare a selector,
+  or {all: true} to bind every node in scope.
+failing: |-
+  summary: Keep the contract stable.
+  phase: before
+  require: Preserve the existing public contract.
+passing: |-
+  summary: Keep the contract stable.
+  phase: before
+  match:
+    subjects: [change.public-contract]
+  require: Preserve the existing public contract.

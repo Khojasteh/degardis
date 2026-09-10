@@ -1,0 +1,10 @@
+trigger: >-
+  A guidance file declares a field the guidance schema does not have.
+impact: >-
+  The field is read by nothing, so it cannot affect the generated guidance.
+  Correct or remove the named field.
+failing: |-
+  summary: Lead with the result.
+  phase: before
+passing: |-
+  summary: Lead with the result.

@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: guidance
+field: points
+expected: a non-empty list of non-empty strings
+failing: |-
+  points: ['']
+passing: |-
+  points: [State the result first.]

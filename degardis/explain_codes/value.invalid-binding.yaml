@@ -1,0 +1,13 @@
+trigger: >-
+  A binding is not a mapping naming exactly one of `from` and `literal`, or
+  gives `literal` a list or a mapping.
+impact: >-
+  Nothing says where the value comes from. Bindings are tagged so that a
+  value name and a written string cannot be confused: `{from: ...}` reads
+  another value, `{literal: ...}` writes a scalar.
+failing: |-
+  with:
+    label: author
+passing: |-
+  with:
+    label: {literal: author}

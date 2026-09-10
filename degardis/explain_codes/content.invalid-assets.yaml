@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: content mapping
+field: assets
+expected: a list of usable glob strings
+failing: |-
+  assets: ['']
+passing: |-
+  assets: [assets/**/*]

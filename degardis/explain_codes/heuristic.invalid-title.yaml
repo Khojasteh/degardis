@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: heuristic
+field: title
+expected: a non-empty string
+failing: |-
+  title: ''
+passing: |-
+  title: Smallest Change

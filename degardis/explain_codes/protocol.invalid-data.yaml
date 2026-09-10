@@ -1,0 +1,9 @@
+wording: invalid-field
+owner: protocol
+field: data
+expected: a non-empty mapping
+failing: |-
+  data: []
+passing: |-
+  data:
+    result: {type: string}

@@ -1,0 +1,14 @@
+trigger: >-
+  A check is verified by a gate that does not lie on every path to the node
+  it constrains.
+impact: >-
+  The verification reads `gate.<step-id>`, so a gate some path skips leaves
+  the check with nothing to read. Move the gate so every route to the
+  constrained node passes it, or verify with an expression or an agent
+  confirmation instead.
+failing: |-
+  verify:
+    gate: readiness   # reached on one branch only
+passing: |-
+  verify:
+    confirm: Every declared prerequisite is satisfied.

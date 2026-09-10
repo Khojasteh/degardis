@@ -1,0 +1,11 @@
+trigger: >-
+  Reading a manifest failed in a way no source check names, such as a
+  filesystem or decoding error.
+impact: >-
+  The skill is reported as unreadable rather than crashing with a traceback.
+  The message carries what the operating system said; the repair is usually
+  permissions, encoding, or a partial copy.
+failing: |-
+  # skill.yaml written in UTF-16 with no BOM
+passing: |-
+  # skill.yaml written in UTF-8

@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: content mapping
+field: rules
+expected: a list of usable glob strings
+failing: |-
+  rules: ['']
+passing: |-
+  rules: [rules/**/*]

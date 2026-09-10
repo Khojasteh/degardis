@@ -1,0 +1,14 @@
+trigger: >-
+  An interface icon cannot be decoded as an image: it is not a supported
+  format, its SVG markup does not parse, or the image it carries has no
+  usable dimensions.
+impact: >-
+  Icons are converted to PNG at build time. A source that cannot be read
+  stops the build rather than shipping a skill whose icons the host cannot
+  render.
+failing: |-
+  interface:
+    icon: assets/logo.pdf
+passing: |-
+  interface:
+    icon: assets/logo.svg

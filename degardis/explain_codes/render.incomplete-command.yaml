@@ -1,0 +1,14 @@
+trigger: >-
+  A generated node's heading, or a transition's destination command, is not
+  a complete command that closes as a sentence.
+impact: >-
+  An agent skimming headings has to read what to do, so a heading that reads
+  as a topic invites it to infer the content instead. The heading is the
+  author's own command, rendered: write each action, check, decision, and
+  return as a sentence.
+failing: |-
+  act:
+    action: Report
+passing: |-
+  act:
+    action: Report the result and its limitations.

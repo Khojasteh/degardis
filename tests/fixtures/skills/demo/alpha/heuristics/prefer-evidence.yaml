@@ -1,0 +1,6 @@
+title: Prefer the verdict the evidence carries
+question: Which verdict does the re-read support?
+advice:
+  observed-over-remembered:
+    prefer: Prefer the verdict the re-read shows over the one you expected.
+    because: A verdict carried from before the change is not a re-read.

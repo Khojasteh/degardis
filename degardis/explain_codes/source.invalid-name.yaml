@@ -1,0 +1,11 @@
+trigger: >-
+  A selected source filename is not lowercase letters, digits, and single
+  hyphens.
+impact: >-
+  The file stem is the construct's id, so a stem that cannot be an id leaves
+  the construct unnameable and every reference to it unresolvable. Rename
+  the file; moving it later keeps the id, and renaming it changes the id.
+failing: |-
+  # rules/Preserve_Contract.yaml
+passing: |-
+  # rules/preserve-contract.yaml

@@ -1,0 +1,17 @@
+trigger: >-
+  A rule file declares neither require nor prohibit.
+impact: >-
+  One binding command is what makes a rule act, so a rule with neither
+  states nothing for an agent to do. Declare exactly one of require and
+  prohibit.
+failing: |-
+  summary: Keep the contract stable.
+  phase: before
+  match:
+    subjects: [change.public-contract]
+passing: |-
+  summary: Keep the contract stable.
+  phase: before
+  match:
+    subjects: [change.public-contract]
+  require: Preserve the existing public contract.

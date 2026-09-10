@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: content mapping
+field: heuristics
+expected: a list of usable glob strings
+failing: |-
+  heuristics: ['']
+passing: |-
+  heuristics: [heuristics/**/*]

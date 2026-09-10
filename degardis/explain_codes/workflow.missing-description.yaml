@@ -1,0 +1,12 @@
+trigger: >-
+  A workflow file declares no description.
+impact: >-
+  The description is the workflow's purpose in the generated directory and
+  its header, and the directory is how an agent sees what each workflow is
+  for without navigating to it. State the purpose in one sentence.
+failing: |-
+  title: Perform the task
+  entry: inspect
+passing: |-
+  description: Inspect the request and deliver the bounded result.
+  entry: inspect

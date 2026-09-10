@@ -1,0 +1,13 @@
+trigger: >-
+  The content mapping holds a field this compiler does not define.
+impact: >-
+  The field is ignored, so files it was meant to include are left out of the
+  bundle while the manifest appears to name them.
+failing: |-
+  content:
+    references:
+      - references/*.md
+passing: |-
+  content:
+    assets:
+      - references/*.md

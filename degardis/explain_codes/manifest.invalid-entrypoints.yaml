@@ -1,0 +1,13 @@
+trigger: >-
+  entrypoints is not a mapping of route names to routes, is empty, or names a
+  route whose name is not lowercase-hyphenated.
+impact: >-
+  The routing table cannot be read, so no route into the skill is known.
+  Write one entry per route, keyed by a lowercase-hyphenated name.
+failing: |-
+  entrypoints:
+  - target: perform-task
+passing: |-
+  entrypoints:
+    perform:
+      target: perform-task

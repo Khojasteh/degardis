@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: rule
+field: summary
+expected: a non-empty string
+failing: |-
+  summary: ''
+passing: |-
+  summary: Keep work in scope.

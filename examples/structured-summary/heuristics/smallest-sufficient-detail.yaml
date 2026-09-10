@@ -1,0 +1,12 @@
+title: Prefer the smallest sufficient detail
+question: How much detail should this summary carry?
+advice:
+  reader-decision:
+    prefer: Prefer the detail that changes what the reader decides.
+    because: Detail a reader cannot act on costs attention and adds nothing.
+  qualification-first:
+    when: length(result.inspection.gaps) > 0
+    prefer: Prefer stating a qualification over dropping it to save space.
+    caution: A qualification restated in every section reads as hedging.
+references:
+- references/heuristics/smallest-sufficient-detail-examples.md

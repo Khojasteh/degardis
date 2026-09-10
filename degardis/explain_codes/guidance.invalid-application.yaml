@@ -1,0 +1,13 @@
+trigger: >-
+  Guidance stands where a binding construct is expected, or is applied with
+  `detail: inline` while the unit declares no points.
+impact: >-
+  Guidance is non-binding: it cannot be bound as a policy, a rule, or a
+  protocol, and asking to render points inline renders nothing when there
+  are none. Bind a policy or a rule where the requirement is mandatory.
+failing: |-
+  policies:
+  - clear-reporting   # a guidance unit
+passing: |-
+  guidance:
+  - clear-reporting

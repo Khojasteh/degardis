@@ -1,0 +1,12 @@
+trigger: >-
+  The interface short_description is outside 25-64 characters, the range
+  agent interfaces display without truncating.
+impact: >-
+  A shorter one says too little to choose the skill by; a longer one is cut
+  off where the host runs out of room.
+failing: |-
+  interface:
+    short_description: Summarize
+passing: |-
+  interface:
+    short_description: Summarize a document for review

@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: rule
+field: require or prohibit
+expected: exactly one non-empty command
+failing: |-
+  require: ''
+passing: |-
+  require: Stay in scope.

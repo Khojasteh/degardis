@@ -1,0 +1,15 @@
+trigger: >-
+  A selected workflow is not the primary workflow and no reached step calls
+  it.
+impact: >-
+  Nothing renders it and no run can enter it. It still builds: an unreached
+  workflow is what a partly wired skill looks like, and `--fail-on-warning`
+  refuses one. Add the `use` step that calls it, or drop it from the content
+  patterns.
+failing: |-
+  # workflows/report-gaps.yaml selected, and no step uses it
+passing: |-
+  describe-gaps:
+    use: report-gaps
+    on:
+      reported: done

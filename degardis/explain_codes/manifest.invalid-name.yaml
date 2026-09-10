@@ -1,0 +1,10 @@
+trigger: >-
+  The manifest name is not 1-64 lowercase letters, digits, and single
+  hyphens.
+impact: >-
+  The name is the skill's directory and its selector, so nothing addresses
+  the skill reliably until it is valid.
+failing: |-
+  name: Structured_Summary
+passing: |-
+  name: structured-summary

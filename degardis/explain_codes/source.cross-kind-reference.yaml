@@ -1,0 +1,12 @@
+trigger: >-
+  A reference names a construct the manifest selects under a different
+  content key: a rule where a policy is expected, or the reverse.
+impact: >-
+  The kinds are not interchangeable, because each has its own execution
+  meaning. Name the id under the key that matches what you want bound.
+failing: |-
+  policies:
+  - stay-in-scope   # selected by content.rules
+passing: |-
+  rules:
+  - stay-in-scope

@@ -1,0 +1,5 @@
+title: Step context
+summary: Say which source you inspected, not only what you concluded.
+rationale: A conclusion is auditable only when its source is visible.
+points:
+- Name the file or the record, not the concept.

@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: protocol
+field: rationale
+expected: a non-empty string
+failing: |-
+  rationale: ''
+passing: |-
+  rationale: Deferred decisions need a visible owner.

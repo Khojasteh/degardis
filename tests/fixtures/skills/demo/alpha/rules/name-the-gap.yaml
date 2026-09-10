@@ -1,0 +1,7 @@
+title: Name what was not covered
+summary: A report names the part of the surface it did not reach.
+rationale: Readers need to distinguish verified results from incomplete coverage.
+phase: before-return
+match:
+  outcomes: [reported]
+require: Name the part of the surface this execution did not reach.

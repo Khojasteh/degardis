@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: protocol
+field: initial
+expected: a non-empty state id
+failing: |-
+  initial: ''
+passing: |-
+  initial: open

@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: content mapping
+field: policies
+expected: a list of usable glob strings
+failing: |-
+  policies: ['']
+passing: |-
+  policies: [policies/**/*]

@@ -1,0 +1,11 @@
+trigger: >-
+  An SVG icon carries a script element, a foreignObject element, an external
+  href, or an external CSS url().
+impact: >-
+  A bundle is installed and rendered by someone else's agent host, so an
+  icon that fetches or executes anything is a risk carried to every reader.
+  Inline what the image needs, as markup or a data: URI.
+failing: |-
+  <svg><image href="https://example.com/logo.png"/></svg>
+passing: |-
+  <svg><path d="M8 0 L16 16 H0 Z"/></svg>

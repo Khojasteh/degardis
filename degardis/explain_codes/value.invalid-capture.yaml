@@ -1,0 +1,10 @@
+trigger: >-
+  A call outcome is captured with `as`, but that callee outcome carries no
+  record payload.
+impact: >-
+  A caller can bind only data the callee actually returns on that outcome
+  edge.
+failing: |-
+  completed: {next: report, as: result} # completed has no record
+passing: |-
+  completed: {next: report, as: result} # completed returns summary-result

@@ -1,0 +1,17 @@
+trigger: >-
+  An active provision matched a reached node and reached no generated node.
+  A `during` provision selecting only a decision, a gate, or a branch is the
+  usual cause.
+impact: >-
+  The requirement is in no installed page, so the agent executing the skill
+  is never told it. The message names the phase and the node form that
+  refused it: a `during` item renders beside a command, so select an action,
+  a call, a pattern, or a return, or move it to `before`.
+failing: |-
+  phase: during
+  match:
+    forms: [gate]
+passing: |-
+  phase: before
+  match:
+    forms: [gate]

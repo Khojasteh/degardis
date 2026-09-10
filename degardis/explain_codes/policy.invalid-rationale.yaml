@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: policy
+field: rationale
+expected: a non-empty string
+failing: |-
+  rationale: ''
+passing: |-
+  rationale: External effects need explicit ownership.

@@ -1,0 +1,13 @@
+trigger: >-
+  A selected construct is reached by nothing this run can execute.
+impact: >-
+  The bundle ships a page no agent meets. Either bind it — at the manifest,
+  a workflow, or a step — or drop it from the content patterns so the bundle
+  stops carrying it.
+failing: |-
+  content:
+    policies:
+    - policies/**/*.yaml   # and no scope names one
+passing: |-
+  policies:
+  - request-authority

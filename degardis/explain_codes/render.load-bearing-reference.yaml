@@ -1,0 +1,14 @@
+trigger: >-
+  An outbound reference appears in a role that carries execution: a command,
+  a required or prohibited line, a verification, a state update, a produced
+  or supplied value, or a transition.
+impact: >-
+  The requirement would depend on an untyped documentation link. Required
+  cross-file execution is compiler-generated under `execution/`; author
+  commands must state their behavior directly. Put explanatory material in
+  the construct's `references` or use a typed action `resource` operation
+  for a required bundled file.
+failing: |-
+  require: Apply the exceptions in `references/policies/notes.md`.
+passing: |-
+  require: Apply only an exception this provision's own `unless` states.

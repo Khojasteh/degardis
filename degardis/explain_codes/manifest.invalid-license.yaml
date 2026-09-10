@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: manifest
+field: license
+expected: a non-empty string
+failing: |-
+  license: ''
+passing: |-
+  license: MIT

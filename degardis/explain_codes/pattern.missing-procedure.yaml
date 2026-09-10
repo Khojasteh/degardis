@@ -1,0 +1,13 @@
+trigger: >-
+  A pattern file declares no procedure.
+impact: >-
+  The procedure items are what a pattern step expands into, so a pattern
+  with none expands to nothing and the step performs no work. Declare the
+  ordered procedure items.
+failing: |-
+  summary: Inspect the owner, choose a plan, then act.
+passing: |-
+  summary: Inspect the owner, choose a plan, then act.
+  procedure:
+    inspect-owner:
+      command: Inspect the source that owns the target behavior.

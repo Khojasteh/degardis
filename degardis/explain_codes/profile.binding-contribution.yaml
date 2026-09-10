@@ -1,0 +1,14 @@
+trigger: >-
+  A profile declares policies, rules, protocols, or workflows.
+impact: >-
+  Profiles are auxiliary guidance outside the execution graph, so mandatory
+  behavior cannot depend on one. Put requirements in the core workflow,
+  policies, rules, or protocols instead.
+failing: |-
+  points:
+  - Keep it short.
+  policies:
+  - request-authority
+passing: |-
+  points:
+  - Keep it short.

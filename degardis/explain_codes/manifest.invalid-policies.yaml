@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: manifest
+field: policies
+expected: a non-empty list of policy ids
+failing: |-
+  policies: ['']
+passing: |-
+  policies: [request-authority]

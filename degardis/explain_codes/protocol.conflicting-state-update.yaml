@@ -1,0 +1,20 @@
+trigger: >-
+  One protocol hook names the same state-data field in both set and clear.
+impact: >-
+  The boundary gives two incompatible commands for one value, so its resulting
+  state is ambiguous. Keep only the operation the hook is meant to perform.
+failing: |-
+  hooks:
+    replace-note:
+      phase: after
+      from: [open]
+      command: Replace the retained note.
+      set: {note: {from: result.note}}
+      clear: [note]
+passing: |-
+  hooks:
+    replace-note:
+      phase: after
+      from: [open]
+      command: Replace the retained note.
+      set: {note: {from: result.note}}

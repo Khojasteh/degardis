@@ -1,0 +1,13 @@
+trigger: >-
+  One construct is bound at two scopes: the manifest and a workflow, or a
+  workflow and one of its steps.
+impact: >-
+  The narrower binding lowers nothing the wider one did not, so the second
+  copy states nothing new at the same boundary. Keep the binding at the
+  widest scope that is correct, and remove the other.
+failing: |-
+  # manifest binds request-authority, and the workflow binds it again
+  policies:
+  - request-authority
+passing: |-
+  # bound once, at the manifest

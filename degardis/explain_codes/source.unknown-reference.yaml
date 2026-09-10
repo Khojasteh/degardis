@@ -1,0 +1,21 @@
+trigger: >-
+  A manifest, workflow, or step names a construct id that no content pattern
+  selects.
+impact: >-
+  Nothing resolves the reference, so whatever it was meant to bind is bound
+  nowhere. Check the file stem and that a `content` pattern reaches its
+  directory.
+failing: |-
+  entrypoints:
+    perform:
+      target: perform-task
+  content:
+    workflows:
+    - workflows/deliver.yaml
+passing: |-
+  entrypoints:
+    perform:
+      target: deliver
+  content:
+    workflows:
+    - workflows/deliver.yaml

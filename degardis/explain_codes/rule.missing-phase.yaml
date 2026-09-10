@@ -1,0 +1,17 @@
+trigger: >-
+  A rule file declares no phase.
+impact: >-
+  The phase is where the check sits relative to the node it constrains, so
+  without it the compiler has nowhere to lower the rule. Declare before,
+  during, after, or before-return.
+failing: |-
+  summary: Keep the contract stable.
+  match:
+    subjects: [change.public-contract]
+  require: Preserve the existing public contract.
+passing: |-
+  summary: Keep the contract stable.
+  phase: before
+  match:
+    subjects: [change.public-contract]
+  require: Preserve the existing public contract.

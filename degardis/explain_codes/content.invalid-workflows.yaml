@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: content mapping
+field: workflows
+expected: a list of usable glob strings
+failing: |-
+  workflows: ['']
+passing: |-
+  workflows: [workflows/**/*]

@@ -1,0 +1,11 @@
+trigger: >-
+  A DExpr condition does not parse: prose where an expression belongs, an
+  unbalanced bracket, or an operator the grammar does not have.
+impact: >-
+  The condition cannot be evaluated, so the activation or branch it controls
+  has no machine meaning. DExpr compares declared values with `and`, `or`,
+  `not`, the six comparisons, `in`, and three functions.
+failing: |-
+  when: the request authorizes the change
+passing: |-
+  when: input.request.authorizes-change == true

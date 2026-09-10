@@ -1,0 +1,14 @@
+trigger: >-
+  A supplied value's type cannot stand where the destination expects one: a
+  different scalar, a value that may be absent where one must be present, or
+  a literal outside a declared enum.
+impact: >-
+  The destination would receive something it cannot use. Match the declared
+  type, or declare the destination `{optional: T}` where an absent value is
+  meant.
+failing: |-
+  with:
+    depth: {literal: deep}   # enum is [brief, detailed]
+passing: |-
+  with:
+    depth: {literal: detailed}

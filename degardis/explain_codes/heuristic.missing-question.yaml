@@ -1,0 +1,15 @@
+trigger: >-
+  A heuristic file declares no question.
+impact: >-
+  The question is what says which choice the advice is for, so without it a
+  decision naming the heuristic gives no basis for reading it. State the
+  choice the advice helps make.
+failing: |-
+  advice:
+    reversible:
+      prefer: Prefer the smaller option.
+passing: |-
+  question: Which valid option should be preferred?
+  advice:
+    reversible:
+      prefer: Prefer the smaller option.

@@ -1,0 +1,16 @@
+trigger: >-
+  The manifest declares no interface.
+impact: >-
+  The bundle carries no display metadata, so a host has no name or summary
+  to show. Declare interface with display_name, short_description, and
+  default_prompt.
+failing: |-
+  name: example-skill
+  version: 1.0.0
+passing: |-
+  name: example-skill
+  version: 1.0.0
+  interface:
+    display_name: Example Skill
+    short_description: Perform one validated task
+    default_prompt: Use {name} for this request.

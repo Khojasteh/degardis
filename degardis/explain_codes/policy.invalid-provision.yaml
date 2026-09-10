@@ -1,0 +1,20 @@
+trigger: >-
+  A provision declares a field the provision schema does not have, no phase
+  or an unknown one, no selector, or neither or both of `require` and
+  `prohibit`.
+impact: >-
+  The provision is not read, so the boundary it states is bound nowhere. A
+  provision declares phase, match, when, unless, exactly one of require and
+  prohibit, and verify.
+failing: |-
+  provisions:
+    establish:
+      phase: before
+      require: Establish the authority.
+passing: |-
+  provisions:
+    establish:
+      phase: before
+      match:
+        effects: [external.*]
+      require: Establish the authority.

@@ -1,0 +1,10 @@
+trigger: >-
+  A policy file declares a field the policy schema does not have.
+impact: >-
+  The field is read by nothing, so whatever it was meant to say has no
+  effect. Correct or remove the field named by the diagnostic.
+failing: |-
+  summary: Keep external effects within authority.
+  prefer: The smallest external effect.
+passing: |-
+  summary: Keep external effects within authority.

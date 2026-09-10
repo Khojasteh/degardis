@@ -1,6 +1,23 @@
-id: beta.run
-title: Run beta
-description: Run the beta fixture workflow.
+title: Run once
+description: Do the one thing this skill does, and return.
+inputs:
+  subject:
+    type: string
+outcomes:
+  done:
+    record: note
+entry: act
 steps:
-- action: do-beta
-  instruction: Perform the beta fixture action.
+  act:
+    action: Do the one thing this skill does.
+    uses: [input.subject]
+    produces:
+      note:
+        type: string
+    next: finish
+
+  finish:
+    return:
+      outcome: done
+      with:
+        text: {from: result.note}

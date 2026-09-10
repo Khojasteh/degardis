@@ -1,0 +1,10 @@
+trigger: >-
+  The generated SKILL.md links to a path the bundle would not write.
+impact: >-
+  An installed skill would offer its reader a reference that cannot be
+  opened. This checks generated output against the resolved source rather
+  than one authored field, so report it with the source that produced it.
+failing: |-
+  # SKILL.md links rules/outcome-first.md
+passing: |-
+  # the bundle writes rules/outcome-first.md

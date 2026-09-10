@@ -1,0 +1,14 @@
+trigger: >-
+  A policy file declares no summary.
+impact: >-
+  Nothing states the boundary the provisions share, so a reader of the
+  source cannot tell what authority they belong to. State the boundary in
+  one sentence.
+failing: |-
+  title: External action authority
+  provisions:
+    establish: ...
+passing: |-
+  summary: Keep external effects within established authority.
+  provisions:
+    establish: ...

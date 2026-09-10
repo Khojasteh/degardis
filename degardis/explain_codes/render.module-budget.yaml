@@ -1,0 +1,11 @@
+trigger: >-
+  A generated execution module is larger than the budget for a single loaded
+  module.
+impact: >-
+  A module is read whole before it is executed, so one larger than a single
+  read delivers arrives truncated and the agent executes what it did not
+  finish reading.
+failing: |-
+  A workflow whose header, repeated in every module, leaves no room to fit a node around it.
+passing: |-
+  A workflow whose description and bound guidance leave each module room for the nodes it carries.

@@ -1,0 +1,12 @@
+trigger: >-
+  A manifest binding list names one construct more than once.
+impact: >-
+  The second mention binds nothing the first did not, so it is either a typo
+  or a leftover. Name each construct once.
+failing: |-
+  policies:
+  - request-authority
+  - request-authority
+passing: |-
+  policies:
+  - request-authority

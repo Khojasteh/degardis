@@ -1,0 +1,12 @@
+trigger: >-
+  An execution transition names something that is not a node defined in the
+  generated execution graph.
+impact: >-
+  The renderer cannot produce either a valid local edge or a typed
+  cross-module load for that destination. This is a compiler failure rather
+  than a source mistake; report it with the source that produced the broken
+  transition.
+failing: |-
+  # a transition naming a node no workflow lowered
+passing: |-
+  # every transition targets a node in the generated execution graph

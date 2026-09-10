@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: heuristic
+field: question
+expected: a non-empty string
+failing: |-
+  question: ''
+passing: |-
+  question: Which valid option is preferred?

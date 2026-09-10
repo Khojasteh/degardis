@@ -1,0 +1,9 @@
+trigger: >-
+  The generated SKILL.md exceeds the compiler's root byte budget.
+impact: >-
+  The root is loaded every time the skill is selected, before any work
+  begins, so it is charged against every run whether or not it is read.
+failing: |-
+  Generated SKILL.md is larger than 8 KiB.
+passing: |-
+  Generated SKILL.md stays within the 8 KiB root budget.

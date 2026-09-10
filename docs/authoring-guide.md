@@ -1,32 +1,23 @@
-# Authoring skills
+# Authoring a skill
 
-This guide takes a skill author from an empty directory to a validated,
-inspectable bundle. It uses a minimal `my-skill` source for the first build and
-the repository's public
-[`structured-summary`](../examples/structured-summary/) example for optional
-features. For exact field constraints, see the [reference](reference.md).
+This guide shows how to make a small skill, then explains when to add the other
+parts of the source format. For every field and allowed value, use the
+[Manual](manual.md) as the lookup page, in the browser or from
+`degardis manual TOPIC`.
 
-## 1. Start with one outcome
+## Start with one outcome
 
-Give a skill one outcome it can complete without another installed skill.
-`structured-summary` owns turning supplied material into a summary for a
-defined reader and purpose. The material can concern any subject.
+Give a skill one outcome it can deliver on its own. The included
+[`structured-summary`](../examples/structured-summary/) example turns supplied
+material into a summary for a stated reader and purpose.
 
-Use a lowercase, hyphenated name of at most 64 characters. The directory name
-and manifest `name` must match. Write the description in ordinary request
-language so an agent can recognize when the skill applies:
+Choose a lowercase, hyphenated name. The skill directory and the manifest name
+must match. Write the description as the kind of request that should select the
+skill, not as instructions for running it.
 
-```yaml
-name: structured-summary
-description: Turn supplied material into a clear, audience-appropriate summary.
-```
+## Create the smallest useful source
 
-Keep execution instructions out of the description. Put procedures in
-workflows and reusable rules in entries.
-
-## 2. Create the source layout
-
-Start with two files:
+Start with a manifest and one workflow:
 
 ```text
 my-skill/
@@ -39,295 +30,230 @@ Create `my-skill/skill.yaml`:
 
 ```yaml
 name: my-skill
-title: My Skill
-format_version: 1
+format_version: 2
 version: 0.1.0
 description: Turn supplied notes into a concise action list.
-primary_workflow: my-skill.run
+entrypoints:
+  run:
+    target: run
+content:
+  workflows:
+  - workflows/*.yaml
 interface:
   display_name: My Skill
-  short_description: Turn notes into a concise action list
-  default_prompt: Use $my-skill to turn these notes into an action list.
+  short_description: Turn notes into an action list
+  default_prompt: Use {name} to turn these notes into an action list.
 ```
 
 Create `my-skill/workflows/run.yaml`:
 
 ```yaml
-id: my-skill.run
-description: Extract a practical action list from supplied notes.
+title: Turn notes into an action list
+description: Read the supplied notes and report the actions they commit someone to.
+inputs:
+  notes:
+    type: string
+outcomes:
+  listed: {}
+entry: read-notes
 steps:
-- action: inspect-notes
-  instruction: >-
-    Identify explicit tasks, owners, deadlines, and unresolved decisions in
-    the supplied notes.
-- action: write-actions
-  instruction: >-
-    Present the tasks as a concise checklist without inventing missing
-    details.
+  read-notes:
+    action: Identify every task, owner, deadline, and unresolved decision the notes state.
+    uses: [input.notes]
+    produces:
+      actions:
+        type: {list: string}
+    next: report
+  report:
+    action: Write the actions as a checklist, and invent no detail the notes do not state.
+    next: done
+  done:
+    return:
+      outcome: listed
 ```
 
-From the directory containing `my-skill/`, verify the source and build its
-first artifact:
+Validate and build from the directory that contains `my-skill/`:
 
 ```console
 degardis validate my-skill
 degardis build my-skill --output .artifacts
 ```
 
-Success creates `.artifacts/my-skill/SKILL.md`. Keep editing the YAML source,
-then validate and rebuild; generated files are replaceable output.
+Keep editing the YAML source. The folder under `.artifacts` is generated output,
+so replace it by rebuilding instead of editing it directly.
 
-The canonical example shows the optional directories:
+## Write a useful manifest
 
-```text
-structured-summary/
-  skill.yaml
-  entries/
-    audience.yaml
-    fidelity.yaml
-  workflows/
-    compose.yaml
-    inspect.yaml
-  profiles/
-    detailed.yaml
-    details/
-      detailed.md
-  scripts/
-    list_headings.py
-  assets/
-    icon.svg
-    template.md
-```
+The manifest answers four questions:
 
-Only `skill.yaml` and the primary workflow are universally required.
+- What is this skill called, and when should an agent use it?
+- Which workflow starts the skill?
+- Which source and support files belong in the bundle?
+- What should an agent host display?
 
-Add entries, supporting workflows, profiles, scripts, and assets only when
-they materially improve repeated execution.
+`format_version` identifies the source format. `version` identifies your own
+skill release. The `content` mapping selects each file that ships; files are not
+included merely because they are in a familiar directory.
 
-Degardis applies default content globs when `content` is omitted, so a
-minimal source can use `workflows/*.yaml` without declaring it explicitly.
+The three required `interface` fields have different jobs:
 
-The manifest must still provide the required `interface` metadata shown in the
-minimal manifest.
+- `display_name` is the name people see in a host.
+- `short_description` is the short host-facing summary.
+- `default_prompt` is a suggested way to invoke the skill. Use `{name}` exactly
+  as written so each host can render its own skill-name syntax.
 
-## 3. Write `skill.yaml`
+Keep the top-level `description` specific. It helps an agent host decide whether
+the skill applies to a request.
 
-The example manifest begins:
+## Build the workflow
 
-```yaml
-name: structured-summary
-title: Structured Summary
-format_version: 1
-version: 1.0.0
-license: MIT
-copyright: Copyright (c) 2026 Example Organization
-description: Turn supplied material into a clear, audience-appropriate summary.
-primary_workflow: structured-summary.compose
-entry_kinds:
-- principle
-- policy
-content:
-  entries:
-  - entries/*.yaml
-  workflows:
-  - workflows/*.yaml
-  scripts:
-  - scripts/*.py
-  assets:
-  - assets/*.md
-profiles:
-  directory: profiles
-  defaults: []
-interface:
-  display_name: Structured Summary
-  short_description: Turn supplied material into a clear summary
-  icon: assets/icon.svg
-  brand_color: "#5B4B8A"
-  default_prompt: Use $structured-summary to summarize this material.
-```
+A workflow states what it receives, how it proceeds, and what it returns. Every
+reachable path must finish at one of its declared outcomes.
 
-The version fields have separate meanings:
+Use the step form that matches the work:
 
-- `format_version` selects the Degardis source contract. The current compiler
-  supports format 1 and rejects unsupported formats before building.
-- `version` identifies the authored skill source.
+| Form | Use it when |
+| --- | --- |
+| `action` | The agent performs one action and may produce a value. |
+| `branch` | A declared expression chooses the route. |
+| `decide` | The agent chooses among named alternatives. |
+| `gate` | The agent records one of several stated conditions. |
+| `use` | Another workflow in this skill performs the next part. |
+| `pattern` | A reusable procedure performs the next part. |
+| `return` | The workflow finishes with an outcome. |
 
-Content globs are relative to the skill root and cannot escape it. Scripts and
-assets are copied byte-for-byte. Icons are rendered to agent-compatible PNG
-assets.
+Declare values where they enter or are produced, then refer to them by name. For
+example, an action can read `input.material`, produce `result.inspection`, and a
+later step can use that result. This makes the information each step needs clear
+to both the author and the agent.
 
-The three interface fields serve different readers:
+A value has to be available on every path that reaches a reader of it. When a
+branch can skip the action that produces one, give that value a `default` and it
+holds what you wrote wherever the branch skipped it, so a later step can read it
+either way.
 
-- `display_name` labels the skill in an agent interface.
-- `short_description` is a 25–64 character interface summary.
-- `default_prompt` is a suggested invocation and must contain the exact
-  `$structured-summary` skill token.
+Write every command as a complete instruction. A reader should understand what
+to do from the command where it appears, without inferring it from a title.
 
-The top-level `description` is different: agents use it to decide when the
-skill applies. Keep it specific even when the interface summary is shorter.
+Split a second workflow out with `use` when that part has a clear purpose of its
+own. Supply its declared inputs and handle every outcome it can return.
 
-## 4. Put reusable rules in entries
+## Add requirements in the right place
 
-An entry is a focused rule, not a procedure. For example:
+Choose a construct by the role it plays, not by the wording you happen to have.
+
+| If the content is | Use |
+| --- | --- |
+| A standing boundary with related requirements | A policy |
+| One requirement that applies only in a stated condition | A rule |
+| A requirement that opens, changes, and closes across steps | A protocol |
+| A reusable sequence of actions | A pattern |
+| A preference among valid choices | A heuristic |
+| Useful context | Guidance |
+| Optional help for a recurring situation | A profile |
+
+Policies, rules, and protocols are binding. Put a requirement in one of those
+or in the workflow itself. Heuristics, guidance, profiles, and reference pages
+can help an agent, but they must not be the only place a required action appears.
+
+### Policies and rules
+
+Policies and rules use selectors to say which workflow steps they affect. First,
+give the relevant steps clear `subjects` and, when useful, `effects` tags:
 
 ```yaml
-id: structured-summary.policy.fidelity
-title: Stay faithful to the material
-kind: policy
-priority: 20
-rule: Preserve the meaning and uncertainty of the supplied material without adding unsupported claims.
-require:
-- Distinguish explicit statements from reasonable but necessary interpretation.
-- Retain qualifications that materially affect a conclusion.
+write-summary:
+  subjects: [summary.write]
+  effects: [workspace.write]
 ```
 
-Entry IDs must be unique within the skill. `kind` may be `principle`, `policy`,
-`heuristic`, `pattern`, `constraint`, or `rule`; it defaults to `rule`.
-`entry_kinds` is an author-facing inventory and does not restrict those
-compiler-supported values. Use optional `require`, `allow`, `reject`,
-`conditions`, `exceptions`, and `examples` lists only when they clarify
-application.
-
-## 5. Express procedures as workflows
-
-The primary workflow is embedded in generated `SKILL.md`:
+Then select that work from a policy provision or rule:
 
 ```yaml
-id: structured-summary.compose
-title: Compose a structured summary
-description: Turn supplied material from any subject into a summary suited to its reader and purpose.
-steps:
-- action: establish-purpose
-  instruction: Identify the intended reader, purpose, desired length, and supplied material.
-- use: structured-summary.inspect
-- action: select-content
-  instruction: Choose the central ideas, supporting details, relationships, and qualifications needed for the purpose.
+summary: Keep every claim inside what the supplied material supports.
+phase: before
+match:
+  subjects: [summary.write]
+require: Establish support for each claim before writing it.
+verify:
+  confirm: Each claim is supported by the supplied material.
 ```
 
-A step may be a non-empty string or a mapping. A mapping can use:
+Use `before` when something must be established before a step. Use `during`
+when the requirement shapes how an action is performed. Use `after` for work
+that must follow a step, and `before-return` for work required before an outcome
+is returned. The manual lists the full selector and phase rules.
 
-- `action` or `id` as its label;
-- `instruction` as the work to perform;
-- `when` as an agent-evaluated condition; and
-- `use` to follow another workflow in the same skill.
+### Protocols
 
-A mapping must contain at least one of `use`, `action`, `id`, or `instruction`.
-`use` cannot be combined with `action` or `instruction`, and it cannot
-reference another skill. Supporting workflows are generated under
-`references/workflows/`.
+Use a protocol only when a requirement has state that crosses a boundary. For
+example, a skill can keep evidence after inspection and require it to be used
+before the workflow ends. A protocol declares the allowed states, its initial
+and accepting states, and the hooks that move between them.
 
-## 6. Add profiles only for material variants
+If the requirement is satisfied at one step, prefer a policy provision or rule.
 
-Profiles are build-time additions for audiences, formats, technologies, or
-environments that materially change execution:
+### Patterns, heuristics, and guidance
+
+A pattern is a reusable procedure selected by a `pattern` step. Give it typed
+inputs and a sequence of commands. Use it when the same method belongs in more
+than one workflow.
+
+A heuristic helps an agent choose between valid options. Attach one to a
+`decide` or `gate` step; do not use it as proof that a requirement was met.
+
+Guidance is concise context that may help at the skill, workflow, or step level.
+Keep required behavior out of guidance and its linked references.
+
+## Use profiles and support files deliberately
+
+Profiles are optional guidance for a situation such as a reader who needs a
+different level of detail. The core workflow must not require an agent to find
+or use one.
+
+References are supporting Markdown. Scripts are helpers an agent may run, and
+assets are files it may read, copy, or fill in. Select all of them explicitly in
+`content`. Review and test scripts with representative input before you ship a
+skill that uses them.
+
+Use `/` in every content pattern, even on Windows. Quote a pattern that starts
+with `!`; it excludes files selected earlier in the same list.
+
+## Write YAML safely
+
+Quote a value when you mean text that YAML might read as another kind of value:
 
 ```yaml
-name: detailed
-label: Detailed
-description: Apply when the reader needs context, relationships, and supporting detail.
-instructions:
-- Explain how the main ideas relate to one another instead of presenting an isolated list.
-- Include representative supporting detail while preserving the source's qualifications.
-details_files:
-- details/detailed.md
+summary: "no"
+version: "1.10"
+window: "1:30"
 ```
 
-The filename and `name` must match. A profile needs a label, a selection
-description, and at least one instruction. Use either inline `details` or
-`details_files`, not both. Detail files must remain inside the skill and must
-not contain a level-one heading.
+Use YAML comments for author-only information, such as explanations or design
+notes. They help the people maintaining the source but do not become part of
+the installed skill.
 
-Move shared guidance into the core workflow or entries. Delete a profile if it
-adds only generic advice.
+## Review before sharing
 
-## 7. Use scripts and assets deliberately
-
-Scripts provide necessary repeatable executable behavior. Assets are inputs
-that an agent reads, copies, or fills in.
-
-The example includes:
-
-- `scripts/list_headings.py`, a deterministic helper for exposing the structure
-  of Markdown material;
-- `assets/template.md`, a starting structure for the summary; and
-- `assets/icon.svg`, an interface icon source.
-
-Keep instructions in YAML rather than hiding them in an asset.
-
-Test every script with representative input and avoid unsafe or
-environment-specific behavior unless the skill explicitly owns that
-environment.
-
-Content globs must stay inside the skill directory. Icon paths are the
-exception: relative icon paths may resolve outside the skill so several skills
-can share a source image. The generated bundle remains self-contained because
-Degardis converts and copies the selected icons.
-
-## 8. Validate, build, and inspect
-
-Validate your source without writing output:
+Use this loop as you work:
 
 ```console
 degardis validate my-skill
-```
-
-Inspect metadata and profiles:
-
-```console
 degardis list my-skill
-```
-
-Build and inspect the artifact:
-
-```console
 degardis build my-skill --output .artifacts
 ```
 
-Inspect:
+Use `inspect` when an AI agent needs a compact report about the source or the
+generated skill. Read the built skill before sharing it: confirm that each
+instruction is clear at the point where it is needed and that required behavior
+is not hidden in optional material.
 
-- `SKILL.md` frontmatter, primary workflow, and links;
-- generated entries and supporting workflows;
-- any selected profile reference;
-- `agents/openai.yaml`;
-- copied scripts and assets; and
-- generated icon files.
+Before release, check that:
 
-Some items are emitted only when the source declares them. To inspect a
-profile and icons, build the canonical example's detailed variant:
-
-```console
-degardis build examples/structured-summary --profile detailed --output .artifacts
-```
-
-Run the bundled scripts with representative input as a separate check;
-`degardis validate` verifies source structure and generated links but does not
-execute scripts.
-
-Also exercise ZIP output when it is a distribution format:
-
-```console
-degardis build my-skill --zip --output .artifacts
-```
-
-## 9. Preserve the example boundary
-
-This repository contains exactly one public example so its documentation and
-compiler can evolve together.
-
-Private compiler fixtures may use multiple synthetic skills to test collection
-selection, conflicts, and multi-skill builds. They are test data and must not
-become tutorial dependencies.
-
-## Final checklist
-
-- The directory and manifest names match.
-- `format_version` is supported and `version` identifies the skill source.
-- The description states one recognizable outcome.
-- The primary workflow is complete and independently executable.
-- Entries are focused rules rather than workflow fragments.
-- Every profile materially changes execution.
-- Workflow composition stays inside the skill.
-- Scripts are necessary and tested; assets are genuine output inputs.
-- `degardis validate` succeeds.
-- The generated `SKILL.md` stays within the recommended 500-line maximum.
-- Folder and ZIP artifacts contain only expected files.
+- the manifest name and directory name match;
+- every path ends at a declared outcome;
+- every value is declared before a later step reads it;
+- each policy, rule, and protocol is used at the scope where it matters;
+- profiles and references are optional support, not required execution;
+- scripts are necessary, reviewed, and tested; and
+- the folder or ZIP contains only the files you expect.

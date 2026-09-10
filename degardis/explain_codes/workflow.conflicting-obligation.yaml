@@ -1,0 +1,31 @@
+trigger: >-
+  One command is both required and prohibited at the same step and the same
+  phase, by two provisions, two rules, or a provision and a rule.
+impact: >-
+  No reading of the node satisfies both, so the agent reaching it can only
+  block. This is the one conflict the compiler can see: it cannot read two
+  different sentences to decide whether they disagree, and two provisions
+  sharing a selector are ordinary policy rather than a conflict. Withdraw
+  one, narrow one selector, or move one to another phase.
+failing: |-
+  establish:
+    phase: before
+    match:
+      all: true
+    require: Report the effect.
+  withhold:
+    phase: before
+    match:
+      all: true
+    prohibit: Report the effect.
+passing: |-
+  establish:
+    phase: after
+    match:
+      all: true
+    require: Report the effect.
+  withhold:
+    phase: before
+    match:
+      all: true
+    prohibit: Report the effect.

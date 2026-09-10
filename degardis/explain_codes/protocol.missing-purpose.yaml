@@ -1,0 +1,15 @@
+trigger: >-
+  A protocol file declares no purpose.
+impact: >-
+  Nothing states what the lifecycle is for, so a reader of the source cannot
+  tell which obligation the states carry. State what stays open across
+  boundaries, and why.
+failing: |-
+  states: [clear, open]
+  initial: clear
+  accepting: [clear]
+passing: |-
+  purpose: Keep a decision basis available until its consumer uses it.
+  states: [clear, open]
+  initial: clear
+  accepting: [clear]

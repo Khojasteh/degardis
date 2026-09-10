@@ -1,0 +1,18 @@
+trigger: >-
+  A hook's `from` states cannot hold where it was lowered, or a frame closes
+  where no accepting state is possible.
+impact: >-
+  The check is computed over the lowered graph, so this says the lifecycle
+  cannot happen as written rather than that it might not. Widen `from` to
+  every prior state the hook can meet, or add the hook that reaches an
+  accepting state before the frame closes.
+failing: |-
+  hooks:
+    consume:
+      phase: before
+      from: [open]   # the state is still `clear` here
+passing: |-
+  hooks:
+    consume:
+      phase: before
+      from: [clear, open]

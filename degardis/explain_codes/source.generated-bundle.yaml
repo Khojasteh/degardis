@@ -1,0 +1,11 @@
+trigger: >-
+  A command was pointed at a directory holding SKILL.md and no skill.yaml,
+  which is what a build writes rather than what an author edits.
+impact: >-
+  The command stops instead of descending into the bundle, where it would
+  find whatever skill.yaml a skill ships as a template asset and report a
+  pass for a skill nobody named.
+failing: |-
+  degardis validate .artifacts/structured-summary
+passing: |-
+  degardis validate examples/structured-summary

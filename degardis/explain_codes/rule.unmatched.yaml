@@ -1,0 +1,13 @@
+trigger: >-
+  A bound rule's selector matches no reachable node at its phase.
+impact: >-
+  Nothing triggers the rule, so the relation it states is enforced nowhere.
+  Tag the step the rule is for, or narrow the selector to what the workflow
+  actually declares. This warns rather than fails; `--fail-on-warning`
+  refuses it.
+failing: |-
+  match:
+    outcomes: [never-returned]
+passing: |-
+  match:
+    outcomes: [completed]

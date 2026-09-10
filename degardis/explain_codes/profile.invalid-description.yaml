@@ -1,0 +1,13 @@
+trigger: >-
+  A profile's description is present but is not a non-empty string.
+impact: >-
+  The profile cannot be indexed. Supply a description containing
+  non-whitespace text, or omit description to show only the title.
+failing: |-
+  description: ''
+  points:
+  - Prefer project tooling.
+passing: |-
+  description: Apply where the project ships tooling of its own.
+  points:
+  - Prefer project tooling.

@@ -1,0 +1,8 @@
+wording: invalid-field
+owner: rule
+field: unless
+expected: a valid expression
+failing: |-
+  unless: maybe later
+passing: |-
+  unless: input.request == 'cancelled'

@@ -1,0 +1,15 @@
+trigger: >-
+  A step other than a `decide` or a `gate` names heuristics.
+impact: >-
+  A heuristic aids a choice among valid alternatives, so it has nowhere to
+  appear on a step that makes no choice. This is reported as a misplaced
+  heuristic rather than an unknown field, because the mistake is about what
+  a heuristic is for.
+failing: |-
+  inspect:
+    action: Inspect the material.
+    heuristics: [smallest-change]
+passing: |-
+  choose:
+    decide: Choose the route.
+    heuristics: [smallest-change]

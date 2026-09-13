@@ -1,0 +1,4 @@
+trigger: >-
+  A skill selects a principle file that no skill or task principles field names.
+impact: >-
+  The bundle carries a principle only through an owner link. Every selected principle must have the skill or the tasks that need it as owners; otherwise stop selecting it.

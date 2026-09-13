@@ -1,0 +1,4 @@
+wording: invalid-field
+owner: task
+field: knowledge
+expected: a non-empty list of bare knowledge ids

@@ -1,0 +1,4 @@
+wording: invalid-field
+owner: task
+field: guides
+expected: a non-empty list of bare guide ids

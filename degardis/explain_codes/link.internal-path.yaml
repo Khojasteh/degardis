@@ -1,0 +1,6 @@
+trigger: >-
+  An authored body links to a relative or absolute path: a Markdown link or image, a reference definition, or an HTML href or src whose destination is not an external address or a same-page anchor.
+impact: >-
+  The path is written from the source file and read from the generated page the text lands on, which sits in a different directory, so the link would open the wrong file or none. The compiler does not rewrite authored links; it writes the link for an inline reference from the page itself.
+resolution: >-
+  Replace the link with an inline reference such as [[guide:checklist]] or [[asset:template.docx]]. A link in a code sample is left alone, and an external link or an anchor on the same page is fine as written.

@@ -1,0 +1,6 @@
+trigger: >-
+  The manifest name is not 1-64 lowercase letters, digits, and single hyphens.
+impact: >-
+  The name is the bundle's directory and its selector, so nothing addresses the skill reliably until it is valid.
+resolution: >-
+  Respell the name in lowercase letters, digits, and single hyphens.

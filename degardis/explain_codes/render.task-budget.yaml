@@ -1,0 +1,4 @@
+trigger: >-
+  A generated task page is larger than the {{task_budget}} budget for one load.
+impact: >-
+  A host may return the page truncated, so the agent can work without knowing what it is missing. The finding names the largest contributors; reduce the generated load without dropping material the task requires.

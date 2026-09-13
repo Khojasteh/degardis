@@ -1,19 +1,40 @@
 name: alpha
-title: Alpha
-format_version: 1
+format_version: 2
 version: 1.0.0
-description: Alpha is a minimal self-contained fixture skill used to exercise generic
-  compiler behavior in tests.
-primary_workflow: alpha.run
+license: MIT
+copyright: Copyright (c) 2026 Alpha
+description: Carry every construct kind this format defines, in one source.
+purpose: >-
+  Exercise the compiler: three tasks, skill-wide principles, knowledge of every
+  kind, a requirement chain, facets in two categories that name guides of their
+  own, and guides alongside scripts and assets.
+principles:
+- evidence
+- expenditure
+- reporting
+- delegation
+- provenance
+tasks:
+- review
+- repair
+- document
 content:
-  entries:
-  - entries/*.yaml
-  workflows:
-  - workflows/*.yaml
-profiles:
-  directory: profiles
-  defaults: []
+  tasks:
+  - tasks/*.md
+  principles:
+  - principles/*.md
+  knowledge:
+  - knowledge/*.md
+  facets:
+  - facets/*.md
+  guides:
+  - guides/*.md
+  scripts:
+  - scripts/*.py
+  assets:
+  - assets/*.md
 interface:
   display_name: Alpha
-  short_description: Minimal fixture skill for compiler behavior tests
-  default_prompt: Use $alpha to run the fixture workflow.
+  short_description: Carry every construct kind
+  brand_color: '#123456'
+  default_prompt: Use alpha to exercise the compiler.

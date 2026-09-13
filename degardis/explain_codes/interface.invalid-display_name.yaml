@@ -1,0 +1,4 @@
+wording: invalid-field
+owner: interface
+field: display_name
+expected: a non-empty string

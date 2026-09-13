@@ -1,0 +1,4 @@
+trigger: >-
+  The manifest declares no tasks.
+impact: >-
+  The tasks field is the router's ordered task set. Declare every selected task id in the order that makes the intended task the first matching one.

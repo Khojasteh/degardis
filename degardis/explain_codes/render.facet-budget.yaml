@@ -1,0 +1,4 @@
+trigger: >-
+  A generated facet page is larger than the {{facet_budget}} budget for one facet load.
+impact: >-
+  An agent that decides this facet applies may receive it truncated. Reduce the load without dropping the situation-specific decisions the facet owns.

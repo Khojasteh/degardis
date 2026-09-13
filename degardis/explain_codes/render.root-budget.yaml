@@ -1,0 +1,4 @@
+trigger: >-
+  Generated SKILL.md is larger than the {{root_budget}} budget for the root load.
+impact: >-
+  The root is loaded every time the skill is selected, before any task begins. Keep it to orientation, routing, skill-level principle links, and other genuinely universal control information; move task-specific guidance onto the task page that needs it.

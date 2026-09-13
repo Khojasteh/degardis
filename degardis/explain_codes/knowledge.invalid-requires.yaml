@@ -1,0 +1,4 @@
+wording: invalid-field
+owner: knowledge unit
+field: requires
+expected: a non-empty list of bare knowledge ids

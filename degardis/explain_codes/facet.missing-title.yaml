@@ -1,0 +1,5 @@
+wording: missing-field
+owner: facet
+field: title
+why: >-
+  The title is the whole of what a reader has when deciding whether this facet applies, since the index never repeats a facet's contents.

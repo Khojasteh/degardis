@@ -1,0 +1,5 @@
+wording: missing-field
+owner: knowledge unit
+field: kind
+why: >-
+  Kind decides which subsection carries this unit on every task page that reaches it.

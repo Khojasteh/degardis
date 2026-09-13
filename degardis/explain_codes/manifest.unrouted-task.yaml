@@ -1,0 +1,4 @@
+trigger: >-
+  A selected task file is not named by the manifest's tasks field.
+impact: >-
+  Nothing routes to the task. Reconcile selection with routing: if the task belongs in the skill, name it in `tasks` at its intended first-match position; otherwise stop selecting it.

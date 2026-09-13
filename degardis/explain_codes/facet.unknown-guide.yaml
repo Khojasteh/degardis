@@ -1,0 +1,4 @@
+trigger: >-
+  A facet names a guide the manifest selects no file for.
+impact: >-
+  The facet page would point a reader who has decided this facet applies to a guide page that is not in the bundle. Make the guide id resolve to a source selected by `content.guides`.

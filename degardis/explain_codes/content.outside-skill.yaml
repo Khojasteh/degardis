@@ -1,0 +1,6 @@
+trigger: >-
+  A content glob, or a file it matches, resolves outside the skill directory.
+impact: >-
+  A skill must be self-contained to be installable. A source outside the directory would be missing from the bundle wherever it is built.
+resolution: >-
+  Move the material inside the skill directory, or narrow the pattern so it selects only paths within it.

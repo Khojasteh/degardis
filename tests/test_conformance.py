@@ -1,0 +1,615 @@
+"""The guarantees the format makes, one case each, with the failure it prevents.
+
+A guarantee that is not one of these cases is not yet a guarantee. Read them
+before changing what a bundle looks like: each states something an author or a
+running agent is entitled to rely on, and the docstring says what goes wrong
+when it stops holding.
+"""
+
+from __future__ import annotations
+
+import posixpath
+import re
+import shutil
+import tempfile
+import unittest
+from pathlib import Path
+
+from degardis import wording
+from degardis.build import build_skills
+from degardis.bundlepaths import (
+    AGENTS_DIRECTORY,
+    FACET_INDEX,
+    GUIDES_DIRECTORY,
+    PRINCIPLES_DIRECTORY,
+    REFERENCES_DIRECTORY,
+    REGISTER,
+    ROOT,
+    TASKS_DIRECTORY,
+    facet_path,
+    guide_path,
+    principle_path,
+    task_path,
+)
+from degardis.markdown import EXTERNAL_TARGET, link_destinations, unwrap_paragraphs
+from degardis.validate import compile_skill
+from degardis.model import Diagnostics
+from degardis.registry import load_skill_path
+from degardis.sources import TASK_FIELDS
+
+from tests.support import (
+    alpha,
+    compiled,
+    copy_skills,
+    edit_frontmatter,
+    edit_yaml,
+    field_of,
+    folder_names,
+    folder_text,
+    pages,
+    write_text,
+)
+from tests.support import task_path as source_task
+
+
+class BundleShapeTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        self.workspace = Path(self.directory.name)
+        self.root = copy_skills(self.workspace)
+        self.artifact = build_skills(alpha(self.root), self.workspace / "out")[0]
+
+    def test_the_root_routes_directly_to_a_task_page(self):
+        """No generated hop may sit between the root and the page it names.
+
+        An index every run passes through is a load that answers no question
+        the run had: the compiler already knows which knowledge belongs to which
+        task, so an agent that has to look it up is paying for the compiler's
+        indecision.
+        """
+        text = folder_text(self.artifact, ROOT)
+        for name in ("repair", "review", "document"):
+            with self.subTest(task=name):
+                self.assertIn(f"({task_path(name)})", text)
+
+    def test_the_bundle_holds_no_routing_layer_of_its_own(self):
+        """Every generated principle page must be reachable from the root."""
+        generated = {
+            name
+            for name in folder_names(self.artifact)
+            if name.endswith(".md")
+            and not name.startswith(("references/guides/", "assets/"))
+        }
+        expected = {ROOT, FACET_INDEX}
+        expected |= {task_path(name) for name in ("repair", "review", "document")}
+        expected |= {
+            principle_path(name)
+            for name in ("evidence", "expenditure", "reporting", "delegation", "provenance")
+        }
+        expected |= {facet_path(name) for name in ("python", "legacy", "urgent")}
+        self.assertEqual(expected, generated)
+
+    def test_a_task_page_carries_its_closure_rather_than_a_link_to_it(self):
+        """A source decomposition is for whoever maintains it, not a route.
+
+        If a page linked to its knowledge instead of carrying it, the agent
+        would follow the author's filing system at run time, and a unit it
+        failed to open would be a gap nothing reports.
+        """
+        page = folder_text(self.artifact, task_path("review"))
+        self.assertIn("The surface is what someone outside the change", page)
+        self.assertNotIn("knowledge/change-surface.md", page)
+
+    def test_every_generated_link_resolves_to_a_file_the_bundle_ships(self):
+        """A link an installed reader cannot open is a dead end at run time."""
+        shipped = folder_names(self.artifact)
+        for name in sorted(page for page in shipped if page.endswith(".md")):
+            text = folder_text(self.artifact, name)
+            here = Path(name).parent
+            for target in link_destinations(text):
+                if EXTERNAL_TARGET.match(target):
+                    continue
+                with self.subTest(page=name, target=target):
+                    resolved = posixpath.normpath(
+                        posixpath.join(here.as_posix(), target.partition("#")[0])
+                    )
+                    self.assertIn(resolved, shipped)
+
+    def test_a_rebuild_is_byte_identical(self):
+        """Nothing in the generated text may depend on the machine it ran on.
+
+        A bundle that differs between two builds of one source makes every
+        downstream comparison — a review, a digest, a cache — useless.
+        """
+        again = build_skills(alpha(self.root), self.workspace / "again")[0]
+        for name in sorted(folder_names(self.artifact)):
+            with self.subTest(name=name):
+                self.assertEqual(
+                    (self.artifact / name).read_bytes(), (again / name).read_bytes()
+                )
+
+    # Every location docs/artifact-format.md says a bundle contains. A build
+    # writes into these and nowhere else, so a file that table does not account
+    # for is a file a reader of that document does not know exists.
+    DOCUMENTED_LOCATIONS = (
+        f"{REFERENCES_DIRECTORY}/tasks/",
+        f"{REFERENCES_DIRECTORY}/principles/",
+        f"{REFERENCES_DIRECTORY}/facets/",
+        f"{REFERENCES_DIRECTORY}/guides/",
+        "scripts/",
+        "assets/",
+        f"{AGENTS_DIRECTORY}/",
+    )
+
+    def test_the_bundle_emits_no_machine_interface_beside_the_document(self):
+        """The report is the only machine interface.
+
+        A source map, a plan, a closure, or a coverage file written beside the
+        pages would become an interface the compiler has to keep, and an agent
+        would read it instead of the document the checks actually cover.
+
+        The comparison is closed rather than a list of suffixes to refuse: any
+        file a build starts writing fails this until the documented layout
+        accounts for it, whatever it is called.
+        """
+        unaccounted = sorted(
+            name
+            for name in folder_names(self.artifact)
+            if name != ROOT and not name.startswith(self.DOCUMENTED_LOCATIONS)
+        )
+        self.assertEqual(
+            [],
+            unaccounted,
+            "these bundle files sit outside every location "
+            "docs/artifact-format.md describes",
+        )
+
+
+class PlacementTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        self.root = copy_skills(Path(self.directory.name))
+        self.pages = pages(alpha(self.root))
+
+    def test_the_root_lists_every_skill_principle_once_before_task_routes(self):
+        """The skill declares principles once, so task pages cannot disagree.
+
+        The root states those links above its routing, so an agent reads
+        skill-wide guidance before choosing the page for a particular class of
+        work.
+        """
+        title = "Report the result, not the work that produced it"
+        root = self.pages[ROOT]
+        principle = f"[{title}]({principle_path('reporting')})"
+        self.assertIn(f"## {wording.PRINCIPLES_HEADING}", root)
+        self.assertIn(f"## {wording.TASKS_HEADING}", root)
+        self.assertEqual(1, root.count(principle))
+        self.assertLess(root.index(principle), root.index(f"({task_path('review')})"))
+        for name in ("repair", "review", "document"):
+            with self.subTest(task=name):
+                self.assertNotIn(title, self.pages[task_path(name)])
+
+    def test_a_skill_principle_is_stated_on_the_root_and_on_no_task_page(self):
+        """A principle every task needs is named once, at skill level, so no
+        task page can carry a copy that disagrees with the root's."""
+        for name in ("evidence", "expenditure", "reporting", "delegation", "provenance"):
+            title = field_of(alpha(self.root) / "principles" / f"{name}.md", "title")
+            with self.subTest(principle=name):
+                self.assertIn(title, self.pages[ROOT])
+                for task in ("repair", "review", "document"):
+                    self.assertNotIn(title, self.pages[task_path(task)])
+
+    def test_a_task_never_selects_a_facet(self):
+        """Which facets apply depends on the situation, which no task sees.
+
+        The schema is asserted as well as the pages, because a task page with
+        no facet link today and a `facets` field tomorrow is the same
+        failure arriving a release later.
+        """
+        self.assertNotIn("facets", TASK_FIELDS)
+        skill = load_skill_path(alpha(self.root))
+        result = compile_skill(skill, Diagnostics())
+        for item in result.plan.tasks:
+            with self.subTest(task=item.id):
+                self.assertNotIn(FACET_INDEX, self.pages[item.page])
+                self.assertNotIn("references/facets/", self.pages[item.page])
+
+    def test_the_facet_index_remains_a_situational_lookup(self):
+        """It survives because applicability is a question only the agent can
+        answer; the root's principle links do not make that selection."""
+        self.assertIn(FACET_INDEX, self.pages[ROOT])
+        self.assertLess(
+            self.pages[ROOT].index(f"## {wording.PRINCIPLES_HEADING}"),
+            self.pages[ROOT].index(f"## {wording.FACETS_HEADING}"),
+        )
+        index = self.pages[FACET_INDEX]
+        self.assertIn(wording.FACET_INDEX_LEAD, index)
+
+    def test_removing_every_facet_leaves_the_task_pages_unchanged(self):
+        """Facets are auxiliary. A facet missed, or matched wrongly, cannot
+        change what a task requires or whether the source is valid."""
+        before = {
+            name: text
+            for name, text in self.pages.items()
+            if name.startswith("references/tasks/")
+        }
+        shutil.rmtree(alpha(self.root) / "facets")
+        with edit_yaml(alpha(self.root) / "skill.yaml") as data:
+            data["content"].pop("facets")
+        after = pages(alpha(self.root))
+        for name, text in before.items():
+            with self.subTest(page=name):
+                self.assertEqual(text, after[name])
+
+    def test_a_skill_read_only_by_situation_still_carries_required_reading(self):
+        """The register holds reading whose applicability can change, and what
+        a facet selects is the only reading the situation can change under the
+        agent mid-run.
+
+        A valid skill reaches that shape with no principle and no task guide,
+        and that was the one shape whose root carried no Required reading
+        section at all — leaving the agent with the most revisable reading the
+        only one asked to keep no record of it.
+        """
+        shutil.rmtree(alpha(self.root) / "principles")
+        with edit_yaml(alpha(self.root) / "skill.yaml") as data:
+            data.pop("principles")
+            data["content"].pop("principles")
+        with edit_frontmatter(source_task(self.root, "alpha", "review")) as fields:
+            fields.pop("guides")
+        _, result, _ = compiled(alpha(self.root))
+        self.assertFalse(result.plan.root_principles)
+        self.assertFalse(
+            [item for item in result.plan.tasks if item.principles or item.task.guides]
+        )
+        self.assertTrue(result.plan.facets)
+        assert result.rendered is not None
+        root = result.rendered.page_texts()[ROOT]
+        self.assertIn(f"## {wording.REGISTER_HEADING}", root)
+
+    def test_the_register_holds_every_principle_and_guide_page_shipped(self):
+        """The register is the compiler's answer to an enumeration, so it has
+        to be the complete one.
+
+        The root asks the agent to track every page under `references/principles`
+        and `references/guides`. Left to list those directories itself, an agent
+        pays for two lookups and can still come back short, and nothing in the
+        bundle would show what it missed. A register that omits a shipped page
+        is that same silent gap with the compiler's name on it.
+        """
+        _, result, _ = compiled(alpha(self.root))
+        register = result.rendered.pages[REGISTER]
+        rows = {
+            line.split("|")[1].strip()
+            for line in register.split(f"## {wording.PRINCIPLES_HEADING}", 1)[1]
+            .split(f"## {wording.CONFORMANCE_HEADING}", 1)[0]
+            .splitlines()
+            if line.startswith("|") and not line.startswith(("|Id|", "|---|"))
+        }
+        shipped = {item.id for item in result.plan.principles}
+        shipped |= set(result.content.sources.guides)
+        self.assertNotEqual(set(), shipped)
+        self.assertEqual(shipped, rows)
+
+    def test_the_register_records_one_current_task_before_any_page_row(self):
+        """Routing is decided before any principle or guide can be named, and
+        only the current task governs, so the record is one resting row ahead
+        of the page rows rather than a history the agent must reconcile.
+        """
+        _, result, _ = compiled(alpha(self.root))
+        register = result.rendered.pages[REGISTER]
+        record = register.split(f"## {wording.TASK_RECORD_HEADING}\n", 1)[1]
+        record = record.split("\n## ", 1)[0]
+        rows = [line for line in record.splitlines() if line.startswith("|")]
+        columns = list(wording.TASK_RECORD_COLUMNS)
+        self.assertEqual(
+            [
+                "|" + "|".join(columns) + "|",
+                "|" + "|".join(["---"] * len(columns)) + "|",
+                "|" + "|".join([wording.REGISTER_EMPTY] * len(columns)) + "|",
+            ],
+            rows,
+        )
+        self.assertLess(
+            register.index(f"## {wording.TASK_RECORD_HEADING}\n"),
+            register.index(f"## {wording.PRINCIPLES_HEADING}\n"),
+        )
+
+    def test_listing_a_construct_in_the_register_does_not_make_it_wanted(self):
+        """A reference is how the bundle says one thing needs another, and the
+        register would generate one for everything.
+
+        Were a row a reference, every principle and guide would look wanted by
+        something, and the compiler could no longer tell an author that a file
+        no task, facet, or body names is a file nothing uses — the one warning
+        that finds material an edit somewhere else left behind.
+        """
+        spare = "---\ntitle: Spare\n---\n\n# Spare\n"
+        write_text(alpha(self.root) / "guides" / "spare.md", spare)
+        write_text(alpha(self.root) / "principles" / "spare.md", spare)
+        _, result, diagnostics = compiled(alpha(self.root))
+        self.assertIn("spare", result.rendered.pages[REGISTER])
+        reported = {record.code for record in diagnostics.records}
+        self.assertIn("content.unconsumed", reported)
+        self.assertIn("principle.unused", reported)
+
+    def test_the_register_emits_no_reference_of_its_own(self):
+        """The rows are identities, not links.
+
+        The file is copied into a record this bundle cannot address, where a
+        relative link resolves to nothing, and a link nobody can follow is
+        worse than the id it replaced.
+        """
+        _, result, _ = compiled(alpha(self.root))
+        self.assertEqual(
+            [], [link for link in result.rendered.links if link.page == REGISTER]
+        )
+        self.assertEqual(
+            [], link_destinations(result.rendered.pages[REGISTER])
+        )
+
+    def test_a_bundle_with_nothing_to_register_carries_neither_half(self):
+        """The pointer and the page it names appear together or not at all.
+
+        A root naming a register the build did not write sends the agent to a
+        file that is not there, and a register nothing points at is a page no
+        run opens.
+        """
+        shutil.rmtree(alpha(self.root) / "principles")
+        shutil.rmtree(alpha(self.root) / "guides")
+        with edit_yaml(alpha(self.root) / "skill.yaml") as data:
+            data.pop("principles")
+            data["content"].pop("principles")
+            data["content"].pop("guides")
+        for name in ("review", "repair", "document"):
+            with edit_frontmatter(source_task(self.root, "alpha", name)) as fields:
+                fields.pop("guides", None)
+        for facet in sorted((alpha(self.root) / "facets").glob("*.md")):
+            with edit_frontmatter(facet) as fields:
+                fields.pop("guides", None)
+        rebuilt = pages(alpha(self.root))
+        self.assertNotIn(REGISTER, rebuilt)
+        self.assertNotIn(f"## {wording.REGISTER_HEADING}", rebuilt[ROOT])
+        self.assertNotIn(REGISTER, rebuilt[ROOT])
+        tasks = {
+            name: code
+            for name, code in self.read_codes(rebuilt).items()
+            if name.startswith(TASKS_DIRECTORY + "/")
+        }
+        self.assertNotEqual({}, tasks)
+        self.assertEqual({None}, set(tasks.values()))
+
+    @staticmethod
+    def read_codes(rendered: dict[str, str]) -> dict[str, str | None]:
+        """The code each register-tracked page ends with, or None if its last
+        line is anything else or is not set apart from what precedes it."""
+        code_line = re.compile(
+            re.escape(wording.READ_CODE_LINE).replace(
+                re.escape("{code}"), "(?P<code>[^`]+)"
+            )
+        )
+        found: dict[str, str | None] = {}
+        for name, text in rendered.items():
+            if name.startswith(
+                (TASKS_DIRECTORY + "/", PRINCIPLES_DIRECTORY + "/", GUIDES_DIRECTORY + "/")
+            ):
+                lines = [line for line in text.splitlines() if line.strip()]
+                match = code_line.fullmatch(lines[-1])
+                found[name] = match["code"] if match and lines[-2] == "---" else None
+        return found
+
+    def test_a_tracked_page_ends_with_a_read_code_no_other_file_shows(self):
+        """A register row closes with a code the agent can only get by opening
+        that page.
+
+        Printed last, a whole read reaches it, and a thematic break above it
+        keeps the compiler's line from reading as the author's closing
+        sentence. Printed anywhere else — the root, the register, another
+        tracked page — the row could be closed without the page ever being
+        opened, which is the one thing the code exists to rule out. Task pages
+        are tracked too, so the task row names a task only once its page has
+        been read.
+        """
+        rendered = pages(alpha(self.root))
+        codes = self.read_codes(rendered)
+        self.assertNotEqual({}, codes)
+        self.assertNotIn(None, codes.values())
+        self.assertEqual(len(codes), len(set(codes.values())))
+        for name, text in rendered.items():
+            for page, code in codes.items():
+                if page != name:
+                    with self.subTest(code_of=page, found_in=name):
+                        self.assertNotIn(code, text)
+
+    def test_a_read_code_changes_with_its_page_and_only_its_page(self):
+        """A register filled before an edit then shows exactly which rows the
+        edit made stale, and no row the edit left alone."""
+        before = self.read_codes(pages(alpha(self.root)))
+        guide = alpha(self.root) / "guides" / "checklist.md"
+        write_text(guide, guide.read_text(encoding="utf-8") + "\nOne more line.\n")
+        after = self.read_codes(pages(alpha(self.root)))
+        changed = {name for name in before if before[name] != after[name]}
+        self.assertEqual({guide_path("checklist")}, changed)
+
+
+class AuthoredMaterialTests(unittest.TestCase):
+    """Ordinary compilation never rewrites what an author wrote."""
+
+    def setUp(self) -> None:
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        self.root = copy_skills(Path(self.directory.name))
+
+    def test_every_sentence_of_a_unit_reaches_the_page_that_carries_it(self):
+        """Silently dropping part of a unit would ship a page whose knowledge
+        nobody reviewed, and nothing in the bundle would show what was lost."""
+        _, result, _ = compiled(alpha(self.root))
+        rendered = result.rendered.pages
+        for item in result.plan.tasks:
+            page = rendered[item.page]
+            for unit in item.closure:
+                for line in unit.body.splitlines():
+                    if not line.strip() or line.lstrip().startswith(("#", "|")):
+                        continue
+                    with self.subTest(task=item.id, unit=unit.key):
+                        self.assertIn(line.strip(), page)
+
+    def test_the_column_an_author_wrapped_to_does_not_reach_the_page(self):
+        """A wrap is the width of the editor it was written in, and the page is
+        read somewhere else. Carrying it breaks lines across the middle of a
+        window that is not that wide, and shows a reflowed paragraph in a diff as
+        every line changed. Folding is reformatting, so what is guaranteed is
+        that the author's material still arrives whole: every folded line of
+        every unit reaches the page that carries it."""
+        _, result, _ = compiled(alpha(self.root))
+        folded_any = False
+        for item in result.plan.tasks:
+            page = result.rendered.pages[item.page]
+            for unit in item.closure:
+                folded = unwrap_paragraphs(unit.body)
+                folded_any = folded_any or folded != unit.body
+                for line in folded.splitlines():
+                    if not line.strip() or line.lstrip().startswith(("#", "|")):
+                        continue
+                    with self.subTest(task=item.id, unit=unit.key):
+                        self.assertIn(line.strip(), page)
+        self.assertTrue(folded_any, "no fixture unit is wrapped, so nothing was folded")
+
+    def test_a_unit_two_tasks_need_reaches_both_pages_in_full(self):
+        """Each page is complete for its own work; neither is a partial copy."""
+        page_pages = pages(alpha(self.root))
+        marker = "Edited lines are not the surface."
+        self.assertIn(marker, page_pages[task_path("review")])
+        self.assertIn(marker, page_pages[task_path("document")])
+
+    def test_a_principle_reaches_the_page_exactly_as_its_own_source_states_it(self):
+        """A principle is authored in the skill that uses it, so the compiler
+        supplies none and rewords none. A page carrying text nobody in the
+        source wrote is text nobody in the source can correct."""
+        _, result, _ = compiled(alpha(self.root))
+        body = result.content.sources.principles["provenance"].body
+        page = pages(alpha(self.root))[principle_path("provenance")]
+        for line in body.splitlines():
+            if line.strip() and not line.lstrip().startswith("#"):
+                with self.subTest(line=line[:40]):
+                    self.assertIn(line.strip(), page)
+
+    def test_a_guide_title_names_its_link_and_page(self):
+        """A conditional page needs one author-controlled name at both ends.
+
+        Inferring a title from a body heading would make a body without one
+        appear anonymous in its task, while writing the title only on the task
+        would leave the page the link opens unidentified.
+        """
+        title = field_of(alpha(self.root) / "guides" / "checklist.md", "title")
+        task = pages(alpha(self.root))[task_path("review")]
+        _, result, _ = compiled(alpha(self.root))
+        guide = result.rendered.pages["references/guides/checklist.md"]
+        self.assertIn(f"[{title}](../guides/checklist.md)", task)
+        self.assertEqual(f"# {title}", guide.splitlines()[0])
+
+
+class IdentityTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        self.root = copy_skills(Path(self.directory.name))
+
+    def test_no_source_file_declares_an_id(self):
+        """Two spellings of one name can disagree, and nothing would say which
+        the compiler used."""
+        for path in sorted(alpha(self.root).rglob("*.md")):
+            if path.parts[-2] == "assets":
+                continue
+            with self.subTest(path=path.name):
+                self.assertNotIn("\nid:", path.read_text(encoding="utf-8"))
+
+    def test_renaming_a_file_renames_the_construct(self):
+        """The stem is the identity, so a move keeps it and a rename changes it."""
+        source = alpha(self.root) / "knowledge" / "change-surface.md"
+        source.rename(source.with_name("surface.md"))
+        for name in ("review", "document"):
+            with edit_frontmatter(source_task(self.root, "alpha", name)) as fields:
+                fields["knowledge"] = [
+                    reference.replace("change-surface", "surface")
+                    for reference in fields.get("knowledge", [])
+                ]
+        with edit_frontmatter(
+            alpha(self.root) / "knowledge" / "order-findings.md"
+        ) as fields:
+            fields["requires"] = ["surface"]
+        _, result, diagnostics = compiled(alpha(self.root))
+        self.assertEqual([], diagnostics.errors)
+        self.assertIn("surface", result.content.sources.knowledge)
+
+    def test_a_generated_page_path_follows_from_the_id_alone(self):
+        """A path a reader cannot predict is a link the compiler has to keep in
+        step with three other places."""
+        self.assertEqual("references/tasks/review.md", task_path("review"))
+        self.assertEqual("references/facets/python.md", facet_path("python"))
+
+
+class DiagnosticsTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        self.root = copy_skills(Path(self.directory.name))
+
+    def test_the_checks_collect_rather_than_stopping_at_the_first_problem(self):
+        """An author repairing one finding per run pays a full cycle for each."""
+        with edit_frontmatter(source_task(self.root, "alpha", "review")) as fields:
+            fields["knowledge"] = ["nowhere"]
+        with edit_yaml(alpha(self.root) / "skill.yaml") as fields:
+            fields["principles"].append("clear-reporting")
+        with edit_frontmatter(source_task(self.root, "alpha", "repair")) as fields:
+            fields["knowledge"] = ["also-nowhere"]
+        _, _, diagnostics = compiled(alpha(self.root))
+        found = [record.code for record in diagnostics.select("error")]
+        self.assertEqual(
+            [
+                "manifest.unknown-principle",
+                "task.unknown-knowledge",
+                "task.unknown-knowledge",
+            ],
+            found,
+        )
+
+    def test_two_findings_of_one_code_are_kept_apart(self):
+        """A message naming only the file makes two findings identical, and one
+        of them is dropped before the author ever sees it.
+
+        Two principles the manifest names and no file answers are two repairs,
+        so the collector owes the author both, told apart by what each refused.
+        """
+        with edit_yaml(alpha(self.root) / "skill.yaml") as fields:
+            fields["principles"] += ["clear-reporting", "bounded-delegation"]
+        _, _, diagnostics = compiled(alpha(self.root))
+        messages = sorted(
+            record.message
+            for record in diagnostics.records
+            if record.code == "manifest.unknown-principle"
+        )
+        self.assertEqual(2, len(messages))
+        self.assertIn("principles/bounded-delegation.md", messages[0])
+        self.assertIn("principles/clear-reporting.md", messages[1])
+
+    def test_every_finding_carries_the_check_that_found_it(self):
+        """Without the code a reader has the message and nothing to look up."""
+        with edit_frontmatter(source_task(self.root, "alpha", "review")) as fields:
+            fields["knowledge"] = ["nowhere"]
+        _, _, diagnostics = compiled(alpha(self.root))
+        # A source reporting nothing at all would pass the comparison below
+        # while establishing nothing, so the edit above has to have produced a
+        # finding for it to read.
+        self.assertNotEqual([], diagnostics.records)
+        self.assertEqual(
+            [],
+            [record.message for record in diagnostics.records if not record.code],
+            "these findings name no check for a reader to look up",
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()

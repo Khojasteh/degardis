@@ -1,0 +1,6 @@
+trigger: >-
+  The interface default_prompt puts host-specific invocation syntax, such as $ or /, immediately before the skill's manifest name.
+impact: >-
+  The source prompt is tied to one host, so another generated target cannot supply its own invocation syntax.
+resolution: >-
+  Remove the prefix and leave the exact manifest name. Degardis adds the invocation prefix required by each generated target.

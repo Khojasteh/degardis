@@ -1,0 +1,6 @@
+trigger: >-
+  The manifest interface has no default_prompt.
+impact: >-
+  The interface can offer no suggested invocation, so a reader has to guess how to start the skill.
+resolution: >-
+  Add a default_prompt that contains the skill's exact bare manifest name.

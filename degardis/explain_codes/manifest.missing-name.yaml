@@ -1,0 +1,4 @@
+trigger: >-
+  The manifest declares no name.
+impact: >-
+  Discovery identifies a skill by its manifest name before any other check runs, so without one nothing can be reported against it. Declare the name.

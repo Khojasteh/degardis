@@ -1,0 +1,7 @@
+trigger: >-
+  A manifest, or the frontmatter of a Markdown source, does not parse as YAML, parses as something other than a mapping of fields, or uses a non-string field name.
+impact: >-
+  None of the file's fields reach the bundle, so the construct is not compiled at all. The message names the line and what YAML did with the text, which is usually an unquoted value holding a character YAML reserves.
+resolution: >-
+  Correct the YAML at the reported line, quoting any value whose punctuation
+  YAML would otherwise read as structure.

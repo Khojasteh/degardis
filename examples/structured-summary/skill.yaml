@@ -1,29 +1,41 @@
 name: structured-summary
-title: Structured Summary
-format_version: 1
-version: 1.0.0
+format_version: 2
+version: 2.0.0
 license: MIT
 copyright: Copyright (c) 2026 Example Organization
 description: Turn supplied material into a clear, audience-appropriate summary.
-primary_workflow: structured-summary.compose
-entry_kinds:
-- principle
-- policy
+purpose: >-
+  Work from material someone has handed you and give them back something shorter
+  that they can act on: a summary, a decision brief, or an account of what the
+  material does not settle. The material is the only authority; nothing here
+  adds to it.
+principles:
+- evidence
+- provenance
+- reporting
+- requester-questions
+- enumeration
+tasks:
+- summarize
+- brief
+- report-gaps
 content:
-  entries:
-  - entries/*.yaml
-  workflows:
-  - workflows/*.yaml
+  tasks:
+  - tasks/*.md
+  principles:
+  - principles/*.md
+  knowledge:
+  - knowledge/*.md
+  facets:
+  - facets/*.md
+  guides:
+  - guides/*.md
+  - facets/guides/*.md
   scripts:
   - scripts/*.py
-  assets:
-  - assets/*.md
-profiles:
-  directory: profiles
-  defaults: []
 interface:
   display_name: Structured Summary
-  short_description: Turn supplied material into a clear summary
+  short_description: Turn material into a clear summary
   icon: assets/icon.svg
-  brand_color: "#5B4B8A"
-  default_prompt: Use $structured-summary to summarize this material.
+  brand_color: '#5B4B8A'
+  default_prompt: Use {name} to summarize this material.

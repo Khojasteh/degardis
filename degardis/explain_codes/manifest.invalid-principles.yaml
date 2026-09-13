@@ -1,0 +1,4 @@
+wording: invalid-field
+owner: manifest
+field: principles
+expected: a non-empty list of bare principle ids, in lowercase letters, digits, and single hyphens, with no repeats

@@ -1,0 +1,4 @@
+wording: invalid-field
+owner: facet
+field: guides
+expected: a non-empty list of bare guide ids

@@ -1,5 +1,0 @@
-id: beta.rule-two
-kind: rule
-title: Rule Two
-priority: 100
-rule: This is a second fixture rule used only to exercise generic entry rendering.

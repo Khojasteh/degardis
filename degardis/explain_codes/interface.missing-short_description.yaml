@@ -1,0 +1,4 @@
+trigger: >-
+  The manifest interface has no short_description.
+impact: >-
+  The interface has no one-line summary to present beside the skill's name.

@@ -1,0 +1,5 @@
+wording: missing-field
+owner: task
+field: title
+why: >-
+  The title names this task in the generated router and heads its own page, so without one a reader choosing a task has only the recognition cues.

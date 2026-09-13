@@ -1,0 +1,4 @@
+trigger: >-
+  The manifest declares no content.
+impact: >-
+  Nothing selects the source files, so no construct is read and there is nothing to compile. Declare content, selecting at least the tasks.

@@ -1,0 +1,64 @@
+# The manual's topic catalog. A topic's name is the file beside this one, the
+# name `degardis manual` takes, and the name another topic cross-references.
+# Every entry here is therefore a topic the installed CLI can print, and prose
+# that no such name reaches belongs in the document template instead.
+# The order is the document's reading order: each topic whose file opens with a
+# level-two heading starts a section, and the topics after it belong to it.
+# `{{format_version}}` in any manual file resolves to the format version the
+# compiler accepts.
+
+topics:
+  - name: overview
+    summary: Understand the source constructs and how the compiler places them.
+    related: [layout, tasks, knowledge, principles, guides]
+  - name: layout
+    summary: Arrange a source folder and understand its bundle layout.
+    related: [markdown, manifest, build]
+  - name: markdown
+    summary: Write construct Markdown and inline references.
+    related: [identifiers, yaml, tasks, knowledge]
+  - name: identifiers
+    summary: Choose construct ids and write references.
+    related: [markdown, knowledge, relationships]
+  - name: manifest
+    summary: Declare skill identity, tasks, content, and interface.
+    related: [layout, interface, yaml, tasks, guides, scripts, assets]
+  - name: interface
+    summary: Define how a host displays and invokes the skill.
+    related: [manifest]
+  - name: yaml
+    summary: Use the YAML subset accepted in manifests and frontmatter.
+    related: [manifest, markdown]
+  - name: tasks
+    summary: Define requested work, routing cues, and task pages.
+    related: [knowledge, relationships, principles, guides]
+  - name: knowledge
+    summary: Write and classify reusable knowledge units.
+    related: [tasks, relationships, identifiers]
+  - name: relationships
+    summary: Declare task knowledge and transitive requirements.
+    related: [knowledge, tasks, inspection]
+  - name: principles
+    summary: Write shared guidance and control where it appears.
+    related: [tasks, inspection]
+  - name: facets
+    summary: Add guidance selected by the situation.
+    related: [tasks, layout, guides]
+  - name: guides
+    summary: Add task or facet detail loaded as a separate page.
+    related: [manifest, tasks, facets, principles, build]
+  - name: scripts
+    summary: Ship executable helpers.
+    related: [manifest, markdown, assets]
+  - name: assets
+    summary: Ship supporting files unchanged.
+    related: [manifest, markdown, scripts]
+  - name: validation
+    summary: Validate a source and interpret check codes.
+    related: [inspection, build, identifiers]
+  - name: inspection
+    summary: Inspect placement, reports, pages, and quality measures.
+    related: [validation, relationships, principles, build]
+  - name: build
+    summary: Build reproducible bundles within page budgets.
+    related: [validation, layout, guides]

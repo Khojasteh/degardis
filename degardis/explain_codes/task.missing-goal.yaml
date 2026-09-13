@@ -1,0 +1,5 @@
+wording: missing-field
+owner: task
+field: goal
+why: >-
+  The goal is what tells the agent when this task is finished, and it is the only statement of the outcome the work is aimed at.

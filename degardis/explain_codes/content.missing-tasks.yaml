@@ -1,0 +1,4 @@
+trigger: >-
+  The manifest's content selects no tasks.
+impact: >-
+  A task is the only thing a request is routed to, so a skill with none has nothing for SKILL.md to route to and ships no page an agent can work from. Select at least one task pattern.

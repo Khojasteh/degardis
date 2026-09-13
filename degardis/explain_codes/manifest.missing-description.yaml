@@ -1,0 +1,4 @@
+trigger: >-
+  The manifest declares no description.
+impact: >-
+  The description is what a host reads to decide whether to select this skill among many. It is written for that reader; `purpose` is the separate sentence the agent reads once the skill has been selected.

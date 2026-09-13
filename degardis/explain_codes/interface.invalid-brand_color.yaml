@@ -1,0 +1,4 @@
+wording: invalid-field
+owner: interface
+field: brand_color
+expected: a six-digit hexadecimal colour

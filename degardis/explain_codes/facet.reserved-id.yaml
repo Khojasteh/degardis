@@ -1,0 +1,4 @@
+trigger: >-
+  A facet's file stem is one the generated facet index already occupies.
+impact: >-
+  The index is written to facets/index.md, so a facet with that id would be written over the page that lists the facets. A reader sent to choose between facets would find one of them instead. Rename the file.

@@ -1,0 +1,5 @@
+trigger: >-
+  Every task names a principle, but the skill does not name it.
+impact: >-
+  The agent reaches every task only after routing, so guidance every task needs
+  is loaded later than necessary. Name the principle at skill level instead.

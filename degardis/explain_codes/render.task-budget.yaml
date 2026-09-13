@@ -1,0 +1,4 @@
+trigger: >-
+  A generated task page is larger than the {{task_budget}} budget for one load.
+impact: >-
+  A host may return the page truncated, and a truncated task page is one the agent works from without knowing what it is missing. Nothing is dropped to make it fit: the finding names the largest contributors so its author decides. Remove knowledge this task does not need, shorten what it does, split a task that is really two, or move material to a separate guide load.

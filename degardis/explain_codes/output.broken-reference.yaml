@@ -1,0 +1,7 @@
+trigger: >-
+  A generated page links to a path the bundle would not write.
+impact: >-
+  An installed skill would offer its reader a link that cannot be opened. This checks the generated output against what the build actually ships, so it catches a guide the manifest stopped selecting and a link in an authored body whose target moved.
+resolution: >-
+  Select the target under content so the bundle ships it, or point the link at
+  a path the bundle already writes.

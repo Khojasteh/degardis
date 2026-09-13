@@ -1,0 +1,12 @@
+trigger: >-
+  An SVG icon carries a script element, a foreignObject element, an external
+  href, or an external CSS url().
+impact: >-
+  What ships is the PNG the compiler renders from this file. A script or
+  foreignObject element describes behaviour a rasterizer never runs, so what a
+  browser shows and what the bundle carries would differ, and an external
+  reference would make the rendered icon depend on a file or a network no build
+  can promise.
+resolution: >-
+  Inline what the image needs, as markup or a data: URI, and keep every
+  reference to an internal # fragment.

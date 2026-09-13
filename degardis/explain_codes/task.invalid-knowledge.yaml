@@ -1,0 +1,4 @@
+wording: invalid-field
+owner: task
+field: knowledge
+expected: a non-empty list of KIND:ID references

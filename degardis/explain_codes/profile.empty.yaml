@@ -1,0 +1,4 @@
+wording: empty-body
+owner: profile
+why: >-
+  A reader who decides this profile applies then loads it, so an empty profile costs them a load and gives them nothing.

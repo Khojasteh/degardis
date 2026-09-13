@@ -1,0 +1,4 @@
+trigger: >-
+  A task names a knowledge unit the manifest selects no file for.
+impact: >-
+  The reference resolves to nothing, so that knowledge is left off the task's page and the page is incomplete for the work it describes. Either the id or the kind is wrong, or the manifest's content does not select that directory: a reference is KIND:ID, where the kind is singular and the content key is plural.

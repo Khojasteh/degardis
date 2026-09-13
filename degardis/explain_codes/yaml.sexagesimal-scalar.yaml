@@ -1,0 +1,8 @@
+trigger: >-
+  An unquoted value is digits separated by colons, such as a clock time or a
+  duration.
+impact: >-
+  YAML reads it as a base-60 number, so 10:30 loads as 630 and the text is
+  gone.
+resolution: >-
+  Quote the value, so YAML keeps it as text rather than a base-60 number.

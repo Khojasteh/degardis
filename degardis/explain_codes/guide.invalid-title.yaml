@@ -1,0 +1,4 @@
+wording: invalid-field
+owner: guide
+field: title
+expected: a non-empty string

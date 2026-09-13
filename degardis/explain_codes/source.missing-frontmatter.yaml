@@ -1,0 +1,7 @@
+trigger: >-
+  A Markdown source does not open with a --- frontmatter block, or never closes the one it opened.
+impact: >-
+  Frontmatter is where a source states its fields, and the compiler reads no fields from anywhere else. Every construct requires at least a title, so the whole file is unreadable rather than partly readable. The block must start on the first line.
+resolution: >-
+  Open the file with a --- line, state the construct's fields below it, and
+  close the block with a second ---.

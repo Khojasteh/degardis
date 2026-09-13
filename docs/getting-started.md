@@ -1,165 +1,91 @@
 # Getting started
 
-This tutorial validates, builds, and installs the repository's canonical
-`structured-summary` example. You need Python 3.10 or later, a local checkout,
-and a terminal at the repository root.
+Install Degardis, build the worked example, then start a skill of your own. The
+[Manual](manual.md) is the reference for every construct, field, and rule —
+`degardis manual TOPIC` prints the same topics at a terminal. This page is the
+first run.
 
-## Install Degardis
+You need Python 3.10 or newer.
+
+## Install
 
 ```console
 python -m pip install degardis
 degardis --help
 ```
 
-This installs Degardis from PyPI. Contributors can instead install the current
-checkout with `python -m pip install -e .`. If your shell cannot find
-the `degardis` command after installation, use `python -m degardis` in its
-place in the commands below.
+If your shell cannot find `degardis`, use `python -m degardis` in the commands
+below. To work on a checkout of the repository itself, install it with
+`python -m pip install -e .`.
 
-## Validate the source
+## Build the example
+
+From a clone of the repository:
 
 ```console
 degardis validate examples/structured-summary
-```
-
-Expected result:
-
-```text
-Validation
-
-[PASS] Structured Summary (structured-summary)
-
-Summary: 1 passed, 0 failed, 1 total.
-```
-
-Validation reads the source without creating an artifact. The manifest at
-[`examples/structured-summary/skill.yaml`](../examples/structured-summary/skill.yaml)
-declares source format 1 and skill version 1.0.0.
-
-## Inspect available profiles
-
-```console
-degardis list examples/structured-summary
-```
-
-The output identifies the skill, its version, optional `detailed` profile,
-bundled scripts, legal metadata, and absolute source path. Look for these
-lines; the source path differs by machine:
-
-```text
-Profiles    detailed
-Scripts     Yes
-```
-
-## Build the bundle
-
-```console
 degardis build examples/structured-summary --output .artifacts
 ```
 
-Expected result, with a machine-specific artifact path:
+`validate` reads the source, reports every structural problem it finds in one
+run, and writes nothing. `build` writes `.artifacts/structured-summary/`; add
+`--zip` for an archive a host can accept as an upload.
 
-```text
-Build
+Open the result. `SKILL.md` routes a request to a task, and the page under
+`tasks/` carries that work's whole knowledge closure. Principles and guides stay
+as separately loaded pages when the root or task links to them. Treat the folder
+as output: change the source and build again rather than editing inside it.
+[Bundles](artifact-format.md) describes what a bundle contains and what a rebuild
+replaces.
 
-[BUILT] Structured Summary (structured-summary)
-  Artifact    <repository-path>/.artifacts/structured-summary
-
-Summary: 1 skill built as folder.
-```
-
-Inspect the generated folder:
-
-```text
-.artifacts/structured-summary/
-  SKILL.md
-  agents/
-    openai.yaml
-  references/
-    entries/
-      audience.md
-      fidelity.md
-    workflows/
-      inspect.md
-  scripts/
-    list_headings.py
-  assets/
-    icon-large.png
-    icon-small.png
-    template.md
-```
-
-Sources remain authoritative; do not edit the generated folder.
-
-## Include the optional profile
+If a report names a check code you do not recognize, ask for it:
 
 ```console
-degardis build examples/structured-summary --profile detailed --output .artifacts
+degardis explain manifest.unknown-principle
 ```
 
-The rebuilt artifact includes `references/profiles/detailed.md`. Explicit
-profile selectors replace manifest defaults. Use `--profile all` to include
-every profile.
-
-## Build a ZIP
+## Start your own
 
 ```console
-degardis build examples/structured-summary --zip --output .artifacts
+degardis init my-skill
+degardis validate my-skill
 ```
 
-This replaces the uncompressed `structured-summary/` folder with
-`.artifacts/structured-summary.zip`. Use ZIP output for ChatGPT upload and an
-uncompressed folder for filesystem-based agents.
+`init` writes a manifest and one task that already validates and builds.
 
-## Install an uncompressed bundle
+Before filling it in, list your **tasks** — the recognizable classes of work
+someone asks for. "Summarize supplied material", "review a draft", "investigate a
+complaint" are tasks. "French", "our house style", "the customer archive" are
+not; those are things the tasks work on. Getting this right early is what makes
+the rest fall out: knowledge goes to the tasks that need it, principles belong to
+the skill or task that needs them, and profiles carry what depends on the situation
+rather than on the work.
 
-Choose an agent location from [Artifact format](artifact-format.md#install-an-uncompressed-bundle).
-Building directly into a skill directory replaces any existing
-`structured-summary/` folder or `structured-summary.zip` in that directory.
-Inspect third-party skill instructions and scripts before installing them.
+Then write the files. Each construct is one Markdown file whose directory says
+what it is, whose stem is its id, whose frontmatter holds its fields, and whose
+body is its content. Open `my-skill/tasks/primary.md` to see the shape.
 
-For example, install the skill for Codex in the current repository:
+One order matters while you are starting: a skill or task `principles` reference
+resolves to `principles/<id>.md` in your own skill and nowhere else, so write the
+principle file before a level names it.
+
+## Ask the compiler what it decided
 
 ```console
-degardis build examples/structured-summary --output .agents/skills
+degardis inspect my-skill --only composition,principles
 ```
 
-The command creates `.agents/skills/structured-summary/SKILL.md`. Start a new
-agent session if the installed skill does not appear immediately.
+`composition` answers the question you will actually have — why does this page
+carry this material? — by naming what the task asked for, what that knowledge
+required. `principles` names each principle's file, its owners, and its own activation condition.
 
-To make it available across local projects in Codex and other hosts that read
-the personal `.agents/skills` directory:
+A pass from `validate` means the source compiles to a complete bundle whose
+links resolve. It does not mean the skill guides an agent well. Read the
+generated task pages as an agent would, and use the skill against real requests,
+before you share it.
 
-```console
-degardis build examples/structured-summary --output ~/.agents/skills
-```
+## Next
 
-## Troubleshooting
-
-- **`degardis` is not recognized or not found:** run
-  `python -m degardis --help`. If that works, use
-  `python -m degardis` in place of `degardis`, or add your Python scripts
-  directory to `PATH`.
-
-- **`No skills found inside`:** the supplied directory is neither a skill nor
-  contains skill descendants. Pass the directory containing `skill.yaml`, or
-  an ancestor directory that contains one or more skills.
-
-- **`Profile selector matched no selected skill`:** the selected skill does
-  not define that profile. Run `degardis list` with the same path and use one
-  of the reported profile names.
-
-- **`Output directory ... must not overlap skill source`:** use a separate
-  output such as `.artifacts`, `dist`, or an agent skill directory outside the
-  source. This check protects authored files from artifact replacement.
-
-- **`[FAIL]` or `[ERROR]`:** `[FAIL]` identifies an invalid skill. `[ERROR]`
-  means the command itself could not complete, for example because a path or
-  profile selector was invalid. Correct the reported issue and validate again
-  before building.
-
-## Next steps
-
-- Read [Concepts](concepts.md) for the source and artifact models.
-- Follow [Authoring skills](authoring-guide.md) to make a new skill.
-- Use [Reference](reference.md) for exact fields and command behavior.
+- [Manual](manual.md) — what each part of a source is for, and every field.
+- [CLI reference](cli.md) — commands, options, and exit status.
+- [Bundles](artifact-format.md) — what `build` produces.

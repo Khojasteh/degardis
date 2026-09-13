@@ -1,0 +1,6 @@
+trigger: >-
+  A task principles field names a principle this skill has no selected
+  principles/<id>.md file for.
+impact: >-
+  The task page cannot link to guidance that does not exist in this source. Add
+  the local principle file or correct the reference.

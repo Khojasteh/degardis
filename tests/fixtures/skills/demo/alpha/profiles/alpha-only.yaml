@@ -1,5 +1,0 @@
-name: alpha-only
-label: Alpha Only
-description: Fixture profile that is only defined on the alpha skill.
-instructions:
-- Fixture profile content unique to alpha.

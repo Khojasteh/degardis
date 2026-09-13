@@ -1,0 +1,5 @@
+wording: empty-body
+owner: guide
+why: >-
+  The body is the conditionally relevant knowledge. Without it an agent opens a
+  guide page that supplies no knowledge for the situation that required it.

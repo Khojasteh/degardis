@@ -1,0 +1,10 @@
+trigger: >-
+  The interface default_prompt spells one host's invocation syntax, such as
+  $<skill-name> or /<skill-name>, where the {name} placeholder belongs.
+impact: >-
+  The spelled syntax is emitted verbatim to every target, so the suggested
+  invocation is wrong on each host that types a skill name differently, and
+  the source cannot follow a host that changes its own.
+resolution: >-
+  Replace the spelled invocation syntax with the {name} placeholder, which
+  each target renders in its own.

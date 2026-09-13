@@ -1,0 +1,7 @@
+trigger: >-
+  Two profiles have the same title, compared without regard to case.
+impact: >-
+  The index never repeats a profile's contents, so the title and its optional description are the whole of what a reader decides from. Two identical rows cannot be told apart, and the reader either loads both or guesses.
+resolution: >-
+  Give each profile a title that tells it apart from the others, since the
+  title is what the reader chooses by.

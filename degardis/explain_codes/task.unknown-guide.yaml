@@ -1,0 +1,6 @@
+trigger: >-
+  A task names a guide the manifest selects no file for.
+impact: >-
+  The task page would point its reader to optional knowledge that
+  is not in the bundle. Correct the guide id or select its source file under
+  content.guides.

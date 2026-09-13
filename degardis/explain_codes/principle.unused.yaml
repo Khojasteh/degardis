@@ -1,0 +1,6 @@
+trigger: >-
+  A skill selects a principle file that no skill or task principles field names.
+impact: >-
+  The bundle includes generated principle pages and links only for principles a
+  level names, so an unselected principle carries no behavior. Name it from the
+  skill or a task that needs it, or delete the file.

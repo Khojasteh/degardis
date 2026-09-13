@@ -1,0 +1,4 @@
+trigger: >-
+  The manifest names a principle the skill has no selected principles/<id>.md file for.
+impact: >-
+  An activation link to a missing principle page would be a dead end, so the compiler cannot include that guidance. A reference resolves only inside this skill: select the file or correct the name in skill.yaml.

@@ -1,0 +1,67 @@
+# The manual's topic catalog. A topic's name is the file beside this one, the
+# name `degardis manual` takes, and the name another topic cross-references.
+# Every entry here is therefore a topic the installed CLI can print, and prose
+# that no such name reaches belongs in the document template instead.
+# The order is the document's reading order: each topic whose file opens with a
+# level-two heading starts a section, and the topics after it belong to it.
+# `{{format_version}}` in any manual file resolves to the format version the
+# compiler accepts.
+
+topics:
+  - name: overview
+    summary: Understand what a source is and what the compiler does with it.
+    related: [layout, tasks, knowledge, principles, guides]
+  - name: layout
+    summary: Lay out the source folder, and read the bundle it builds.
+    related: [markdown, manifest, build]
+  - name: markdown
+    summary: Write a source file the compiler can read.
+    related: [identifiers, tasks, knowledge]
+  - name: identifiers
+    summary: Name a construct and refer to it.
+    related: [markdown, knowledge, relationships]
+  - name: manifest
+    summary: Declare the skill and select what it ships.
+    related: [layout, interface, yaml, extensions, tasks, guides, scripts, assets]
+  - name: interface
+    summary: Say how a host displays and invokes the skill.
+    related: [manifest]
+  - name: yaml
+    summary: Write the YAML a manifest and a frontmatter block accept.
+    related: [manifest, markdown, extensions]
+  - name: extensions
+    summary: Add metadata another tool owns without claiming Degardis field names.
+    related: [yaml, manifest, tasks, knowledge, principles, profiles, guides]
+  - name: tasks
+    summary: Define a class of work and what its page carries.
+    related: [knowledge, relationships, principles, guides, extensions]
+  - name: knowledge
+    summary: Write what the skill knows, one unit at a time.
+    related: [tasks, relationships, identifiers, extensions]
+  - name: relationships
+    summary: Decide what reaches a page, and what a unit requires.
+    related: [knowledge, tasks, inspection]
+  - name: principles
+    summary: Write the guidance your tasks share, and see where it lands.
+    related: [tasks, inspection, extensions]
+  - name: profiles
+    summary: Add guidance the situation calls for, not the task.
+    related: [tasks, layout, extensions]
+  - name: guides
+    summary: Ship a Markdown page a task opens as a separate load.
+    related: [manifest, tasks, build, extensions]
+  - name: scripts
+    summary: Ship a file an agent can run.
+    related: [manifest, markdown, assets]
+  - name: assets
+    summary: Ship a file an agent can use without running or opening it as a guide.
+    related: [manifest, markdown, scripts]
+  - name: validation
+    summary: Check a source and read what it reports.
+    related: [inspection, build, identifiers]
+  - name: inspection
+    summary: See why each page carries what it carries, and read one before you build.
+    related: [validation, relationships, principles, build]
+  - name: build
+    summary: Compile a bundle, and keep its pages within budget.
+    related: [validation, layout, guides]

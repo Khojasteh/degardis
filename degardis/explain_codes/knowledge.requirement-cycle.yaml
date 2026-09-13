@@ -1,0 +1,4 @@
+trigger: >-
+  Knowledge units require each other in a cycle.
+impact: >-
+  A closure places each unit after everything it requires, and a cycle has no such order: every member would have to come before itself. Break it by deciding which unit is the prerequisite, or by splitting out the part the two genuinely share into a third unit both require.

@@ -1,0 +1,6 @@
+trigger: >-
+  A content key the manifest declares resolves to no file, because its patterns select none or an exclusion removes them all.
+impact: >-
+  Declaring the key states that the skill ships that content, and the bundle would ship none of it. Nothing else reports this: a profile, a guide, or a script that never arrives simply disappears from the built skill. Leave the key out to ship none of that content on purpose.
+resolution: >-
+  Correct the key's patterns so they select at least one file.

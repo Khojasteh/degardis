@@ -1,0 +1,5 @@
+wording: missing-field
+owner: task
+field: recognize
+why: >-
+  The cues are what the generated router matches a request against, so a task with none can never be chosen.

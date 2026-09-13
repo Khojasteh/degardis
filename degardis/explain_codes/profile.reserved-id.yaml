@@ -1,0 +1,4 @@
+trigger: >-
+  A profile's file stem is one the generated profile index already occupies.
+impact: >-
+  The index is written to profiles/index.md, so a profile with that id would be written over the page that lists the profiles. A reader sent to choose between profiles would find one of them instead. Rename the file.

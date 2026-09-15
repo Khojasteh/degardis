@@ -1,0 +1,6 @@
+trigger: >-
+  A guide activation field is present but is not a non-empty string.
+impact: >-
+  The compiler cannot state one reliable condition for every task that names the
+  guide. Write the condition in the reader's terms, or remove activation when
+  the guide applies unconditionally.

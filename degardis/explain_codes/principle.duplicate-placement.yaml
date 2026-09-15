@@ -1,0 +1,5 @@
+trigger: >-
+  A skill and one or more of its tasks both name the same principle.
+impact: >-
+  The generated root and task page both require the same guidance, leaving its
+  placement ambiguous. Keep the principle at either skill level or task level.

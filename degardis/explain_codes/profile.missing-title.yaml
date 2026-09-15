@@ -1,0 +1,5 @@
+wording: missing-field
+owner: profile
+field: title
+why: >-
+  The title is the whole of what a reader has when deciding whether this profile applies, since the index never repeats a profile's contents.

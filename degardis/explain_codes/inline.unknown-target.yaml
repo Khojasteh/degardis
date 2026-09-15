@@ -1,0 +1,5 @@
+trigger: >-
+  An inline reference names no selected entity of its stated kind.
+impact: >-
+  The generated link would open no file in the bundle. Correct the id or path,
+  or select the target under the matching content key.

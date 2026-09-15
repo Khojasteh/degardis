@@ -1,0 +1,4 @@
+trigger: >-
+  The manifest holds a field this compiler does not define.
+impact: >-
+  The field is ignored, so anything it was meant to configure has no effect. A manifest declares no task and no profile: both are discovered from the directories the content selects, so listing either here is a second register of names that can disagree with the files on disk.

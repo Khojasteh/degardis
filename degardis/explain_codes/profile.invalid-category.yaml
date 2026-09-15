@@ -1,0 +1,4 @@
+wording: invalid-field
+owner: profile
+field: category
+expected: a non-empty string

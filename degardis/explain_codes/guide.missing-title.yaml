@@ -1,0 +1,5 @@
+wording: missing-field
+owner: guide
+field: title
+why: >-
+  The title is the name every task link and inline reference uses for this guide. A guide with no title would force the compiler to infer a name from its Markdown body or path.

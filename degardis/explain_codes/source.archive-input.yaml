@@ -1,0 +1,8 @@
+trigger: >-
+  A command was pointed at a .zip file rather than a directory.
+impact: >-
+  Degardis reads authored sources from a directory and writes archives; it
+  never reads one back. The command stops rather than reporting an empty
+  skill.
+resolution: >-
+  Point the command at the skill's source directory rather than at an archive.

@@ -1,0 +1,4 @@
+wording: invalid-field
+owner: content mapping
+field: guides
+expected: a list of usable glob strings that select Markdown pages only

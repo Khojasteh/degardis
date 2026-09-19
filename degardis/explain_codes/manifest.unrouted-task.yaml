@@ -1,0 +1,6 @@
+trigger: >-
+  A selected task file is not named by the manifest's tasks field.
+impact: >-
+  Nothing routes to the task, so the bundle would ship a page no request can
+  reach. Name it in tasks where it belongs in the routing order, or delete the
+  file.

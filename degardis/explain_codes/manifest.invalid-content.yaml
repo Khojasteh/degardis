@@ -1,0 +1,4 @@
+wording: invalid-field
+owner: manifest
+field: content
+expected: a mapping

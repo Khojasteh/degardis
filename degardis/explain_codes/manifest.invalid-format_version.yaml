@@ -1,0 +1,8 @@
+trigger: >-
+  The manifest declares a format_version integer of zero or below, before
+  this versioning scheme begins.
+impact: >-
+  No compiler, current or earlier, has ever read this value, so there is
+  nothing to interpret or convert.
+resolution: >-
+  Declare format_version: {{format_version}}, the version this compiler reads.

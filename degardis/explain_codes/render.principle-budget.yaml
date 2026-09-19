@@ -1,0 +1,6 @@
+trigger: >-
+  A generated principle page is larger than the {{principle_budget}} budget for one principle load.
+impact: >-
+  When that principle activates, the host may truncate the page before the agent
+  receives all of its guidance. Shorten it or divide genuinely independent
+  guidance into separate principles with their own activation.

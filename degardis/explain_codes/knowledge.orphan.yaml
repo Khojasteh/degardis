@@ -1,0 +1,4 @@
+trigger: >-
+  A knowledge unit is reached by no task.
+impact: >-
+  Nothing in the bundle carries it, so the skill ships none of it. That is either a task not yet written or a unit that should be deleted, and only its author knows which. Name it from a task's `knowledge`, or from the `requires` of something a task reaches.

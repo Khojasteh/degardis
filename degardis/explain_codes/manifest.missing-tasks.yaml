@@ -1,0 +1,6 @@
+trigger: >-
+  The manifest declares no tasks.
+impact: >-
+  The tasks field is the routing order the root page lists, and only the author
+  knows which work a request most often asks for. Declare tasks, naming every
+  task id in the order the agent should read them.

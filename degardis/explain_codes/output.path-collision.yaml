@@ -1,0 +1,7 @@
+trigger: >-
+  Two files would be written to the same path in the bundle.
+impact: >-
+  One would overwrite the other, and which survives depends on the filesystem. Tasks, principles, guides, scripts, assets, and icons all claim paths in one namespace, so a guide written to tasks/ or facets/ can collide with a page the compiler generates.
+resolution: >-
+  Rename or deselect one of the two sources, so every output path has one
+  owner.

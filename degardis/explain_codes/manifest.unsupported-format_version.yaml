@@ -1,0 +1,6 @@
+trigger: >-
+  The manifest declares a source format_version newer than this installed compiler reads.
+impact: >-
+  The source was written for a later compiler. Install a newer degardis release to read it; this one would apply the wrong rules to fields this version does not know.
+resolution: >-
+  Install a degardis release that reads the declared format, or rewrite the source for format version {{format_version}}.

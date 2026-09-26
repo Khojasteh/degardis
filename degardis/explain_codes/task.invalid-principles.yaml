@@ -1,0 +1,4 @@
+trigger: >-
+  A task principles field is not a non-empty list of bare principle ids.
+impact: >-
+  The compiler cannot place guidance on the task page without a readable local reference. Use a bare principle id; any activation belongs on the principle so every owner presents the same condition.

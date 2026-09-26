@@ -1,0 +1,6 @@
+trigger: >-
+  A generated page links to a path the bundle would not write.
+impact: >-
+  An installed skill would offer its reader a link that cannot be opened. Every link on a generated page is one the compiler wrote, from a declaration or from an inline reference it resolved, so this checks the compiler's own output against what the build ships and points at a compiler defect rather than at the source.
+resolution: >-
+  Report it with the source that produced it. Authored links are checked where they are written, so no edit to the source is expected to be needed.

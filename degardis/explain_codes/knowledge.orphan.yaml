@@ -1,0 +1,4 @@
+trigger: >-
+  A knowledge unit is reached by no task.
+impact: >-
+  Nothing in the bundle carries it. Every selected knowledge unit must belong to a task closure; make this unit reachable from one, or stop selecting it.

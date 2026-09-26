@@ -1,0 +1,6 @@
+trigger: >-
+  The manifest description is longer than 1024 characters.
+impact: >-
+  The description is loaded on every routing decision, so its length is a cost every session pays. The limit keeps that cost bounded.
+resolution: >-
+  Cut the description to what a host needs in order to choose this skill over another; what the agent reads once it has is purpose, and the task pages.

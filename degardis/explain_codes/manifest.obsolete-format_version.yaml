@@ -1,0 +1,6 @@
+trigger: >-
+  The manifest declares a source format_version older than this installed compiler reads ({{format_version}}).
+impact: >-
+  An earlier format's sources never carried the typed inputs, declared outcomes, gates, and graph edges this one validates, so they are not derivable from it. The source should be rewritten.
+resolution: >-
+  Rewrite the source for format version {{format_version}} and declare it; `degardis manual` states what each construct requires now.

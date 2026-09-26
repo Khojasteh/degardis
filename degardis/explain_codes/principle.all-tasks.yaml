@@ -1,0 +1,4 @@
+trigger: >-
+  Every task names a principle, but the skill does not name it.
+impact: >-
+  The same principle is owned separately by every task. When every task needs it, name it once at skill level; its activation still decides when its page is opened.

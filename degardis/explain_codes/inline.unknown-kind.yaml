@@ -1,0 +1,4 @@
+trigger: >-
+  An inline reference names a kind other than task, principle, facet, guide, asset, or script.
+impact: >-
+  The compiler cannot decide which namespace supplies the target. Use one of the listed kinds and its matching identifier or path; a listed kind this skill ships nothing of is reported as a missing target instead.

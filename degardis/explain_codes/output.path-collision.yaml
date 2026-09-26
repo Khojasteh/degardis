@@ -1,0 +1,6 @@
+trigger: >-
+  Two files the source supplies would be written to the same path in the bundle, or one of them would be written over `SKILL.md` or `agents/openai.yaml`.
+impact: >-
+  One would overwrite the other, and which survives depends on the filesystem. Tasks, principles, guides, facets, scripts, and assets all claim paths in one namespace, so an asset selected from under `references/tasks/` can land on a generated task page.
+resolution: >-
+  Rename or deselect one of the two sources, so every output path has one owner.

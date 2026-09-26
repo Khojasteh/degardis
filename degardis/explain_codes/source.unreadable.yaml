@@ -1,0 +1,6 @@
+trigger: >-
+  A source file cannot be read at all: the manifest is missing, declares no name, or a file cannot be decoded as UTF-8.
+impact: >-
+  For a manifest, the skill is reported without inspecting any of its content, so no other check runs and every count reads as empty. For one construct, that construct is left out of everything the compiler places.
+resolution: >-
+  Restore the named file and save it as UTF-8 text the process can open.

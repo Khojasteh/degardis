@@ -1,0 +1,6 @@
+trigger: >-
+  The interface default_prompt does not contain the skill's exact manifest name without host-specific invocation syntax.
+impact: >-
+  The suggested invocation does not name the skill it invokes, so following it may start something else. This is a warning, so the bundle still builds unless warnings are promoted to errors.
+resolution: >-
+  Put the bare manifest name in the prompt where the skill's name belongs. Degardis adds the invocation prefix required by each generated target.

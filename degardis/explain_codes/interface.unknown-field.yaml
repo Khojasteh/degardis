@@ -1,0 +1,4 @@
+trigger: >-
+  The interface mapping holds a field this compiler does not define.
+impact: >-
+  The field is ignored, so the display detail it was meant to set is absent from the built bundle.

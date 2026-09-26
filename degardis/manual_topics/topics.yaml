@@ -1,0 +1,57 @@
+# Printable manual topics in document reading order. Each name is both the file stem beside this catalog and a value accepted by `degardis manual`. `{{format_version}}` in topic text resolves to the accepted source format.
+
+topics:
+  - name: overview
+    summary: Understand the source model and generated read path.
+    related: [layout, manifest, tasks]
+  - name: layout
+    summary: Arrange a source and recognize the generated bundle.
+    related: [manifest, build]
+  - name: manifest
+    summary: Declare identity, tasks, selected content, and interface.
+    related: [interface, tasks, markdown]
+  - name: interface
+    summary: Define host display, invocation, and icons.
+    related: [manifest]
+  - name: markdown
+    summary: Write construct files and inline references.
+    related: [yaml, identifiers]
+  - name: yaml
+    summary: Use the YAML subset accepted by Degardis.
+    related: [manifest, markdown]
+  - name: identifiers
+    summary: Choose ids and write references.
+    related: [tasks, knowledge]
+  - name: tasks
+    summary: Define request classes, routing cues, and task pages.
+    related: [knowledge, principles, guides]
+  - name: knowledge
+    summary: Define reusable concepts, facts, constraints, and guidance.
+    related: [relationships, tasks]
+  - name: relationships
+    summary: Control task knowledge and transitive requirements.
+    related: [tasks, knowledge, inspection]
+  - name: principles
+    summary: Define standards the agent's work must honor, and their activation.
+    related: [tasks, guides]
+  - name: facets
+    summary: Define guidance selected by the situation.
+    related: [guides, tasks]
+  - name: guides
+    summary: Define separately loaded task or facet detail.
+    related: [tasks, facets, principles]
+  - name: scripts
+    summary: Ship executable helpers and link to them.
+    related: [manifest, markdown]
+  - name: assets
+    summary: Ship supporting files and link to them.
+    related: [manifest, markdown]
+  - name: validation
+    summary: Check a source and repair reported findings.
+    related: [inspection, build]
+  - name: inspection
+    summary: Inspect placement, pages, diagnostics, and read costs.
+    related: [validation, relationships]
+  - name: build
+    summary: Build reproducible bundles within page budgets.
+    related: [validation, layout]

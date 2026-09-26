@@ -1,0 +1,4 @@
+wording: invalid-field
+owner: task
+field: recognize
+expected: a non-empty list of sentences

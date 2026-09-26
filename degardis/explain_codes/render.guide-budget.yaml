@@ -1,0 +1,4 @@
+trigger: >-
+  A selected Markdown guide is larger than the {{guide_budget}} budget for one guide load.
+impact: >-
+  When the guide applies, an agent may receive it truncated. Reduce the load without dropping guidance needed on the paths that open it.

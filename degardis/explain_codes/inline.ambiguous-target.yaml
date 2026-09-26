@@ -1,0 +1,6 @@
+trigger: >-
+  A script or asset inline reference names a path that ends more than one selected file of that kind.
+impact: >-
+  The target is matched against the end of each selected path, so check.py names both scripts/check.py and tools/check.py, and the compiler will not choose between them for the author.
+resolution: >-
+  Write more of the path, such as tools/check.py, until it names one file. A file's full source-relative path always names it alone.

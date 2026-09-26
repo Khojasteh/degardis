@@ -1,0 +1,4 @@
+trigger: >-
+  A skill and one or more of its tasks both name the same principle.
+impact: >-
+  The same principle is owned at both skill and task scope. Keep one placement matching its required reach: skill level when every task needs it, otherwise only the tasks that need it.

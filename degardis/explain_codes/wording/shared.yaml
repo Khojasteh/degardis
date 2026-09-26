@@ -1,0 +1,31 @@
+# Sentences shared by a family of check codes, so one wording covers every member of it and a reword reaches all of them. A code file names the wording it takes and supplies the values its placeholders read.
+
+invalid-field:
+  trigger: >-
+    The {{owner}} field `{{field}}` is present but is not {{expected}}.
+  impact: >-
+    The compiler cannot read `{{field}}` as declared, so the {{owner}} is not compiled. Repair the value named by the diagnostic.
+
+missing-field:
+  trigger: >-
+    A {{owner}} states no `{{field}}`.
+  impact: >-
+    {{why}} Add `{{field}}` to the frontmatter.
+
+unexpected-id:
+  trigger: >-
+    A {{owner}} declares an `id` field.
+  impact: >-
+    A construct's id is its file stem, so an `id` field is a second spelling of a name the file already carries, and the two can disagree. Remove the field; renaming the file is what renames the construct.
+
+extension-unknown-field:
+  trigger: >-
+    A {{owner}} declares a field that neither begins with `x-` nor belongs to the {{owner}} schema.
+  impact: >-
+    The compiler ignores the field and still generates the skill, but reports a warning because a misspelled field name reads exactly like this. An unprefixed name can also collide with a field Degardis defines later. Prefix external metadata with `x-`.
+
+empty-body:
+  trigger: >-
+    A {{owner}} states nothing below its frontmatter.
+  impact: >-
+    {{why}} A selected {{owner}} must carry the body its role promises.

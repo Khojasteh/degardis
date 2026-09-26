@@ -1,0 +1,4 @@
+wording: invalid-field
+owner: content mapping
+field: tasks
+expected: a list of usable glob strings

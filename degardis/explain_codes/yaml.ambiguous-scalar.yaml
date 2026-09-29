@@ -1,0 +1,6 @@
+trigger: >-
+  An unquoted value is yes, no, on, or off, in any letter case.
+impact: >-
+  YAML reads these words as booleans rather than text, so a field that should read as a word is reported as the wrong type.
+resolution: >-
+  Quote the value, so YAML keeps it as the word the file states.

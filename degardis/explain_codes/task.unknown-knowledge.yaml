@@ -1,0 +1,4 @@
+trigger: >-
+  A task names a knowledge unit the manifest selects no file for.
+impact: >-
+  The reference resolves to nothing, so the task's knowledge closure is incomplete. `knowledge` entries are bare knowledge ids; make the named id resolve to a source selected by `content.knowledge`.

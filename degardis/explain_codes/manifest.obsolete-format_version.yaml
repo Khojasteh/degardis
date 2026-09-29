@@ -1,0 +1,6 @@
+trigger: >-
+  The manifest declares a source `format_version` older than this installed compiler reads ({{format_version}}).
+impact: >-
+  An earlier format's sources use constructs and fields this one does not read, and no command converts them, so the source must be rewritten.
+resolution: >-
+  Rewrite the source for format version {{format_version}} and declare it; `degardis manual` states what each construct requires now.

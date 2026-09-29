@@ -1,0 +1,4 @@
+wording: invalid-field
+owner: facet
+field: category
+expected: a non-empty string

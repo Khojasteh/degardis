@@ -1,0 +1,6 @@
+trigger: >-
+  The interface icon is empty, is not a string, is an absolute path, or is a relative path that leads outside the skill directory.
+impact: >-
+  The icon is part of the source, and a build reads only the source, so that the same source builds the same bundle wherever it is built. An absolute path names a file on one machine, and a path out of the skill directory names a file the source does not carry.
+resolution: >-
+  Put the image inside the skill directory and state its path relative to that directory.

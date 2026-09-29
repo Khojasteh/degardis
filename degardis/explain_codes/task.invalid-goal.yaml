@@ -1,0 +1,4 @@
+wording: invalid-field
+owner: task
+field: goal
+expected: a non-empty string

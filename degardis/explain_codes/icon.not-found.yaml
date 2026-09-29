@@ -1,0 +1,4 @@
+trigger: >-
+  An interface icon path names a file that does not exist.
+impact: >-
+  The build copies the declared icon into the bundle, so there is nothing to copy. The path is relative to the skill directory, so check its spelling as well as the file.

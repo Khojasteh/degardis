@@ -1,0 +1,6 @@
+trigger: >-
+  The manifest name contains the brand of an AI vendor or agent host, such as `claude` or `openai`.
+impact: >-
+  A host may reserve its own brand and refuse a skill whose name carries it, and a name carrying another company's brand reads as that company's endorsement.
+resolution: >-
+  Rename the skill after what it does, without the brand.

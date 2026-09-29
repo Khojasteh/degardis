@@ -1,0 +1,4 @@
+trigger: >-
+  A principle's body contains an inline reference of any kind.
+impact: >-
+  A principle is a standard that stands on its own, so its text references no principle, guide, script, or asset, and the source is refused. Remove the reference; a guide, script, or asset the work needs belongs in the tasks, knowledge, facets, or guides that use it.

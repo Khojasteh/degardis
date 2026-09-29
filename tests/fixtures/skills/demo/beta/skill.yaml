@@ -1,19 +1,17 @@
 name: beta
-title: Beta
-format_version: 1
-version: 1.0.0
-description: Beta is a minimal self-contained fixture skill used to exercise profile
-  selection behavior in tests.
-primary_workflow: beta.run
+format_version: 2
+version: 0.2.0
+description: A second skill, so discovery and multi-skill builds have one to find.
+principles:
+- reporting
+tasks:
+- note
 content:
-  entries:
-  - entries/*.yaml
-  workflows:
-  - workflows/*.yaml
-profiles:
-  directory: profiles
-  defaults: []
+  tasks:
+  - tasks/*.md
+  principles:
+  - principles/*.md
 interface:
   display_name: Beta
-  short_description: Minimal fixture skill depending on alpha
-  default_prompt: Use $beta to run the fixture workflow.
+  short_description: A second skill
+  default_prompt: Use beta for the second job.

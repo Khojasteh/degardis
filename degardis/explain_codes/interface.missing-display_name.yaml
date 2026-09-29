@@ -1,0 +1,4 @@
+trigger: >-
+  The manifest interface has no `display_name`.
+impact: >-
+  A host has no name to show for the skill, so the bundle is incomplete for the interfaces that require one. Add the human-readable name a user recognizes the skill by.

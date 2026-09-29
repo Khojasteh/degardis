@@ -1,0 +1,4 @@
+trigger: >-
+  A guide's body references the guide itself.
+impact: >-
+  The reference names the page its reader already has open, so it adds nothing to that page. Remove it.

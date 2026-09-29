@@ -1,0 +1,4 @@
+trigger: >-
+  A task compiles to a page carrying its goal and nothing else.
+impact: >-
+  The page costs the agent a load and gives it nothing beyond the goal. Give the task knowledge, a body, a guide, or a hand-off.

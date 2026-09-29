@@ -1,0 +1,4 @@
+wording: invalid-field
+owner: manifest
+field: copyright
+expected: a non-empty string

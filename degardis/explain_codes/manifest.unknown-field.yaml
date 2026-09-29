@@ -1,0 +1,4 @@
+trigger: >-
+  The manifest holds an unprefixed field this compiler does not define.
+impact: >-
+  The field is ignored, so it cannot configure the skill. Only fields defined by the manifest schema have effect; correct a misspelled name, prefix external metadata with `x-`, and keep construct definitions in their selected source files.

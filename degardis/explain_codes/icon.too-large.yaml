@@ -1,0 +1,4 @@
+trigger: >-
+  An interface icon source is over 10 MiB, or its image is over 67,108,864 pixels.
+impact: >-
+  The file ships as it is, so both limits bound what an installed bundle carries and what a host has to decode to show it. Resize the source: nothing in the build shrinks it.

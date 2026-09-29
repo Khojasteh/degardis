@@ -1,0 +1,4 @@
+trigger: >-
+  A guide requires a guide the manifest selects no file for.
+impact: >-
+  A requirement is what lists a guide on the page of the guide that cannot be understood without it, so an unresolvable one leaves that page without it. Correct the reference, or remove the requirement if the guide now stands alone.

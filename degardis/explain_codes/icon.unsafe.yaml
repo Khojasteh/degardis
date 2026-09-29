@@ -1,0 +1,6 @@
+trigger: >-
+  An SVG icon carries a script element, an event-handler attribute such as `onload`, a `foreignObject` element, an external `href`, or an external CSS `url()` or `@import`.
+impact: >-
+  The file ships as it is for a host to display. A script, an event handler, or a `foreignObject` can carry active or embedded content into the host's renderer, while an external reference can trigger access to a file or network resource the bundle does not carry.
+resolution: >-
+  Inline what the image needs, as markup or a `data:` URI, and keep every reference to an internal `#` fragment.

@@ -1,0 +1,4 @@
+trigger: >-
+  The manifest names an id that no selected task in this skill has.
+impact: >-
+  A route to a missing task page would send the agent to a page that is not there. Select a task with that file-stem id or correct the name in `skill.yaml`.

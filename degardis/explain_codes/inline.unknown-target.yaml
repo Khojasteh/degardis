@@ -1,0 +1,4 @@
+trigger: >-
+  An inline reference names nothing of its stated kind that the bundle ships: no guide, script, or asset its content key selects, or no principle the skill names.
+impact: >-
+  The generated page would name a file the bundle does not ship. A selected principle has a page only once the `principles` field of `skill.yaml` names it, because the skill is a principle's one owner. Correct the id or path, select the target under the matching content key, or name the principle in `skill.yaml`.

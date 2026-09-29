@@ -1,0 +1,4 @@
+trigger: >-
+  Knowledge units require each other in a cycle.
+impact: >-
+  A requirement names a unit that another cannot be understood without, and a cycle leaves no unit that can be understood first. Break it by deciding which unit is the prerequisite, or by splitting out the part the units genuinely share into a third unit they all require.

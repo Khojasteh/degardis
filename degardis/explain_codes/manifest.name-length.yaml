@@ -1,0 +1,6 @@
+trigger: >-
+  The manifest name is longer than {{name_limit}} characters, the longest name every targeted host accepts.
+impact: >-
+  A host that holds names to that length refuses the skill, so the bundle cannot be installed there.
+resolution: >-
+  Shorten the name to the few words that identify the skill.

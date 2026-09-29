@@ -1,0 +1,4 @@
+wording: empty-body
+owner: facet
+why: >-
+  A reader who decides this facet applies then loads it, so an empty facet costs them a load and gives them nothing.

@@ -1,0 +1,4 @@
+trigger: >-
+  A skill selects a principle file that the `principles` field of `skill.yaml` does not name.
+impact: >-
+  A principle holds across every task, so the bundle carries one only through the skill's own list, and nothing else can place this one. Name it in `skill.yaml`, with `applicability` conditions if it governs only some situations; otherwise stop selecting it.

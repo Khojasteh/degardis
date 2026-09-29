@@ -1,0 +1,5 @@
+wording: missing-field
+owner: guide
+field: title
+why: >-
+  The title is the text of every link to this guide. A guide with no title would force the compiler to infer a name from its Markdown body or path.

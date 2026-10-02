@@ -1,0 +1,4 @@
+trigger: >-
+  A task names a guide the manifest selects no file for.
+impact: >-
+  The task page would point its reader to a guide page that is not in the bundle. Make the guide id resolve to a source selected by `content.guides`.

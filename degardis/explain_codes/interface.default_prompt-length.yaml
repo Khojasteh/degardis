@@ -1,0 +1,6 @@
+trigger: >-
+  The interface `default_prompt` is longer than {{default_prompt_limit}} characters, the longest default prompt a targeted host accepts.
+impact: >-
+  A host that holds default prompts to that length may refuse the skill or cut the prompt short, so a user invoking the skill does not start from the prompt the source states.
+resolution: >-
+  Cut the prompt to the request that starts the skill, and leave instructions for how to do the work to the skill itself.

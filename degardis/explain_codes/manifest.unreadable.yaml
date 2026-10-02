@@ -1,0 +1,4 @@
+trigger: >-
+  Reading a manifest failed in a way no source check names, such as a filesystem or decoding error.
+impact: >-
+  Nothing in the skill can be checked or built. The message carries what the operating system said; the repair is usually permissions, encoding, or a partial copy.

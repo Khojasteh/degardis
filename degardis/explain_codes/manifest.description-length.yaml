@@ -1,0 +1,6 @@
+trigger: >-
+  The manifest description is longer than {{description_limit}} characters, the longest description every targeted host accepts.
+impact: >-
+  A host that holds descriptions to that length may refuse the skill or cut the description short, so the text it chooses the skill by is not the text the source states.
+resolution: >-
+  Cut the description to what a host needs in order to choose this skill over another.

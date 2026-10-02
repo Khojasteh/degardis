@@ -1,0 +1,4 @@
+wording: invalid-field
+owner: task
+field: handoffs
+expected: a non-empty list of items, each naming another task under `task` by bare id, with an optional `applicability` list of non-empty conditions, and no task named twice

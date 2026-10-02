@@ -1,0 +1,5 @@
+wording: missing-field
+owner: principle
+field: title
+why: >-
+  The title heads the generated principle page and names every link that opens it.

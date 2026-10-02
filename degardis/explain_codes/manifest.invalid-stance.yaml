@@ -1,0 +1,4 @@
+wording: invalid-field
+owner: manifest
+field: stance
+expected: a non-empty string

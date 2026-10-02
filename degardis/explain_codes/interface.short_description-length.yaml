@@ -1,0 +1,6 @@
+trigger: >-
+  The interface `short_description` is longer than {{short_description_limit}} characters, the longest short description a targeted host accepts.
+impact: >-
+  A host that holds short descriptions to that length may refuse the skill or cut the description short, so the reader choosing among skills does not see the text the source states.
+resolution: >-
+  Shorten it to the few words that tell this skill apart from the others a host lists beside it.

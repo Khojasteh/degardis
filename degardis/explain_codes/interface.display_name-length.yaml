@@ -1,0 +1,6 @@
+trigger: >-
+  The interface `display_name` is longer than {{display_name_limit}} characters, the longest display name a targeted host accepts.
+impact: >-
+  A host that holds display names to that length may refuse the skill or cut the name short, so the label a user sees is not the name the source states.
+resolution: >-
+  Shorten it to the few words a user recognizes the skill by.

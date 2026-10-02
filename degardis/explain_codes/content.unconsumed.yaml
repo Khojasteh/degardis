@@ -1,0 +1,4 @@
+trigger: >-
+  A selected guide, script, or asset is on no list of guides reached from a task or facet page and is named by no inline reference in an authored body.
+impact: >-
+  The bundle ships a file nothing reaches, so it is weight with no reader. Name a guide on a task or facet that needs its separate load, or require it from a guide one of them lists; otherwise reference the file with an inline reference such as `[[script:check.py]]`, or stop selecting it.

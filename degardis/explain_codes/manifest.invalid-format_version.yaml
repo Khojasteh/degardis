@@ -1,0 +1,6 @@
+trigger: >-
+  The manifest's `format_version` is not an integer, or is an integer of zero or below, before this versioning scheme begins.
+impact: >-
+  No source format is numbered this way, so there is no format to read the files against or convert them from. A quoted number is text rather than an integer.
+resolution: >-
+  Declare `format_version: {{format_version}}`, unquoted, the version this compiler reads.

@@ -1,0 +1,4 @@
+wording: invalid-field
+owner: manifest
+field: tasks
+expected: a non-empty list of bare task ids, in lowercase letters, digits, and single hyphens, with no repeats

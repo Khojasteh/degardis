@@ -1,0 +1,4 @@
+trigger: >-
+  The manifest declares no `description`.
+impact: >-
+  The description is what a host reads to decide whether to select this skill among many. Declare one written for that reader.

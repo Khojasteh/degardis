@@ -1,0 +1,7 @@
+# Text is stored and checked out with LF on every platform, whatever a clone's core.autocrlf says, so working copies match .editorconfig and the bytes a build reads are the bytes the repository holds.
+* text=auto eol=lf
+
+# Never normalized or diffed as text.
+*.png binary
+*.ico binary
+*.zip binary

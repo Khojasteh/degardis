@@ -1,0 +1,4 @@
+trigger: >-
+  A knowledge unit requires a unit the manifest selects no file for.
+impact: >-
+  A requirement is what expands a task's closure, so an unresolvable one silently narrows every page that reaches this unit: the material it cannot be understood without is left out. Correct the reference, or remove the requirement if the unit now stands alone.

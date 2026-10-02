@@ -1,0 +1,4 @@
+trigger: >-
+  A content pattern selected a file the construct reader cannot read, such as a YAML file swept in by a pattern meant for Markdown sources.
+impact: >-
+  Every parsed construct in this format is a Markdown file whose frontmatter states its fields. The selected file is not one, so nothing in it is read. Narrow the pattern: `facets/*.md` selects the facets without whatever else sits beside them, where `facets/**/*` sweeps both in.

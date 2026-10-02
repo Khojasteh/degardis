@@ -1,0 +1,4 @@
+trigger: >-
+  A knowledge unit is reached by no task.
+impact: >-
+  No task page carries it, so the bundle ships it nowhere. Make this unit reachable from a task's knowledge closure, or stop selecting it.

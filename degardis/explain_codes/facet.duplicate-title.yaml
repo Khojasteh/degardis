@@ -1,0 +1,6 @@
+trigger: >-
+  Two facets have the same title, compared without regard to case.
+impact: >-
+  The index uses each title as its link text, and each facet page uses it as its heading. Repeated link labels and headings make title-based references ambiguous; optional descriptions cannot give the facets distinct titles.
+resolution: >-
+  Give each facet a title that tells it apart from the others, since the title is what the reader chooses by.

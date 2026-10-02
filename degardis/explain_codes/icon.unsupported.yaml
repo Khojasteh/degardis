@@ -1,0 +1,6 @@
+trigger: >-
+  An interface icon is not an SVG, PNG, JPEG, or WebP file by its suffix, is not the image its suffix states, cannot be decoded, has no usable dimensions, or is an SVG whose markup does not parse as an svg document.
+impact: >-
+  The icon ships unchanged for a host to display, and the host reads its format from the suffix, so a file the host could not show stops the build rather than shipping a skill without a usable icon.
+resolution: >-
+  Supply the icon as an SVG, PNG, JPEG, or WebP file whose suffix matches its contents, or repair the SVG markup until it parses.

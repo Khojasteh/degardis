@@ -1,0 +1,4 @@
+trigger: >-
+  A body's headings span more levels than fit below the heading its page places it under, so its deepest headings would go past level six.
+impact: >-
+  Markdown has no heading deeper than level six, so the deepest levels are written at level six together and the reader can no longer tell them apart. Use fewer heading levels in the body, or move the deepest sections into a guide of their own.

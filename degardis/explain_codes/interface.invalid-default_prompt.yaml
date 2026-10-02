@@ -1,0 +1,4 @@
+wording: invalid-field
+owner: interface
+field: default_prompt
+expected: a non-empty string

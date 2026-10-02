@@ -1,0 +1,4 @@
+trigger: >-
+  Guides require each other in a cycle.
+impact: >-
+  A requirement names a guide that must be read for another to be understood, and a cycle leaves no guide that can be read first. Break it by deciding which guide is the prerequisite, or by splitting out the part the guides genuinely share into a third guide both require.

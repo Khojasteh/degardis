@@ -1,0 +1,4 @@
+trigger: >-
+  A task hands off to a task the manifest selects no file for.
+impact: >-
+  The task page would send its reader to a task page that is not in the bundle. Make the hand-off's `task` id resolve to a source selected by `content.tasks` and named in the manifest's `tasks` field.

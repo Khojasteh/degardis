@@ -1,4 +1,6 @@
 graft docs
 graft examples
 graft tests
+include tools/generate_manual.py
+include tools/manual_template.md
 global-exclude __pycache__ *.py[cod]

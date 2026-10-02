@@ -1,0 +1,4 @@
+wording: invalid-field
+owner: manifest
+field: version
+expected: a non-empty string

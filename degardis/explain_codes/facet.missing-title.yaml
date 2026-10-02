@@ -1,0 +1,5 @@
+wording: missing-field
+owner: facet
+field: title
+why: >-
+  The title heads the facet page and is the link text in the facet index. A description may help a reader decide whether the facet applies, but it cannot name the link or page.

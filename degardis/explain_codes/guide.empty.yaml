@@ -1,0 +1,4 @@
+wording: empty-body
+owner: guide
+why: >-
+  The body is the separately loaded guidance. Without it an agent opens a guide page that supplies nothing for the situation that required it.

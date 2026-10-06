@@ -44,6 +44,7 @@ from degardis.registry import load_skill_path
 
 from tests.support import (
     alpha,
+    codes,
     compiled,
     copy_skills,
     edit_frontmatter,
@@ -217,12 +218,19 @@ class PlacementTests(unittest.TestCase):
     def test_hand_offs_never_reach_the_root(self):
         """The root routes by cues alone. A situation that arises during one
         task is that task's hand-off, paid for by the runs doing that task and
-        not startup cost paid by every run."""
+        not startup cost paid by every run. Whether any task has one changes
+        only the progress-register protocol, which says how a run keeps track of
+        hand-offs and names none of them."""
         before = self.pages[ROOT]
         for name in ("review", "repair"):
             with edit_frontmatter(source_task(self.root, "alpha", name)) as fields:
                 fields.pop("handoffs")
-        self.assertEqual(before, pages(alpha(self.root))[ROOT])
+        after = pages(alpha(self.root))[ROOT]
+        protocol = wording.REGISTER_HEADING
+        self.assertEqual(
+            before.replace(section(before, protocol), ""),
+            after.replace(section(after, protocol), ""),
+        )
 
     def test_a_task_never_selects_a_facet(self):
         """Which facets apply depends on the situation, which no task sees."""
@@ -473,6 +481,8 @@ class PlacementTests(unittest.TestCase):
         assert result.rendered is not None
         root = result.rendered.page_texts()[ROOT]
         self.assertIn(f"## {wording.REGISTER_HEADING}", root)
+        self.assertIn(REGISTER, root)
+        self.assertIn(REGISTER, result.rendered.pages)
 
     def test_the_register_holds_every_principle_and_guide_page_shipped(self):
         """The register is the compiler's answer to an enumeration, so it has
@@ -507,29 +517,33 @@ class PlacementTests(unittest.TestCase):
 
         So every owner link names its target once, followed by each condition
         in authored order, and a principle or guide takes one register row per
-        condition, adjacent, in that same order.
+        condition, adjacent, in that same order. The root's principle links are
+        the one exception: they carry no condition, because the register the
+        agent copies first already holds each one.
         """
         _, result, _ = compiled(alpha(self.root))
         assert result.rendered is not None
         texts = result.rendered.page_texts()
         sources = result.content.sources
         cases = [
-            (ROOT, principle_path(item.id), item.applicability)
+            (ROOT, principle_path(item.id), item.applicability, False)
             for item in result.plan.principles
         ]
         for plan in result.plan.tasks:
-            cases += [(plan.page, guide_path(name), sources.guides[name].applicability)
+            cases += [(plan.page, guide_path(name), sources.guides[name].applicability, True)
                       for name in plan.guides]
-            cases += [(plan.page, task_path(item.task), item.applicability)
+            cases += [(plan.page, task_path(item.task), item.applicability, True)
                       for item in plan.task.handoffs]
         for facet in result.plan.facets:
-            cases += [(facet_path(facet.id), guide_path(name), sources.guides[name].applicability)
+            cases += [(facet_path(facet.id), guide_path(name), sources.guides[name].applicability, True)
                       for name in facet.guides]
         for guide in result.plan.guides:
-            cases += [(guide_path(guide.id), guide_path(name), sources.guides[name].applicability)
+            cases += [(guide_path(guide.id), guide_path(name), sources.guides[name].applicability, True)
                       for name in guide.guides]
-        self.assertTrue(any(len(conditions) > 1 for _, _, conditions in cases))
-        for page, target, conditions in cases:
+        for on_row in (True, False):
+            self.assertTrue(any(len(conditions) > 1
+                                for _, _, conditions, shown in cases if shown is on_row))
+        for page, target, conditions, on_row in cases:
             link = f"]({posixpath.relpath(target, posixpath.dirname(page) or '.')})"
             text = texts[page]
             with self.subTest(page=page, target=target):
@@ -537,6 +551,9 @@ class PlacementTests(unittest.TestCase):
                 start = text.index(link)
                 ends = [text.find(mark, start) for mark in ("\n- ", "\n\n")]
                 entry = text[start : min([end for end in ends if end >= 0] + [len(text)])]
+                if not on_row:
+                    self.assertEqual(link, entry)
+                    continue
                 position = 0
                 for condition in conditions:
                     position = entry.index(condition, position) + len(condition)
@@ -565,7 +582,7 @@ class PlacementTests(unittest.TestCase):
         record = register.split(f"## {wording.ROUTE_HEADING}\n", 1)[1]
         record = record.split("\n## ", 1)[0]
         rows = [line for line in record.splitlines() if line.startswith("|")]
-        columns = list(wording.ROUTE_COLUMNS)
+        columns = [*wording.ROUTE_COLUMNS, wording.ROUTE_WAITS_COLUMN]
         self.assertEqual(
             [
                 "|" + "|".join(columns) + "|",
@@ -578,6 +595,22 @@ class PlacementTests(unittest.TestCase):
             register.index(f"## {wording.ROUTE_HEADING}\n"),
             register.index(f"## {wording.PRINCIPLES_HEADING}\n"),
         )
+
+    def test_every_route_field_on_the_form_is_one_the_root_defines(self):
+        """The root states the route protocol and the copied form carries its
+        fields, and the two are generated together. A field the form shows but
+        the root never defines is a column the agent fills by guessing.
+        """
+        _, result, _ = compiled(alpha(self.root))
+        register = result.rendered.pages[REGISTER]
+        root = result.rendered.page_texts()[ROOT]
+        record = register.split(f"## {wording.ROUTE_HEADING}\n", 1)[1]
+        header = next(line for line in record.splitlines() if line.startswith("|"))
+        columns = header.strip("|").split("|")
+        self.assertEqual([*wording.ROUTE_COLUMNS, wording.ROUTE_WAITS_COLUMN], columns)
+        for column in columns:
+            with self.subTest(column=column):
+                self.assertIn(f"`{column}`", root)
 
     def test_a_route_row_records_why_its_task_was_chosen(self):
         """A task joins the route for a requested outcome or through a
@@ -627,36 +660,27 @@ class PlacementTests(unittest.TestCase):
             [], link_destinations(result.rendered.pages[REGISTER])
         )
 
-    def test_a_bundle_with_nothing_to_register_carries_neither_half(self):
-        """The pointer and the page it names appear together or not at all.
+    def test_every_bundle_carries_the_register_and_the_root_that_names_it(self):
+        """Every run has a route to keep and requirements to check, so a skill
+        with nothing beyond its tasks still ships the form, and each task page
+        still closes with the code its route row takes.
 
-        A root naming a register the build did not write sends the agent to a
-        file that is not there, and a register nothing points at is a page no
-        run opens.
+        The pointer and the page it names appear together: a root naming a
+        register the build did not write sends the agent to a file that is not
+        there, and a register nothing points at is a page no run opens.
         """
-        shutil.rmtree(alpha(self.root) / "principles")
-        shutil.rmtree(alpha(self.root) / "guides")
-        with edit_yaml(alpha(self.root) / "skill.yaml") as data:
-            data.pop("principles")
-            data["content"].pop("principles")
-            data["content"].pop("guides")
-        for name in ("review", "repair", "document"):
-            with edit_frontmatter(source_task(self.root, "alpha", name)) as fields:
-                fields.pop("guides", None)
-        for facet in sorted((alpha(self.root) / "facets").glob("*.md")):
-            with edit_frontmatter(facet) as fields:
-                fields.pop("guides", None)
+        without_features(alpha(self.root), *FEATURES)
+        self.assertEqual(set(), codes(alpha(self.root)))
         rebuilt = pages(alpha(self.root))
-        self.assertNotIn(REGISTER, rebuilt)
-        self.assertNotIn(f"## {wording.REGISTER_HEADING}", rebuilt[ROOT])
-        self.assertNotIn(REGISTER, rebuilt[ROOT])
+        self.assertIn(REGISTER, rebuilt)
+        self.assertIn(REGISTER, section(rebuilt[ROOT], wording.REGISTER_HEADING))
         tasks = {
             name: code
             for name, code in self.read_codes(rebuilt).items()
             if name.startswith(TASKS_DIRECTORY + "/")
         }
-        self.assertNotEqual({}, tasks)
-        self.assertEqual({None}, set(tasks.values()))
+        self.assertEqual(3, len(tasks))
+        self.assertNotIn(None, tasks.values())
 
     @staticmethod
     def read_codes(rendered: dict[str, str]) -> dict[str, str | None]:
@@ -709,6 +733,195 @@ class PlacementTests(unittest.TestCase):
         after = self.read_codes(pages(alpha(self.root)))
         changed = {name for name in before if before[name] != after[name]}
         self.assertEqual({guide_path("checklist")}, changed)
+
+
+# The features the working protocol speaks of, each of which a skill may lack.
+FEATURES = ("principles", "guides", "facets", "handoffs")
+
+# What each feature is called apart from the protocol table, so a piece tagged
+# with the wrong feature still shows: the construct and hand-off kinds the
+# manual documents, the columns only that feature's rows carry on the form, and
+# the status only a hand-off can put a route row in. `pages` is principles or
+# guides.
+FEATURE_VOCABULARY = {
+    "principles": ("principle",),
+    "guides": ("guide",),
+    "facets": ("facet",),
+    "handoffs": (
+        "hand-off",
+        "prerequisite",
+        "follow-on",
+        "instead-of",
+        f"`{wording.ROUTE_WAITS_COLUMN}`",
+        "`suspended`",
+    ),
+    "pages": tuple(
+        f"`{column}`"
+        for column in wording.REGISTER_COLUMNS
+        if column not in wording.ROUTE_COLUMNS
+    ),
+}
+
+
+def without_features(skill: Path, *features: str) -> None:
+    """Take the named features out of a copy of alpha, which has all of them.
+
+    What is left still validates: a guide is unlinked from every text that
+    names one before its declarations go.
+    """
+    manifest = skill / "skill.yaml"
+    if "principles" in features:
+        shutil.rmtree(skill / "principles")
+        with edit_yaml(manifest) as data:
+            data.pop("principles")
+            data["content"].pop("principles")
+    if "guides" in features:
+        shutil.rmtree(skill / "guides")
+        with edit_yaml(manifest) as data:
+            data["content"].pop("guides")
+        for directory in ("tasks", "knowledge", "facets"):
+            for source in sorted((skill / directory).glob("*.md")):
+                text = source.read_text(encoding="utf-8")
+                unlinked = re.sub(r"\[\[guide:[^\]]+\]\]", "it", text)
+                if unlinked != text:
+                    write_text(source, unlinked)
+                if directory != "knowledge":
+                    with edit_frontmatter(source) as fields:
+                        fields.pop("guides", None)
+    if "facets" in features:
+        shutil.rmtree(skill / "facets")
+        with edit_yaml(manifest) as data:
+            data["content"].pop("facets")
+    if "handoffs" in features:
+        for source in sorted((skill / "tasks").glob("*.md")):
+            with edit_frontmatter(source) as fields:
+                fields.pop("handoffs", None)
+
+
+def section(text: str, heading: str) -> str:
+    """One `##` section of a generated file, from its heading to the next one."""
+    start = text.index(f"## {heading}\n")
+    end = text.find("\n## ", start)
+    return text[start : end if end >= 0 else len(text)]
+
+
+class WorkingProtocolTests(unittest.TestCase):
+    """The root's protocol and the form it hands over say only what the
+    bundle has a use for.
+
+    A rule about something the bundle does not ship is one more rule its
+    reader has to hold and can only misapply. Alpha ships every feature the
+    protocol speaks of, and each case takes some of them out.
+    """
+
+    CASES = (
+        (),
+        ("principles",),
+        ("guides",),
+        ("principles", "guides"),
+        ("principles", "guides", "facets"),
+        ("facets",),
+        ("handoffs",),
+        FEATURES,
+    )
+
+    def setUp(self) -> None:
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+
+    def bundles(self):
+        """Each case's removed features, the features left, and its pages."""
+        for number, removed in enumerate(self.CASES):
+            skill = alpha(copy_skills(Path(self.directory.name) / str(number)))
+            without_features(skill, *removed)
+            self.assertEqual(set(), codes(skill), removed)
+            features = {"tasks", *FEATURES} - set(removed)
+            if features & {"principles", "guides"}:
+                features.add("pages")
+            if features & {"pages", "facets"}:
+                features.add("loads")
+            if features & {"pages", "handoffs"}:
+                features.add("conditions")
+            yield removed, features, pages(skill)
+
+    def test_each_protocol_piece_is_said_exactly_where_its_feature_is(self):
+        """A piece about a feature is said when the bundle has it, and the
+        piece standing in for it when it does not; a term naming kinds of page
+        names only the kinds shipped. A paragraph with nothing left to say is
+        left out, not written empty."""
+        for removed, features, rendered in self.bundles():
+            protocol = section(rendered[ROOT], wording.REGISTER_HEADING)
+            terms = {
+                name: wording.PROTOCOL_TERM_JOINER.join(
+                    word for feature, word in kinds if feature in features
+                )
+                for name, kinds in wording.PROTOCOL_TERMS.items()
+            }
+            for pieces in wording.WORKING_PROTOCOL:
+                for piece in pieces:
+                    if isinstance(piece, str):
+                        said, unsaid = piece, ""
+                    else:
+                        feature, present, absent = piece
+                        said, unsaid = (
+                            (present, absent) if feature in features else (absent, present)
+                        )
+                    with self.subTest(removed=removed, piece=piece):
+                        if said:
+                            self.assertIn(said.format(register=REGISTER, **terms), protocol)
+                        if unsaid:
+                            self.assertNotIn(
+                                unsaid.format(register=REGISTER, **terms), protocol
+                            )
+            with self.subTest(removed=removed):
+                self.assertIsNone(re.search(r"\{\w+\}", protocol))
+                self.assertNotIn("\n\n\n", protocol)
+
+    def test_the_protocol_never_names_a_feature_the_bundle_lacks(self):
+        """The protocol table decides which pieces a bundle says, so a check
+        built from that table cannot catch a piece tagged with the wrong
+        feature. This one holds the protocol to what each feature is called
+        instead: a bundle without the feature never names it, and alpha, which
+        has every feature, names each word, so its absence elsewhere is one the
+        search could have seen."""
+        for removed, features, rendered in self.bundles():
+            protocol = section(rendered[ROOT], wording.REGISTER_HEADING).lower()
+            for feature, words in FEATURE_VOCABULARY.items():
+                for word in words:
+                    with self.subTest(removed=removed, word=word):
+                        if feature not in features:
+                            self.assertNotIn(word.lower(), protocol)
+                        elif not removed:
+                            self.assertIn(word.lower(), protocol)
+
+    def test_the_form_has_a_column_or_table_only_for_what_the_bundle_has(self):
+        """A wait exists only through a hand-off, and a page row only for a
+        page the bundle ships; the route and the ledger are every run's. Each
+        field the form shows is one the root defines, and the root defines no
+        wait the form has no column for."""
+        for removed, features, rendered in self.bundles():
+            register = rendered[REGISTER]
+            root = rendered[ROOT]
+            headings = [line[3:] for line in register.splitlines() if line.startswith("## ")]
+            expected = [wording.ROUTE_HEADING]
+            if "principles" in features:
+                expected.append(wording.PRINCIPLES_HEADING)
+            if "guides" in features:
+                expected.append(wording.GUIDES_HEADING)
+            expected.append(wording.CONFORMANCE_HEADING)
+            columns = list(wording.ROUTE_COLUMNS)
+            if "handoffs" in features:
+                columns.append(wording.ROUTE_WAITS_COLUMN)
+            record = section(register, wording.ROUTE_HEADING)
+            rows = [line.strip("|").split("|") for line in record.splitlines()[1:] if line]
+            with self.subTest(removed=removed):
+                self.assertEqual(expected, headings)
+                self.assertEqual(columns, rows[0])
+                self.assertEqual([[wording.REGISTER_EMPTY] * len(columns)], rows[2:])
+                for column in columns:
+                    self.assertIn(f"`{column}`", root)
+                if "handoffs" not in features:
+                    self.assertNotIn(f"`{wording.ROUTE_WAITS_COLUMN}`", root)
 
 
 def carried(line: str) -> str:

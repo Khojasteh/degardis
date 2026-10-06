@@ -26,79 +26,197 @@ WORKING_STATE_HEADING = "Working state"
 WORKING_STATE_INSTRUCTIONS = (
     "When this skill asks for re-readable working state, first inspect the host and tool-runtime "
     "capabilities and use any session-scoped state facility they expose. Only after establishing "
-    "that none exists, use a session scratchpad or another reopenable session-only medium. Never "
-    "hold working state in recall, conversation text, or implicit tracking."
+    "that none exists, use a session scratchpad or another reopenable session-only medium. Keep "
+    "each record it asks for, whether a register, ledger, or account, separate from every other. "
+    "Never hold working state in recall, conversation text, or implicit tracking."
 )
 
 REGISTER_HEADING = "Progress register"
-REGISTER_INSTRUCTIONS = (
-    "Before any other work, copy `{register}` into re-readable working state and keep that copy "
-    "current for the whole session, across requester messages and deliveries. Record every gate "
-    "value and its evidence in it. Write each change as it happens, before you read, decide, or "
-    "produce anything further; never defer or pause updates. What it does not show did not happen: "
-    "a page whose row lacks its code is unread, and a task not marked `done` is unfinished."
-    "\n\n"
-    "Reopen it after each requester message; after relevant work, scope, material, or evidence "
-    "changes, before the next named-condition-dependent action; and before every non-revisable "
-    "effect, delivery, or completion claim. Do not reopen again if nothing changed. Non-revisable "
-    "means not undoable in-run; delivery returns an outcome; a completion claim declares one "
-    "complete. Reread this section whenever it is no longer in view."
-    "\n\n"
-    "For principle/guide rows, (`Id`, `Applicability`) is unique; only `Verdict`, `Basis`, and "
-    "`Read code` may change. A row is named only when an already-read page refers to its page; an "
-    "unnamed row keeps `-` as its `Verdict` and `Basis`."
-    "\n\n"
-    "`Verdict` is `-`, `pending`, or `required`: a named row is `pending` while inapplicable, "
-    "otherwise `required`; uncertainty means `required`. `Basis` states why and the decision "
-    "served. Recompute affected rows when inputs change and before a condition could become true. "
-    "Read newly required pages before dependent work."
-    "\n\n"
-    "`Read code` is `-` or the code closing a page you read completely. On reaching it, before any "
-    "work from that page, record it on every row of that page, whatever its `Verdict`, or, for a "
-    "task page, on the route row it serves, and add the page's `Conformance` rows. Page changes "
-    "require reset and reread. After a `Basis` change, reassess understanding for the current "
-    "decision; if unclear or uncertain, reset and reread. Guessed, reconstructed, partial-read, or "
-    "recalled codes are invalid."
-    "\n\n"
-    "`Route` keeps one row per task occurrence, added when the task is chosen; the first "
-    "`Status: -` row is current. A route row's `Basis` names the requested outcome it serves, or "
-    "the hand-off that added it: the handing-off task and the condition that held, `always` if "
-    "none. Never replace or remove a row or change its `Id` or `Basis`; only its `Read code` and "
-    "`Status` change. When what is asked for changes, set `dropped` on each unfinished row whose "
-    "basis no longer holds, reorder unfinished rows as needed, and add rows for new outcomes in "
-    "execution order. A requester's answer or refinement that leaves a row's basis true, including "
-    "an answer you asked for, goes in a `Requester` conformance row, never in that `Basis`. "
-    "`Status` is `-`, `done`, `incomplete`, or `dropped`. Set `done` once the row's outcome is "
-    "produced and every conformance row governing it is `satisfied` or `not-applicable`, before you "
-    "deliver it or open another row's page. Set `incomplete` when you stop short of that, to report "
-    "a limit or blocker or to await the requester, and `-` again when work on it resumes."
-    "\n\n"
-    "`Conformance` covers requester instructions, `SKILL.md`, the current task/facets, and required "
-    "principles/guides. Add each page's rows when you read it, `SKILL.md`'s on copying, and the "
-    "requester's as given. Use one row per checkable requirement/scope, or one exhaustive row if "
-    "unsplittable; use a bundle-relative `Page`, or `Requester`. Keep rows governing work or "
-    "retained effects. Reading is not conformance. `Result` is `-`, `satisfied`, `not-applicable`, "
-    "or `failed`; checked rows include scope and evidence/basis. Reset affected results when scope, "
-    "work, or evidence changes."
-    "\n\n"
-    "If the register is lost or uneditable, stop and rebuild: take a fresh copy, reread `SKILL.md` "
-    "and pages in retained route/navigation history, then rederive route and conformance from the "
-    "conversation and retained effects. Never reconstruct unread content or codes from recall. If "
-    "named rows, route history, scopes, and supported results cannot be recovered exactly, report a "
-    "blocker."
-    "\n\n"
-    "At each reopen, continue only if named rows follow these rules, required rows hold page codes, "
-    "and the current route row, if any, holds its basis and task code. Before a non-revisable "
-    "effect, precheckable requirements must be `satisfied` or `not-applicable`; evaluate "
-    "effect-dependent requirements afterward."
-    "\n\n"
-    "Before delivery or completion, recompute conditions, evaluate all governing or retained "
-    "conformance rows, and set the `Status` of each route row delivered. Completion requires all "
-    "those rows to be `satisfied` or `not-applicable` and every route row `done` or `dropped`; a "
-    "`failed` or `-` result bars only the effects it governs and completion, and may be reported as "
-    "a limit or blocker. Never end your turn with a change unrecorded or a route row whose page you "
-    "read still at `-`."
+
+# The progress-register protocol, written for a bundle with every feature, as
+# paragraphs of pieces. A string is always said. A `(feature, with, without)`
+# piece says `with` when the bundle has that feature and `without` when it does
+# not, so a paragraph that is only about a missing feature says nothing and is
+# left out. The features are `principles`, `guides`, `facets`, and `handoffs`;
+# `pages` is principles or guides, `loads` is pages or facets, and `conditions`
+# is pages or hand-offs.
+WORKING_PROTOCOL = (
+    (
+        "Before anything further, copy `{register}` into re-readable working state and keep that "
+        "copy current for the whole session, across requester messages and deliveries. Record "
+        "every gate value and its evidence in it. Write each change as it happens; never "
+        "defer or pause updates. What it does not show did not happen: a page whose row lacks "
+        "its code is unread, and a task not marked `done` is unfinished.",
+    ),
+    (
+        "Reopen it after each requester message",
+        (
+            "conditions",
+            "; after relevant work, scope, material, or evidence changes, before the next ",
+            "",
+        ),
+        ("pages", "named-", ""),
+        ("conditions", "condition-dependent action;", ""),
+        " and before every non-revisable effect, delivery, or completion claim. Do not reopen "
+        "again if nothing changed. Non-revisable means not undoable in-run; delivery returns an "
+        "outcome; a completion claim declares one complete. Reread this section whenever it is "
+        "no longer in view.",
+    ),
+    (
+        (
+            "pages",
+            "For {page_kind} rows, (`Id`, `Applicability`) is unique; only `Verdict`, `Basis`, "
+            "and `Read code` may change. A row is named only when an already-read page refers to "
+            "its page; an unnamed row keeps `-` as its `Verdict` and `Basis`.",
+            "",
+        ),
+    ),
+    (
+        (
+            "pages",
+            "`Verdict` is `-`, `pending`, or `required`: a named row is `pending` while "
+            "inapplicable, otherwise `required`; uncertainty means `required`. `Basis` states why "
+            "and the decision served. Recompute affected rows when inputs change and before a "
+            "condition could become true. Read newly required pages before dependent work.",
+            "",
+        ),
+    ),
+    (
+        "`Read code` is `-` or the code closing a page you read completely. On reaching it, "
+        "before any work from that page, record it ",
+        ("pages", "on every row of that page, whatever its `Verdict`, or, for a task page, ", ""),
+        "on the route row it serves, and add the page's `Conformance` rows. Page changes require "
+        "reset and reread.",
+        (
+            "pages",
+            " After a `Basis` change, reassess understanding for the current decision; if "
+            "unclear or uncertain, reset and reread.",
+            "",
+        ),
+        " Guessed, reconstructed, partial-read, or recalled codes are invalid.",
+        ("loads", " Never combine a task page with other pages in one read.", ""),
+    ),
+    (
+        "`Route` has one row per task occurrence. Assign an immutable unique `Occurrence`; `Id` "
+        "names its task and immutable `Basis` names its requested outcome",
+        (
+            "handoffs",
+            ", or its sending occurrence and the hand-off condition that held (`always` for an "
+            "unconditional hand-off)",
+            "",
+        ),
+        ". The first `Status: -` row is current. Never remove or replace rows; ",
+        (
+            "handoffs",
+            "only `Read code`, `Status`, and `Waits for` change. `Waits for` lists prerequisite "
+            "occurrences or `-`. Order unfinished rows by dependencies, then requested order.",
+            "only `Read code` and `Status` change.",
+        ),
+        " Add new outcomes in execution order. Put requester refinements that leave the basis "
+        "true in `Requester` conformance rows.",
+    ),
+    (
+        "`Status` is `-`, ",
+        ("handoffs", "`suspended`, ", ""),
+        "`done`, `incomplete`, or `dropped`. ",
+        (
+            "handoffs",
+            "Suspend for recorded prerequisites; use `incomplete` for other stops.",
+            "Use `incomplete` for stops.",
+        ),
+        " Set `done` only after producing the outcome",
+        ("handoffs", ", clearing its waits,", ""),
+        " and setting all governing conformance to `satisfied` or `not-applicable`, before "
+        "delivering it as complete. Reading",
+        ("handoffs", " or handing off", ""),
+        " is not completion. Drop a row only when its basis no longer holds under governing "
+        "instructions",
+        ("handoffs", ", never solely because it hands off", ""),
+        ". `done` and `dropped` are terminal. Resume `incomplete` as `-` only after clearing its "
+        "stop",
+        ("handoffs", " and rechecking prerequisites", ""),
+        ".",
+    ),
+    (
+        (
+            "handoffs",
+            "For a hand-off, reuse an occurrence responsible for the same result and state, or add "
+            "one, before opening its page. A prerequisite suspends its sender: record the needed "
+            "result in `Conformance`, scoped to the sender's `Occurrence`, put the target in "
+            "`Waits for`, and order it first. Never create a cyclic wait. On return, evaluate that "
+            "result's conformance row and clear only waits whose requirements are `satisfied` or "
+            "`not-applicable`. Once all waits clear, resume the same sender as `-` before "
+            "unrelated work; target completion does not satisfy sender acceptance. An unavailable "
+            "result or cycle blocks dependent work; keep unmet requirements and mark the waiting "
+            "sender `incomplete` when stopping. Open a follow-on's page only after the sender is "
+            "`done`. Instead-of work permits `dropped` only if the sender's basis no longer "
+            "holds; otherwise preserve its unfinished outcome.",
+            "",
+        ),
+    ),
+    (
+        "`Conformance` covers requester instructions, `SKILL.md`",
+        (
+            "pages",
+            ", the current {task_kinds}, and required {page_kinds}.",
+            ", and the current {task_kinds}.",
+        ),
+        " Add each page's rows when you read it, `SKILL.md`'s on copying, and the requester's as "
+        "given. Use one row per checkable requirement/scope, or one exhaustive row if "
+        "unsplittable; use a bundle-relative `Page`, or `Requester`. Keep rows governing work or "
+        "retained effects. Reading is not conformance. `Result` is `-`, `satisfied`, "
+        "`not-applicable`, or `failed`; checked rows include scope and evidence/basis. Reset "
+        "affected results when scope, work, or evidence changes.",
+    ),
+    (
+        "If the register is missing or uneditable, stop and rebuild: take a fresh copy, reread "
+        "`SKILL.md` and pages in retained route",
+        ("loads", "/navigation", ""),
+        " history, then rederive route and conformance from the conversation and retained "
+        "effects. Never reconstruct unread content or codes from recall. If ",
+        ("pages", "named rows, ", ""),
+        "route history, scopes, and supported results cannot be recovered exactly, report a "
+        "blocker.",
+    ),
+    (
+        "At each reopen, reconcile the register first. Missing codes permit only register updates "
+        "and loading required pages, including requirements discovered during loading. Record "
+        "codes and conformance before governed work. Before task work, ",
+        (
+            "pages",
+            "named rows governing the action must follow these rules, required pages must hold "
+            "valid codes, and ",
+            "",
+        ),
+        "the current occurrence must hold its basis and task code. Unmet requirements block only "
+        "actions they govern",
+        ("handoffs", ", not a prerequisite's independently permitted work", ""),
+        ". Before a non-revisable effect, its precheckable requirements must be `satisfied` or "
+        "`not-applicable`; check effect-dependent requirements afterward.",
+    ),
+    (
+        "Before delivery, ",
+        ("conditions", "recompute conditions, ", ""),
+        "evaluate every governing or retained conformance row, and record the delivered rows' "
+        "status. An occurrence is complete only when `done`; whole-request completion requires "
+        "every row `done` or `dropped` and all governing or retained conformance `satisfied` or "
+        "`not-applicable`. A `failed` or `-` result bars completion and the effects it governs; ",
+        ("handoffs", "suspension, dropping, and", "dropping and"),
+        " code-loading clear none. Report unresolved work as such. Never end a turn with an "
+        "unrecorded change or a read task row still at `-`.",
+    ),
 )
+
+# The words the protocol's `{page_kind}`, `{page_kinds}`, and `{task_kinds}`
+# stand for, each beside the feature that ships that kind. A term names only
+# the kinds the bundle ships, joined by `PROTOCOL_TERM_JOINER`; tasks are always
+# shipped.
+PROTOCOL_TERMS = {
+    "page_kind": (("principles", "principle"), ("guides", "guide")),
+    "page_kinds": (("principles", "principles"), ("guides", "guides")),
+    "task_kinds": (("tasks", "task"), ("facets", "facets")),
+}
+PROTOCOL_TERM_JOINER = "/"
 
 TASKS_HEADING = "Tasks"
 TASKS_LEAD = (
@@ -158,9 +276,10 @@ LINK_ROW_CONDITIONS = "[{title}]({link}) — Applicability:"
 HANDOFFS_HEADING = "Hand-offs"
 HANDOFFS_LEAD = (
     "A hand-off sends the work to another task. One with no condition follows this "
-    "task; one with conditions applies when any of them holds, at the point that "
-    "condition names. Reassess conditions as the work changes, and add an applying "
-    "task to the route before continuing."
+    "task; one with conditions applies when any holds, at the point it names. "
+    "Reassess conditions as work changes. Reuse a route occurrence responsible for "
+    "the needed result and state, or add one, before continuing. Entering the target "
+    "does not complete the sender."
 )
 
 # --------------------------------------------------------------------------
@@ -188,8 +307,9 @@ FACET_ROW_DESCRIBED = "[{title}]({link}) — {description}"
 
 PRINCIPLES_HEADING = "Principles"
 PRINCIPLES_LEAD = (
-    "Set each principle's `Verdict` in your progress register, then read every "
-    "`required` principle and set its `Read code` before continuing."
+    "Principles govern the whole run. Your progress register lists when each applies, "
+    "under `Applicability`. Read each one that applies before continuing, and any other "
+    "as soon as it applies."
 )
 
 # --------------------------------------------------------------------------
@@ -198,24 +318,24 @@ PRINCIPLES_LEAD = (
 
 GUIDES_HEADING = "Guides"
 GUIDES_LEAD = (
-    "Set each guide's `Verdict` in your progress register, then read every "
-    "`required` guide and set its `Read code` before continuing."
+    "Read each guide that applies before continuing, and any other as soon as it applies."
 )
 
 # --------------------------------------------------------------------------
 # Principle and guide pages
 # --------------------------------------------------------------------------
 
-READ_CODE_LINE = (
-    "Set `{code}` as this page's `Read code` in your progress register."
-)
+READ_CODE_LINE = "Read code: `{code}`"
 
 # --------------------------------------------------------------------------
 # Progress register asset
 # --------------------------------------------------------------------------
 
+REGISTER_TITLE = REGISTER_HEADING + " ({name}/{version})"
 ROUTE_HEADING = "Route"
-ROUTE_COLUMNS = ("Id", "Basis", "Read code", "Status")
+ROUTE_COLUMNS = ("Occurrence", "Id", "Basis", "Read code", "Status")
+# Only a bundle with hand-offs has a task that waits for another.
+ROUTE_WAITS_COLUMN = "Waits for"
 REGISTER_COLUMNS = ("Id", "Applicability", "Verdict", "Basis", "Read code")
 CONFORMANCE_HEADING = "Conformance"
 CONFORMANCE_COLUMNS = ("Page", "Requirement", "Scope", "Result", "Evidence")

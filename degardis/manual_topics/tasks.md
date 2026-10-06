@@ -36,15 +36,21 @@ The body renders as **Approach**. A task with no body, knowledge, guide, or hand
 
 ### Routing
 
-Cues are the router; title, goal, and knowledge do not affect matching. A cue states what a request for this task's outcome looks like. Overlap between tasks' cues is expected, and manifest order resolves it.
+Cues are the router; title, goal, and knowledge do not affect matching. A cue states what a request for this task's outcome looks like. Overlap between tasks' cues is expected, and manifest order resolves it. Cues appear only in `SKILL.md`.
 
 A request may ask for the outcome of more than one task. Each outcome it asks for goes to the first task in manifest order with a matching cue, and the chosen tasks are done one at a time, in the order the request states or otherwise in manifest order. A task does only its own outcome and receives what earlier tasks produced. A request no task matches is reported rather than forced into the closest task.
 
 ### Hand-offs
 
-A hand-off names another task this one sends the work to when its `applicability` conditions hold. An omitted `applicability` means the hand-off always follows this task. Two tasks may hand off to one task under different conditions. The agent adds an applying task to its route before continuing, so a hand-off can send work to a task before, after, or instead of finishing the current one, as its conditions say.
+A hand-off names another task this one sends the work to when its `applicability` conditions hold. An omitted `applicability` means the hand-off always follows this task. Two tasks may hand off to one task under different conditions. A hand-off applies at the point its conditions name, and they decide which kind it is:
 
-Hand-offs render as links on the task page and never reach `SKILL.md`. A task may not hand off to itself, and it names a target once; two tasks may hand off to each other.
+- **Prerequisite** — the current task needs the target's result before it can finish. The agent pauses the current task, does the target, checks that the result meets the need, and resumes the same task.
+- **Follow-on** — the target starts after the current task finishes.
+- **Instead-of** — the target replaces the rest of the current task. The current task is set aside only when the request no longer asks for its outcome; otherwise that outcome stays unfinished.
+
+The agent reuses a task already on its route for the same result instead of doing it twice. Handing off neither completes nor withdraws the current task, and a result that does not meet the current task's need leaves that task blocked.
+
+Hand-offs render as links on the task page, unconditional ones first and otherwise in authored order, and never reach `SKILL.md`. A task may not hand off to itself, and it names a target once; two tasks may hand off to each other.
 
 ### Task page order
 
@@ -56,5 +62,3 @@ Present sections appear in this order:
 4. **Approach** — task body
 5. **What you need to know** — **Concepts**, **Facts**, **Constraints**, **Guidance**
 6. **Guides**
-
-Cues appear only in `SKILL.md`.

@@ -16,4 +16,4 @@ State the observation supporting each claim beside the claim.
 - `title` (required) — page heading and link text.
 - `applicability` (optional) — conditions under which the principle applies, one per list item.
 
-The body must be non-empty. Only the manifest's `principles` list places a principle in the bundle, by bare id. `SKILL.md`, which every task run reads, links each named principle, and each has one generated page containing its title and body. A selected principle the manifest does not name warns and gets no page.
+The body must be non-empty. Only the manifest's `principles` list places a principle in the bundle, by bare id. `SKILL.md`, which every task run reads, links each named principle in manifest order, and each has one generated page containing its title and body. A selected principle the manifest does not name warns and gets no page.

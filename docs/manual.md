@@ -16,7 +16,7 @@ Five construct types hold authored Markdown:
 - **Facet** — guidance selected by the situation rather than the task.
 - **Guide** — detail a task, facet, or another guide loads separately.
 
-Degardis adds no domain content and never paraphrases, merges, summarizes, or drops authored material. Around that material it adds headings and short, domain-neutral instructions in English with American spelling. The instructions route each requested outcome to a task and tell the agent which pages to read and when. When the bundle has at least one principle or guide page, they also have the agent track its progress and check its work against the requirements that apply, before an effect it cannot undo and before it claims completion.
+Degardis adds no domain content and never paraphrases, merges, summarizes, or drops authored material. Around that material it adds headings and short, domain-neutral instructions in English with American spelling. The instructions route each requested outcome to a task and tell the agent which pages to read and when. They also have the agent track its progress and check its work against the requirements that apply, before an effect it cannot undo and before it claims completion.
 
 `SKILL.md` is the bundle entry point: it identifies the skill, carries its skill-wide guidance, and routes a request to task pages. A task page contains that task's complete knowledge closure and may hand the work to another task. Principles, facets, and guides remain separate loads.
 
@@ -56,7 +56,7 @@ my-skill/
   agents/openai.yaml
 ```
 
-Directories appear only when needed. Scripts and assets keep the paths they have in the source, so `scripts/` and `assets/` appear where the source uses them. A bundle with at least one principle or guide page also contains a generated progress register under `assets/`.
+Directories appear only when needed. Scripts and assets keep the paths they have in the source, so `scripts/` and `assets/` appear where the source uses them. Every bundle also contains a generated progress register under `assets/`.
 
 See also: [The manifest](#the-manifest), [Building a bundle](#building-a-bundle).
 
@@ -186,7 +186,9 @@ Fill in [[asset:template.docx]], then run [[script:check.py]].
 
 A principle stands on its own, so its body may contain no inline reference of any kind; one is refused. Every other body may reference any kind. A guide referencing itself still renders but warns.
 
-An `asset` or `script` reference renders as the file's bundle path in inline code, such as `scripts/check.py`. A `principle` reference renders as `principle:ID` in inline code and places nothing: `SKILL.md` lists every principle beside its conditions.
+An `asset` or `script` reference renders as the file's bundle path in inline code, such as `scripts/check.py`.
+
+A `principle` reference renders as `principle:ID` in inline code and places nothing: `SKILL.md` links every principle.
 
 A `guide` reference renders as `guide:ID` in inline code and makes an owner of the guide: from a knowledge unit, every task whose page carries the unit; from a task, a facet, or a guide, that construct. The owner's page links the guide under **Guides**.
 
@@ -282,15 +284,21 @@ The body renders as **Approach**. A task with no body, knowledge, guide, or hand
 
 ### Routing
 
-Cues are the router; title, goal, and knowledge do not affect matching. A cue states what a request for this task's outcome looks like. Overlap between tasks' cues is expected, and manifest order resolves it.
+Cues are the router; title, goal, and knowledge do not affect matching. A cue states what a request for this task's outcome looks like. Overlap between tasks' cues is expected, and manifest order resolves it. Cues appear only in `SKILL.md`.
 
 A request may ask for the outcome of more than one task. Each outcome it asks for goes to the first task in manifest order with a matching cue, and the chosen tasks are done one at a time, in the order the request states or otherwise in manifest order. A task does only its own outcome and receives what earlier tasks produced. A request no task matches is reported rather than forced into the closest task.
 
 ### Hand-offs
 
-A hand-off names another task this one sends the work to when its `applicability` conditions hold. An omitted `applicability` means the hand-off always follows this task. Two tasks may hand off to one task under different conditions. The agent adds an applying task to its route before continuing, so a hand-off can send work to a task before, after, or instead of finishing the current one, as its conditions say.
+A hand-off names another task this one sends the work to when its `applicability` conditions hold. An omitted `applicability` means the hand-off always follows this task. Two tasks may hand off to one task under different conditions. A hand-off applies at the point its conditions name, and they decide which kind it is:
 
-Hand-offs render as links on the task page and never reach `SKILL.md`. A task may not hand off to itself, and it names a target once; two tasks may hand off to each other.
+- **Prerequisite** — the current task needs the target's result before it can finish. The agent pauses the current task, does the target, checks that the result meets the need, and resumes the same task.
+- **Follow-on** — the target starts after the current task finishes.
+- **Instead-of** — the target replaces the rest of the current task. The current task is set aside only when the request no longer asks for its outcome; otherwise that outcome stays unfinished.
+
+The agent reuses a task already on its route for the same result instead of doing it twice. Handing off neither completes nor withdraws the current task, and a result that does not meet the current task's need leaves that task blocked.
+
+Hand-offs render as links on the task page, unconditional ones first and otherwise in authored order, and never reach `SKILL.md`. A task may not hand off to itself, and it names a target once; two tasks may hand off to each other.
 
 ### Task page order
 
@@ -302,8 +310,6 @@ Present sections appear in this order:
 4. **Approach** — task body
 5. **What you need to know** — **Concepts**, **Facts**, **Constraints**, **Guidance**
 6. **Guides**
-
-Cues appear only in `SKILL.md`.
 
 See also: [Knowledge units](#knowledge-units), [Guides](#guides), [How knowledge reaches a page](#how-knowledge-reaches-a-page).
 
@@ -359,7 +365,7 @@ State the observation supporting each claim beside the claim.
 - `title` (required) — page heading and link text.
 - `applicability` (optional) — conditions under which the principle applies, one per list item.
 
-The body must be non-empty. Only the manifest's `principles` list places a principle in the bundle, by bare id. `SKILL.md`, which every task run reads, links each named principle, and each has one generated page containing its title and body. A selected principle the manifest does not name warns and gets no page.
+The body must be non-empty. Only the manifest's `principles` list places a principle in the bundle, by bare id. `SKILL.md`, which every task run reads, links each named principle in manifest order, and each has one generated page containing its title and body. A selected principle the manifest does not name warns and gets no page.
 
 See also: [The manifest](#the-manifest), [How knowledge reaches a page](#how-knowledge-reaches-a-page).
 
@@ -440,13 +446,13 @@ Prose creates no dependency. Requirement chains may not cycle. Selected knowledg
 
 ### How guides reach a page
 
-A task or facet owns each guide its `guides` field names, a guide owns each guide its `requires` names, and each owns each guide its inline references make it own. Its page lists them at its foot: the guides it names, then those its inline references own, in the order its page first references them. Each guide is listed once, and never on its own page. Ownership does not pass along: a guide's requirements are listed on its page, not on its owners'. Guide requirement chains may not cycle.
+A task or facet owns each guide its `guides` field names, a guide owns each guide its `requires` names, and each owns each guide its inline references make it own. Its page lists them at its foot, unconditional ones first; within each group, the guides it names come first, then those its inline references own, in the order its page first references them. Each guide is listed once, and never on its own page. Ownership does not pass along: a guide's requirements are listed on its page, not on its owners'. Guide requirement chains may not cycle.
 
 ### Conditions
 
-Hand-offs, principles, and guides take an optional `applicability` list of conditions, one per item. Each applies when any of its items holds; conditions that must all hold belong in one item. An omitted list applies unconditionally. Items keep their authored order.
+Each `applicability` item is one condition, and the list applies when any of its items holds; conditions that must all hold belong in one item. An omitted list applies unconditionally. Items keep their authored order.
 
-Conditions appear beside the link they qualify, not on the target page: a hand-off on its task page, a principle in `SKILL.md`, a guide on each owner's page. Each list of these links puts unconditional links first and otherwise keeps its order. The agent reassesses conditions as the work changes and reads an applicable principle or guide before continuing the work it governs.
+A hand-off's or guide's conditions appear beside its link, never on the target page. The agent reassesses conditions as the work changes and reads an applicable principle or guide before continuing the work it governs.
 
 See also: [Knowledge units](#knowledge-units), [Guides](#guides), [Seeing what the compiler decided](#seeing-what-the-compiler-decided).
 

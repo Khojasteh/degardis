@@ -12,10 +12,10 @@ the situation in front of the agent can settle. There is no generated layer
 between the root and a task: an index a run always passes through is a load that
 answers no question.
 
-When principles or guides exist, the progress register is the generated file
-that is not part of that shape. It is an asset: a form the agent copies into a
-record of its own, naming each principle and guide by identity rather than linking
-it, so nothing in the bundle points at a page because the register listed it.
+The progress register is the generated file that is not part of that shape. It
+is an asset: a form the agent copies into a record of its own, naming each
+principle and guide by identity rather than linking it, so nothing in the bundle
+points at a page because the register listed it.
 """
 
 from __future__ import annotations
@@ -44,9 +44,9 @@ OPENAI_METADATA = f"{AGENTS_DIRECTORY}/openai.yaml"
 # generated one is written beside it under a free name.
 FACET_INDEX = f"{FACETS_DIRECTORY}/index.md"
 
-# When emitted, the register sits under `assets/` rather than under
-# `references/`, because it is not a page of the skill: it is a form the agent
-# copies out and keeps its own copy of, somewhere this bundle cannot address.
+# The register sits under `assets/` rather than under `references/`, because
+# it is not a page of the skill: it is a form the agent copies out and keeps its
+# own copy of, somewhere this bundle cannot address.
 REGISTER = f"{ASSETS_DIRECTORY}/progress-register.md"
 
 

@@ -42,7 +42,9 @@ Fill in [[asset:template.docx]], then run [[script:check.py]].
 
 A principle stands on its own, so its body may contain no inline reference of any kind; one is refused. Every other body may reference any kind. A guide referencing itself still renders but warns.
 
-An `asset` or `script` reference renders as the file's bundle path in inline code, such as `scripts/check.py`. A `principle` reference renders as `principle:ID` in inline code and places nothing: `SKILL.md` lists every principle beside its conditions.
+An `asset` or `script` reference renders as the file's bundle path in inline code, such as `scripts/check.py`.
+
+A `principle` reference renders as `principle:ID` in inline code and places nothing: `SKILL.md` links every principle.
 
 A `guide` reference renders as `guide:ID` in inline code and makes an owner of the guide: from a knowledge unit, every task whose page carries the unit; from a task, a facet, or a guide, that construct. The owner's page links the guide under **Guides**.
 

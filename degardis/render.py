@@ -5,7 +5,7 @@ The shape the renderer produces is the architecture stated as files:
     SKILL.md -> tasks/<task>.md
     tasks/<task>.md -> tasks/<other>.md        (a declared hand-off)
     SKILL.md -> facets/index.md -> the facets that apply
-    SKILL.md -> register.md                    (when principles or guides exist)
+    SKILL.md -> register.md
 
 There is nothing between the root and a task. An index a run always passes
 through answers no question the run had, and the compiler already knows which
@@ -15,9 +15,10 @@ its author declared: a route the author chose, not a hop the compiler added. The
 facet index survives that rule because it is the opposite case: which facets
 apply is decided by the situation, which only the running agent can see, so the
 lookup is a real decision rather than an artifact of how the source was filed.
-When principles or guides exist, the register is neither: it routes to
-nothing, and it is written here because enumerating those separately loaded pages
-is work the compiler has already done and the agent would otherwise repeat.
+The register is neither: it routes to nothing. It is the form every run keeps
+its route in, and it is written here because enumerating the separately loaded
+pages beside that route is work the compiler has already done and the agent
+would otherwise repeat.
 
 Authored text reaches a page through `markdown.py`'s transforms and through
 nothing else, so this module never paraphrases, merges, summarizes, or drops any
@@ -114,10 +115,9 @@ _FACET_NAMED = frozenset({"guide"})
 _GUIDE_NAMED = frozenset({"guide"})
 
 # The kinds every body that may reference them names as `kind:id`, because the
-# root already lists every target beside its conditions: only the skill owns a
-# principle. No list on the
-# carrying page accounts for the target, so the mention is still recorded as a
-# reference the author's text makes.
+# root already links every target: only the skill owns a principle. No list on
+# the carrying page accounts for the target, so the mention is still recorded as
+# a reference the author's text makes.
 _ROOT_NAMED = frozenset({"principle"})
 
 
@@ -159,16 +159,29 @@ class _LinkSection:
     under one heading after one lead, because a link with conditions is not a
     second kind of guidance — it is the same guidance with the conditions on
     the row that carries it. Every such list writes its rows in one shape, so
-    only the heading and the lead differ between them.
+    only the heading, the lead, and where the reader finds the conditions
+    differ between them.
+
+    The root's principles are the one list whose conditions the reader already
+    holds: the progress register is copied before any other work and carries
+    each principle's conditions on its own rows. Repeating them beside the
+    links would have every run read the same text twice before it starts, the
+    second time on the one page every run loads, so that list writes its links
+    alone and its lead says where the conditions are. With no condition on its
+    rows, splitting it into unconditional and conditional links would be an
+    order the reader cannot see the reason for, so it keeps the order it is
+    given.
     """
 
     heading: str
     lead: str
+    conditions_on_rows: bool = True
 
 
 _PRINCIPLE_SECTION = _LinkSection(
     heading=wording.PRINCIPLES_HEADING,
     lead=wording.PRINCIPLES_LEAD,
+    conditions_on_rows=False,
 )
 _GUIDE_SECTION = _LinkSection(
     heading=wording.GUIDES_HEADING,
@@ -262,12 +275,11 @@ def render_skill(
     bundle = RenderedBundle()
     bundle.diagnostics = diagnostics
     _set_reference_targets(skill, sources, plan, bundle, copied or {})
-    bundle.skill_text = _render_root(skill, plan, sources, bundle, addresses)
-    tracked = _needs_register(plan, sources)
-    if tracked:
-        bundle.pages[addresses.register] = _render_register(plan, sources)
+    features = _features(plan, sources)
+    bundle.skill_text = _render_root(skill, plan, bundle, addresses, features)
+    bundle.pages[addresses.register] = _render_register(skill, plan, sources, features)
     for item in plan.tasks:
-        bundle.pages[item.page] = _render_task(item, plan, bundle, sources, tracked)
+        bundle.pages[item.page] = _render_task(item, plan, bundle, sources)
     for item in plan.principles:
         page = principle_path(item.id)
         bundle.pages[page] = _render_principle_page(item, bundle, page)
@@ -312,17 +324,46 @@ def _set_reference_targets(
 # --------------------------------------------------------------------------
 
 
-def _needs_register(plan: Plan, sources: SourceSet) -> bool:
-    """Whether the bundle has separately loaded principle or guide pages to track."""
-    return bool(plan.principles or sources.guides)
+def _features(plan: Plan, sources: SourceSet) -> frozenset[str]:
+    """Which features the working protocol speaks of this bundle has.
+
+    The protocol is written for a bundle with all of them, and a rule
+    about something the bundle does not ship is one more rule its reader has to
+    hold and can only misapply. Each feature is something a run can actually
+    come across: a principle or guide page to read, a facet the situation
+    selects, or a hand-off a task page declares to a task the bundle ships.
+    `pages` is a principle or guide page, `loads` is any page a run opens
+    beside its route, such a page or a facet, and `conditions` is anything
+    that states one: such a page or a hand-off. Every bundle has tasks.
+    """
+    features = {"tasks"}
+    if plan.principles:
+        features.add("principles")
+    if sources.guides:
+        features.add("guides")
+    if plan.facets:
+        features.add("facets")
+    if any(
+        plan.task(handoff.task) is not None
+        for item in plan.tasks
+        for handoff in item.task.handoffs
+    ):
+        features.add("handoffs")
+    if features & {"principles", "guides"}:
+        features.add("pages")
+    if features & {"pages", "facets"}:
+        features.add("loads")
+    if features & {"pages", "handoffs"}:
+        features.add("conditions")
+    return frozenset(features)
 
 
 def _render_root(
     skill: Skill,
     plan: Plan,
-    sources: SourceSet,
     bundle: RenderedBundle,
     addresses: Addresses,
+    features: frozenset[str],
 ) -> str:
     """The orientation a host loads every time this skill is selected.
 
@@ -360,11 +401,8 @@ def _render_root(
     writer.paragraph(skill.stance)
     writer.heading(2, wording.WORKING_STATE_HEADING)
     writer.paragraph(wording.WORKING_STATE_INSTRUCTIONS)
-    if _needs_register(plan, sources):
-        writer.heading(2, wording.REGISTER_HEADING)
-        writer.paragraph(
-            wording.REGISTER_INSTRUCTIONS.format(register=addresses.register)
-        )
+    writer.heading(2, wording.REGISTER_HEADING)
+    writer.paragraph(_working_protocol(features, addresses.register))
     _render_link_section(
         writer,
         _PRINCIPLE_SECTION,
@@ -381,6 +419,32 @@ def _render_root(
     return writer.text()
 
 
+def _working_protocol(features: frozenset[str], register: str) -> str:
+    """The protocol the root states, saying only what this bundle's features need.
+
+    Each paragraph is joined from its pieces, and one whose pieces all say
+    nothing here is left out rather than written empty. A term naming kinds of
+    page names only the kinds this bundle ships.
+    """
+    terms = {
+        name: wording.PROTOCOL_TERM_JOINER.join(
+            word for feature, word in kinds if feature in features
+        )
+        for name, kinds in wording.PROTOCOL_TERMS.items()
+    }
+    paragraphs = []
+    for pieces in wording.WORKING_PROTOCOL:
+        text = "".join(
+            piece
+            if isinstance(piece, str)
+            else piece[1] if piece[0] in features else piece[2]
+            for piece in pieces
+        )
+        if text:
+            paragraphs.append(text.format(register=register, **terms))
+    return "\n\n".join(paragraphs)
+
+
 def _render_link_section(
     writer: _Writer,
     section: _LinkSection,
@@ -388,7 +452,8 @@ def _render_link_section(
     page: str,
     bundle: RenderedBundle,
 ) -> None:
-    """Write one list of links under one heading, unconditional rows first.
+    """Write one list of links under one heading, unconditional rows first
+    wherever the rows show their conditions.
 
     One heading holds both readings. Splitting the conditional ones off would
     ask a reader who has landed here to notice two sections where the page has
@@ -400,20 +465,23 @@ def _render_link_section(
     Each target is linked once, with its conditions after it: one on the row
     itself, several as a list nested under the row, in authored order. The link
     comes first so a reader scanning the list finds what it opens before
-    deciding whether it applies.
+    deciding whether it applies. A section whose conditions the register
+    carries writes each link alone, in the order given.
     """
     if not links:
         return
     writer.heading(2, section.heading)
     writer.paragraph(section.lead)
-    unconditional = [link for link in links if not link.conditions]
-    conditional = [link for link in links if link.conditions]
-    for link in unconditional + conditional:
+    if section.conditions_on_rows:
+        unconditional = [link for link in links if not link.conditions]
+        conditional = [link for link in links if link.conditions]
+        links = unconditional + conditional
+    for link in links:
         fields = {
             "title": _one_line(link.title),
             "link": relative_link(link.target, page),
         }
-        if not link.conditions:
+        if not link.conditions or not section.conditions_on_rows:
             writer.line("- " + wording.LINK_ROW.format(**fields))
         elif len(link.conditions) == 1:
             writer.line(
@@ -484,15 +552,17 @@ def _render_router(writer: _Writer, plan: Plan, bundle: RenderedBundle) -> None:
 # --------------------------------------------------------------------------
 
 
-def _render_register(plan: Plan, sources: SourceSet) -> str:
+def _render_register(
+    skill: Skill, plan: Plan, sources: SourceSet, features: frozenset[str]
+) -> str:
     """The form the root asks the agent to keep, written out once.
 
     Page rows track every principle and guide the agent may be sent to, and the
     route table tracks the tasks it was routed to. The conformance ledger
     applies to every governing page, including the stance, current task, and
-    applicable facets once the form exists. A skill with no principle or guide
-    pages has nothing separately loaded to register, so no form is emitted at
-    all.
+    applicable facets. Every bundle ships the form, because every run has a
+    route to keep and requirements to check; a namespace the bundle ships
+    nothing of has no table on it.
 
     Which of them a run needs is the opposite case, and the columns are what
     keep the two apart. The compiler fills the two the source states, the id
@@ -505,7 +575,10 @@ def _render_register(plan: Plan, sources: SourceSet) -> str:
     something to read. Static rows enumerate pages; the empty conformance table
     is where the running agent expands required pages into requirement-level
     state after reading them. What the fields mean is said once on the root, so
-    the copied form cannot drift from a second copy of the protocol.
+    the copied form cannot drift from a second copy of the protocol. The one
+    exception is the title, which names the skill and its version: once copied,
+    the record no longer sits beside the bundle that issued it, so it has to
+    say for itself which release its rows describe.
 
     A construct is named here by identity and never linked, for two reasons.
     This file is copied into a record the bundle cannot address, where a
@@ -516,8 +589,9 @@ def _render_register(plan: Plan, sources: SourceSet) -> str:
     function writes is recorded as a reference.
     """
     writer = _Writer()
-    writer.line(f"# {wording.REGISTER_HEADING}")
-    _render_route_record(writer)
+    title = wording.REGISTER_TITLE.format(name=skill.name, version=skill.version)
+    writer.line(f"# {_one_line(title)}")
+    _render_route_record(writer, features)
     _render_register_table(writer, wording.PRINCIPLES_HEADING, plan.principles)
     _render_register_table(
         writer,
@@ -528,23 +602,32 @@ def _render_register(plan: Plan, sources: SourceSet) -> str:
     return writer.text()
 
 
-def _render_route_record(writer: _Writer) -> None:
+def _render_route_record(writer: _Writer, features: frozenset[str]) -> None:
     """Write the route table, resting at one empty row until routing fills it.
 
     It is a table rather than one row because a request may ask for more than
     one task, and the tasks still to do are register facts: kept anywhere else
     they are the memory the root forbids. A row's code comes from the task page
     the same way a principle's or guide's comes from theirs, so a task governs
-    only once its page has been read, and a hand-off adds a row rather than
-    rewriting the one it interrupts.
+    only once its page has been read, and a hand-off reuses or adds a row
+    rather than rewriting the one it interrupts.
 
     Why a row is on the route is a register fact for the same reason. A task
     joins it for a requested outcome or through a hand-off, one task may occur
     in more than one row, and each occurrence does only its own outcome, so a
     row that did not say which one it serves would leave that to memory too.
+
+    Through a hand-off, a task that needs another's result before it can
+    finish waits for that occurrence and then resumes as itself, and rows are
+    reordered as dependencies require. A wait therefore names an occurrence by
+    an identity the agent assigns and never changes, since a task id may repeat
+    and a row's position does not survive reordering. Without a hand-off no
+    task waits for another, so the form has no column for a wait.
     """
     writer.heading(2, wording.ROUTE_HEADING)
     columns = list(wording.ROUTE_COLUMNS)
+    if "handoffs" in features:
+        columns.append(wording.ROUTE_WAITS_COLUMN)
     writer.line(_table_line(columns))
     writer.line(_table_line(["---"] * len(columns)))
     writer.line(_table_line([wording.REGISTER_EMPTY] * len(columns)))
@@ -568,9 +651,9 @@ def _render_register_table(
     """One namespace's rows, or no heading where that namespace ships nothing.
 
     Unconditional rows come first, as they do in every list of these constructs
-    the bundle writes: an agent holding this table beside the page it came from
-    is matching one against the other, and two orderings for one set is a second
-    thing to reconcile before either can be used.
+    whose rows show conditions: an agent holding this table beside the page it
+    came from is matching one against the other, and two orderings for one set
+    is a second thing to reconcile before either can be used.
 
     A construct with several conditions takes one row per condition, adjacent
     and in authored order, its id repeated on each. The conditions are
@@ -633,7 +716,6 @@ def _render_task(
     plan: Plan,
     bundle: RenderedBundle,
     sources: SourceSet,
-    tracked: bool,
 ) -> str:
     """One task page, with its complete knowledge closure in one load.
 
@@ -654,8 +736,8 @@ def _render_task(
     the task, so restating the cues asks it to decide again on a page that
     offers no alternative, and charges every run for the second copy.
 
-    When the bundle ships a register, the page closes with the code its task
-    row takes, so the row names a task only after its page has been read.
+    The page closes with the code its route row takes, so the row names a task
+    only after its page has been read.
     """
     task = item.task
     writer = _Writer()
@@ -690,7 +772,7 @@ def _render_task(
         item.page,
         bundle,
     )
-    return _with_read_code(writer, item.page) if tracked else writer.text()
+    return _with_read_code(writer, item.page)
 
 
 def _guide_links(

@@ -17,6 +17,7 @@ import re
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from degardis.build import build_skills
 from degardis.bundlepaths import (
@@ -586,14 +587,25 @@ class InspectTests(unittest.TestCase):
 
     def test_a_page_class_the_bundle_does_not_ship_is_sized_at_zero(self):
         """A starter skill has no principle, guide, or facet, so its bundle
-        carries no register and no facet index; the row states their absence
-        as zero rather than dropping the field an agent reads by position."""
+        carries no facet index; the row states that absence as zero rather
+        than dropping the field an agent reads by position. Every bundle
+        carries the register, so it is sized as the file the build wrote, and
+        the most a run can read counts it beside the root and the task page."""
         with tempfile.TemporaryDirectory() as directory:
             run("init", "trial", "--output", directory)
-            _, report, _ = run("inspect", str(Path(directory) / "trial"))
+            skill = Path(directory) / "trial"
+            artifact = build_skills(skill, Path(directory) / "out")[0]
+            sizes = {
+                name: (artifact / name).stat().st_size for name in folder_names(artifact)
+            }
+            _, report, _ = run("inspect", str(skill), "--all")
         size = line_of(report, "size ")
-        self.assertIn(" | register 0B | ", size)
+        self.assertIn(f" | register {sizes[REGISTER]}B | ", size)
         self.assertIn(" | facets 0B index 0B max 0B/", size)
+        self.assertEqual(
+            {"primary": sizes[ROOT] + sizes[REGISTER] + sizes[task_page("primary")]},
+            read_rows(report, "maximum_read_bytes_by_task"),
+        )
 
     def test_quality_reports_the_minimum_read_of_each_task_and_budget_headroom(self):
         sizes = self.built["sizes"]
@@ -662,9 +674,15 @@ class InspectTests(unittest.TestCase):
                     self.assertEqual(over, "render.guide-budget" in report)
 
     def test_headroom_ignores_a_kind_of_page_the_bundle_does_not_ship(self):
-        """A starter skill ships no principle, guide, or facet page. Their 8 KiB
-        budgets are smaller than the root's, so counting them as empty pages
-        would report their whole budget as the tightest margin."""
+        """A starter skill ships no principle, guide, or facet page, so none of
+        those kinds has a margin: the figure is the tighter of the root's and
+        the task page's, never one taken from a page that does not exist.
+
+        The root's own text leaves it less room than a whole 8 KiB budget, so
+        under the real budgets an absent kind counted as an empty page could
+        never be the tightest. Their budgets are shrunk below every real margin
+        here, where counting one would report it."""
+        budget = 1
         with tempfile.TemporaryDirectory() as directory:
             run("init", "trial", "--output", directory)
             skill = Path(directory) / "trial"
@@ -672,12 +690,18 @@ class InspectTests(unittest.TestCase):
             sizes = {
                 name: (artifact / name).stat().st_size for name in folder_names(artifact)
             }
-            _, report, _ = run("inspect", str(skill), "--only", "quality")
+            with mock.patch.multiple(
+                "degardis.inspection",
+                PRINCIPLE_BUDGET_BYTES=budget,
+                GUIDE_BUDGET_BYTES=budget,
+                FACET_BUDGET_BYTES=budget,
+            ):
+                _, report, _ = run("inspect", str(skill), "--only", "quality")
         expected = min(
             ROOT_BUDGET_BYTES - sizes[ROOT],
             TASK_BUDGET_BYTES - sizes[task_page("primary")],
         )
-        self.assertGreater(expected, PRINCIPLE_BUDGET_BYTES)
+        self.assertGreater(expected, budget)
         self.assertEqual(
             f"startup_bytes {sizes[ROOT]}B | headroom {expected}B",
             line_of(report, "startup_bytes "),

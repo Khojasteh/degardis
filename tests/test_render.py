@@ -703,9 +703,17 @@ class RegisterTests(unittest.TestCase):
     def test_the_rules_name_the_resting_value_the_form_uses(self):
         """The form carries no prose, so the root is the only place an agent
         learns what a placeholder means; one the rules never mention is one the
-        agent has to guess at. A row's `Applicability` needs no such entry: it is
-        read as the condition it states, `always` included."""
-        self.assertIn(f"`{wording.REGISTER_EMPTY}`", wording.REGISTER_INSTRUCTIONS)
+        agent has to guess at. Every form has a route, so a piece of the rules
+        every bundle states names it. A row's `Applicability` needs no such
+        entry: it is read as the condition it states, `always` included."""
+        self.assertTrue(
+            any(
+                f"`{wording.REGISTER_EMPTY}`" in piece
+                for pieces in wording.WORKING_PROTOCOL
+                for piece in pieces
+                if isinstance(piece, str)
+            )
+        )
 
     def test_a_construct_that_states_no_condition_is_not_pre_judged(self):
         """A verdict follows from encountering a link, and nothing has been
@@ -1005,9 +1013,9 @@ class FacetTests(unittest.TestCase):
         self.assertEqual(["toolchain", "checklist"], self.listed_guides("python"))
 
     def test_a_principle_a_facet_references_is_named_and_placed_nowhere(self):
-        """A facet cannot own a principle, and the root already lists every
-        principle beside its conditions, so the reference names it and is no
-        finding: the facet page gains no link and no list."""
+        """A facet cannot own a principle, and the root already links every
+        principle, so the reference names it and is no finding: the facet page
+        gains no link and no list."""
         self.append_to_facet(
             "urgent",
             "\nHold to [[principle:evidence]], then to [[principle:evidence]] again.\n",
@@ -1079,10 +1087,9 @@ class ReferenceSourceTests(unittest.TestCase):
                 self.assertEqual([], diagnostics.records)
 
     def test_every_body_names_a_principle_without_a_finding(self):
-        """The root lists every principle beside its conditions, so a reference
-        from any body names it as `principle:ID` rather than opening a second
-        route to its page, and the page carrying the text is recorded as one
-        that names it."""
+        """The root links every principle, so a reference from any body names it
+        as `principle:ID` rather than opening a second route to its page, and
+        the page carrying the text is recorded as one that names it."""
         for folder, name, page in (
             ("tasks", "review", task_path("review")),
             ("knowledge", "house-limits", task_path("review")),

@@ -32,4 +32,4 @@ my-skill/
   agents/openai.yaml
 ```
 
-Directories appear only when needed. Scripts and assets keep the paths they have in the source, so `scripts/` and `assets/` appear where the source uses them. A bundle with at least one principle or guide page also contains a generated progress register under `assets/`.
+Directories appear only when needed. Scripts and assets keep the paths they have in the source, so `scripts/` and `assets/` appear where the source uses them. Every bundle also contains a generated progress register under `assets/`.

@@ -5,6 +5,7 @@ import unittest
 from pathlib import Path
 
 from degardis import wording
+from degardis.bundlepaths import REGISTER
 from degardis.model import Diagnostics
 from degardis.registry import load_skill_path
 from degardis.validate import compile_skill
@@ -85,16 +86,39 @@ class PlacementTests(PrincipleApplicabilityHarness):
     def test_a_principle_stating_no_conditions_is_read_as_always(self):
         self.assertEqual((), self.principles["always"].applicability)
 
-    def test_the_root_links_every_skill_principle_and_states_its_condition(self):
+    def test_the_root_links_every_skill_principle_and_the_register_states_its_condition(self):
+        """The register is copied before any other work and carries each
+        condition on its own row, so the root links the principle alone rather
+        than have every run read its conditions twice."""
         root = self.compiled.rendered.skill_text
+        register = self.compiled.rendered.pages[REGISTER]
         for principle in self.principles.values():
             with self.subTest(principle=principle.id):
                 self.assertIn(
-                    f"[{principle.title}](references/principles/{principle.id}.md)",
+                    f"- [{principle.title}](references/principles/{principle.id}.md)\n",
                     root,
                 )
                 for condition in principle.applicability:
-                    self.assertIn(condition, root)
+                    self.assertNotIn(condition, root)
+                    self.assertIn(f"|{principle.id}|{condition}|", register)
+
+    def test_the_root_lists_principles_in_manifest_order(self):
+        """No condition shows on the root's rows, so a reader there could not
+        tell why conditional principles would trail unconditional ones; the
+        list keeps the order the manifest names them in."""
+        root = self.make_skill()
+        (root / "skill.yaml").write_text(
+            MANIFEST.replace(
+                "- always\n- root-conditional\n- actiony",
+                "- actiony\n- always\n- root-conditional",
+            )
+        )
+        compiled, diagnostics = self.compile(root)
+        self.assertFalse(diagnostics.errors)
+        text = compiled.rendered.skill_text
+        order = ["actiony", "always", "root-conditional"]
+        positions = [text.index(f"(references/principles/{item}.md)") for item in order]
+        self.assertEqual(sorted(positions), positions)
 
     def test_a_task_page_lists_no_principle_even_when_the_task_names_one(self):
         """A principle holds across every task, so the root states it once and

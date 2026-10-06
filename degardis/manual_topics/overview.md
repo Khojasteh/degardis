@@ -10,6 +10,6 @@ Five construct types hold authored Markdown:
 - **Facet** — guidance selected by the situation rather than the task.
 - **Guide** — detail a task, facet, or another guide loads separately.
 
-Degardis adds no domain content and never paraphrases, merges, summarizes, or drops authored material. Around that material it adds headings and short, domain-neutral instructions in English with American spelling. The instructions route each requested outcome to a task and tell the agent which pages to read and when. When the bundle has at least one principle or guide page, they also have the agent track its progress and check its work against the requirements that apply, before an effect it cannot undo and before it claims completion.
+Degardis adds no domain content and never paraphrases, merges, summarizes, or drops authored material. Around that material it adds headings and short, domain-neutral instructions in English with American spelling. The instructions route each requested outcome to a task and tell the agent which pages to read and when. They also have the agent track its progress and check its work against the requirements that apply, before an effect it cannot undo and before it claims completion.
 
 `SKILL.md` is the bundle entry point: it identifies the skill, carries its skill-wide guidance, and routes a request to task pages. A task page contains that task's complete knowledge closure and may hand the work to another task. Principles, facets, and guides remain separate loads.

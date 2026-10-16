@@ -101,7 +101,7 @@ None of these teaches how to author a good skill or how the compiler works inter
 | Manifest/interface key | `registry.py`, `content.py`, `package.py`, and `manifest` or `interface` topic |
 | Page composition/placement | `analysis.py`, reference checks in `validate.py`, `render.py`, and conformance tests; update the `relationships` or construct topic only if authored semantics or observable loading behavior changes |
 | Routing rule or hand-off semantics | `wording.py`, conformance tests, `tasks` manual topic (`relationships` for conditions), and `docs/artifact-format.md` runtime behavior |
-| CLI command/option | `cli.py` help/examples, `docs/cli.md`, README command list |
+| CLI command/option | `cli.py` help/examples, `docs/cli.md` |
 | Inspect dimension/row | `output.py`, `inspection.py`, `inspection` topic, `docs/cli.md` |
 | Generated section wording | `wording.py` only |
 | Generated runtime control mechanism | implementation and conformance tests only; update public docs only if observable behavior changes |
